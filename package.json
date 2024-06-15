@@ -1,5 +1,5 @@
 {
-  "name": "project_template",
+  "name": "WorkoutWager",
   "scripts": {
     "build": "tsc",
     "bundle": "npx projen bundle",

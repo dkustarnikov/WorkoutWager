@@ -1,5 +1,5 @@
 import * as awsLambda from 'aws-lambda';
-import { getApiResponse } from '../common/helpers';
+import { getApiResponse } from '../../common/helpers';
 
 export const handler: awsLambda.Handler = async () => {
   const someKey = process.env.SOME_KEY;
