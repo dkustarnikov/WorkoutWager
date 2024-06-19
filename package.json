@@ -1,12 +1,12 @@
 {
-  "name": "project_template",
+  "name": "WorkoutWager",
   "scripts": {
     "build": "tsc",
     "bundle": "npx projen bundle",
     "clobber": "npx projen clobber",
     "compile": "npx projen compile",
     "default": "npx projen default",
-    "deploy": "npm run projen && npm run build && npm run test &&npm run package && cdk deploy",
+    "deploy": "npm run projen && npm run build && npm run package && npm run test  && cdk deploy",
     "destroy": "npx projen destroy",
     "diff": "npx projen diff",
     "eject": "npx projen eject",

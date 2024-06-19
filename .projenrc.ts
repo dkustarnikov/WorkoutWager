@@ -1,5 +1,4 @@
 import { awscdk } from 'projen';
-import { TypeScriptModuleResolution } from 'projen/lib/javascript/typescript-config';
 
 const project = new awscdk.AwsCdkTypeScriptApp({
   cdkVersion: '2.1.0',
@@ -20,19 +19,14 @@ const project = new awscdk.AwsCdkTypeScriptApp({
 
   tsconfig: {
     compilerOptions: {
-      target: 'es2020',
-      strict: true,
-      noEmit: true,
-      sourceMap: false,
-      module: 'commonjs',
-      moduleResolution: TypeScriptModuleResolution.NODE,
-      esModuleInterop: true,
-      skipLibCheck: true,
-      forceConsistentCasingInFileNames: true,
-      isolatedModules: true,
+      outDir: './dist',
       rootDir: './src',
+      target: 'ES2020',
+      module: 'commonjs',
+      strict: true,
+      esModuleInterop: true,
     },
-    include: ['src/**/*.ts'], // Only include src directory
+    include: ['src/**/*.ts'],
     exclude: ['node_modules'],
   },
 });
@@ -42,7 +36,7 @@ project.addScripts({
   projen: 'ts-node .projenrc.ts',
   build: 'tsc',
   package: 'npm run build && copyfiles -u 1 src/**/* dist',
-  deploy: 'npm run projen && npm run build && npm run test &&npm run package && cdk deploy',
+  deploy: 'npm run projen && npm run build && npm run package && npm run test  && cdk deploy',
 });
 
 // Enables unit tests on windows
