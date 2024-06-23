@@ -4,7 +4,7 @@ import { NodePackageManager } from 'projen/lib/javascript';
 const project = new awscdk.AwsCdkTypeScriptApp({
   cdkVersion: '2.1.0',
   defaultReleaseBranch: 'main',
-  name: 'WorkoutWager',
+  name: 'workout-wager',
   projenrcTs: true,
   packageManager: NodePackageManager.NPM,
   gitignore: ['.env'],
@@ -41,8 +41,6 @@ const project = new awscdk.AwsCdkTypeScriptApp({
 project.addScripts({
   projen: 'ts-node --project tsconfig.dev.json .projenrc.ts',
   build: 'tsc',
-  package: 'npm run build && copyfiles -u 1 src/**/* dist',
-  deploy: 'npx projen && npm run projen && npm run build && npm run package && npm run test && cdk deploy',
 });
 
 // Enables unit tests on windows
