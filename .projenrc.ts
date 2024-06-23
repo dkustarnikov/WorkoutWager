@@ -1,48 +1,48 @@
 import { awscdk } from 'projen';
-import { TypeScriptModuleResolution } from 'projen/lib/javascript/typescript-config';
+import { NodePackageManager } from 'projen/lib/javascript';
 
 const project = new awscdk.AwsCdkTypeScriptApp({
   cdkVersion: '2.1.0',
   defaultReleaseBranch: 'main',
   name: 'WorkoutWager',
   projenrcTs: true,
+  packageManager: NodePackageManager.NPM,
   gitignore: ['.env'],
-  deps: ['aws-lambda'], // Runtime dependencies of this module.
+  deps: [
+    '@types/aws-lambda',
+    'jsonwebtoken',
+  ], // Runtime dependencies of this module.
   devDeps: [
     'aws-cdk-lib',
     'aws-lambda-mock-context',
     'constructs',
-    '@types/aws-lambda@^8.10.138',
+    '@types/jsonwebtoken',
+    '@types/aws-lambda',
     'typescript',
     'copyfiles',
     'ts-dotenv',
+    'ts-node',
   ], // Build dependencies for this module.
-
   tsconfig: {
     compilerOptions: {
-      target: 'es2020',
-      strict: true,
-      noEmit: true,
-      sourceMap: false,
-      module: 'commonjs',
-      moduleResolution: TypeScriptModuleResolution.NODE,
-      esModuleInterop: true,
-      skipLibCheck: true,
-      forceConsistentCasingInFileNames: true,
-      isolatedModules: true,
+      outDir: './dist',
       rootDir: './src',
+      target: 'ES2020',
+      module: 'commonjs',
+      strict: true,
+      esModuleInterop: true,
     },
-    include: ['src/**/*.ts'], // Only include src directory
+    include: ['src/**/*.ts'],
     exclude: ['node_modules'],
   },
 });
 
 // Add custom scripts
 project.addScripts({
-  projen: 'ts-node .projenrc.ts',
+  projen: 'ts-node --project tsconfig.dev.json .projenrc.ts',
   build: 'tsc',
   package: 'npm run build && copyfiles -u 1 src/**/* dist',
-  deploy: 'npm run projen && npm run build && npm run test &&npm run package && cdk deploy',
+  deploy: 'npx projen && npm run projen && npm run build && npm run package && npm run test && cdk deploy',
 });
 
 // Enables unit tests on windows
