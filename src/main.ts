@@ -1,73 +1,39 @@
+import * as path from 'path';
 import { App, CfnOutput, Stack, StackProps, aws_lambda as lambda, aws_apigateway as apigateway } from 'aws-cdk-lib';
-import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 
 export class MyStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps = {}) {
     super(scope, id, props);
 
-    // Define the Lambda function resource
-    const healthFunction = new lambda.Function(this, 'health', {
-      runtime: lambda.Runtime.NODEJS_20_X, // Choose any supported Node.js runtime
-      code: lambda.Code.fromAsset('dist/lambdas/health'), // Ensure this points to the compiled lambda directory
-      handler: 'index.handler',
+    const healthFunction = new NodejsFunction(this, 'health', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      entry: path.join(__dirname, 'lambdas/health/index.ts'), // adjust the path as necessary
+      handler: 'handler',
+      bundling: {
+        externalModules: [],
+      },
       environment: {
-        SOME_KEY: 'some_key variable', // Define your environment variable here
+        SOME_KEY: 'some_key variable',
       },
     });
 
-    // Defining DynamoDb tables
-    // Users Table
-    const usersTable = new dynamodb.Table(this, 'Users', {
-      partitionKey: { name: 'user_id', type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-    });
-    usersTable.addGlobalSecondaryIndex({
-      indexName: 'email-index',
-      partitionKey: { name: 'email', type: dynamodb.AttributeType.STRING },
-    });
-
-    // WorkoutPlans Table
-    new dynamodb.Table(this, 'WorkoutPlans', {
-      partitionKey: { name: 'plan_id', type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+    const authorizerFunction = new NodejsFunction(this, 'authorizer', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      entry: path.join(__dirname, 'lambdas/authorizer/index.ts'), // adjust the path as necessary
+      handler: 'handler',
+      bundling: {
+        externalModules: [],
+      },
+      environment: {
+        JWT_SECRET: 'Some secret',
+      },
     });
 
-    // UserPlans Table
-    const userPlansTable = new dynamodb.Table(this, 'UserPlans', {
-      partitionKey: { name: 'user_id', type: dynamodb.AttributeType.STRING },
-      sortKey: { name: 'plan_id', type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-    });
-    userPlansTable.addGlobalSecondaryIndex({
-      indexName: 'plan_id-index',
-      partitionKey: { name: 'plan_id', type: dynamodb.AttributeType.STRING },
-    });
-
-    // Penalties Table
-    const penaltiesTable = new dynamodb.Table(this, 'Penalties', {
-      partitionKey: { name: 'user_id', type: dynamodb.AttributeType.STRING },
-      sortKey: { name: 'penalty_id', type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-    });
-    penaltiesTable.addGlobalSecondaryIndex({
-      indexName: 'status-index',
-      partitionKey: { name: 'status', type: dynamodb.AttributeType.STRING },
-    });
-    penaltiesTable.addGlobalSecondaryIndex({
-      indexName: 'created_at-index',
-      partitionKey: { name: 'created_at', type: dynamodb.AttributeType.STRING },
-    });
-
-    // Workouts Table
-    const workoutsTable = new dynamodb.Table(this, 'Workouts', {
-      partitionKey: { name: 'user_id', type: dynamodb.AttributeType.STRING },
-      sortKey: { name: 'workout_id', type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-    });
-    workoutsTable.addGlobalSecondaryIndex({
-      indexName: 'workout_date-index',
-      partitionKey: { name: 'workout_date', type: dynamodb.AttributeType.STRING },
+    // Create the custom authorizer
+    const authorizer = new apigateway.TokenAuthorizer(this, 'MyAuthorizer', {
+      handler: authorizerFunction,
     });
 
     // Define the API Gateway resource
@@ -76,9 +42,11 @@ export class MyStack extends Stack {
       proxy: false,
     });
 
-    // Define the '/health' resource with a GET method
+    // Define the '/health' resource with a GET method and attach the authorizer
     const healthEndpoint = api.root.addResource('health');
-    healthEndpoint.addMethod('GET');
+    healthEndpoint.addMethod('GET', new apigateway.LambdaIntegration(healthFunction), {
+      authorizer: authorizer,
+    });
 
     new CfnOutput(this, 'TestBucket', { value: '' });
   }
