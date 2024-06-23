@@ -211,13 +211,13 @@
       },
       "steps": [
         {
-          "exec": "npx npm-check-updates@16 --upgrade --target=minor --peer --dep=dev,peer,prod,optional --filter=@types/aws-lambda,@types/jest,@types/jsonwebtoken,aws-cdk-lib,aws-lambda-mock-context,copyfiles,esbuild,eslint-import-resolver-typescript,eslint-plugin-import,jest,projen,ts-dotenv,ts-jest,ts-node,typescript,jsonwebtoken"
+          "exec": "npx npm-check-updates@16 --upgrade --target=minor --peer --dep=dev,peer,prod,optional --filter=@types/aws-lambda,@types/jest,@types/jsonwebtoken,aws-cdk-lib,aws-lambda-mock-context,copyfiles,esbuild,eslint-import-resolver-typescript,eslint-plugin-import,jest,jwks-rsa,projen,ts-dotenv,ts-jest,ts-node,typescript,jsonwebtoken"
         },
         {
           "exec": "npm install"
         },
         {
-          "exec": "npm update @types/aws-lambda @types/jest @types/jsonwebtoken @types/node @typescript-eslint/eslint-plugin @typescript-eslint/parser aws-cdk-lib aws-cdk aws-lambda-mock-context copyfiles esbuild eslint-import-resolver-typescript eslint-plugin-import eslint jest jest-junit projen ts-dotenv ts-jest ts-node typescript constructs jsonwebtoken"
+          "exec": "npm update @types/aws-lambda @types/jest @types/jsonwebtoken @types/node @typescript-eslint/eslint-plugin @typescript-eslint/parser aws-cdk-lib aws-cdk aws-lambda-mock-context copyfiles esbuild eslint-import-resolver-typescript eslint-plugin-import eslint jest jest-junit jwks-rsa projen ts-dotenv ts-jest ts-node typescript constructs jsonwebtoken"
         },
         {
           "exec": "npx projen"

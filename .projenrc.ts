@@ -22,6 +22,7 @@ const project = new awscdk.AwsCdkTypeScriptApp({
     'copyfiles',
     'ts-dotenv',
     'ts-node',
+    'jwks-rsa'
   ], // Build dependencies for this module.
   tsconfig: {
     compilerOptions: {

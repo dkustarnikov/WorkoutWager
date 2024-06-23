@@ -71,6 +71,10 @@
       "type": "build"
     },
     {
+      "name": "jwks-rsa",
+      "type": "build"
+    },
+    {
       "name": "projen",
       "type": "build"
     },
