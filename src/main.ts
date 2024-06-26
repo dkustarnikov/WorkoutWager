@@ -4,17 +4,18 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
 
 export class MyStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps = {}) {
     super(scope, id, props);
 
+    const prefix = process.env.STACK_NAME === 'main' ? '' : `{process.env.STACK_NAME}-`;
     /**
     * ========================
     * Defining Lambdas
     * ========================
     */
-   
     const healthFunction = new NodejsFunction(this, 'health', {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/health/index.ts'), // adjust the path as necessary
@@ -39,13 +40,27 @@ export class MyStack extends Stack {
       },
     });
 
+    /**
+     * ========================
+     * Defining DynamoDB Tables
+     * ========================
+     */
+    // SavingsPlans Table
+    const savingsPlansTable = new Table(this, `${prefix}SavingsPlans`, {
+      partitionKey: { name: 'planId', type: AttributeType.STRING },
+      billingMode: BillingMode.PAY_PER_REQUEST,
+    });
 
+    savingsPlansTable.addGlobalSecondaryIndex({
+      indexName: 'userIdIndex',
+      partitionKey: { name: 'userId', type: AttributeType.STRING },
+    });
     /**
      * ========================
      * Defining Cognito User Pool
      * ========================
      */
-    const userPool = new cognito.UserPool(this, 'WorkoutWagerUserPool', {
+    const userPool = new cognito.UserPool(this, `${prefix}WorkoutWagerUserPool`, {
       selfSignUpEnabled: true,
       signInAliases: { email: true },
       autoVerify: { email: true },
@@ -70,7 +85,7 @@ export class MyStack extends Stack {
      * Defining Cognito Domain
      * ========================
      */
-    const userPoolDomain = new cognito.UserPoolDomain(this, 'UserPoolDomain', {
+    const userPoolDomain = new cognito.UserPoolDomain(this, `${prefix}UserPoolDomain`, {
       userPool,
       cognitoDomain: {
         domainPrefix: process.env.STACK_NAME ? `${process.env.STACK_NAME}-workout-wager` : 'workout-wager',
@@ -87,7 +102,7 @@ export class MyStack extends Stack {
       scopeDescription: 'Custom Scope Description',
     });
 
-    const resourceServer = new cognito.UserPoolResourceServer(this, 'ResourceServer', {
+    const resourceServer = new cognito.UserPoolResourceServer(this, `${prefix}ResourceServer`, {
       userPool,
       identifier: process.env.STACK_NAME ? `${process.env.STACK_NAME}-workout-wager` : 'workout-wager',
       scopes: [resourceServerScope],
@@ -98,7 +113,7 @@ export class MyStack extends Stack {
      * Creating User Pool Client for client_credentials flow
      * ========================
      */
-    const userPoolClientForClientCreds = new cognito.UserPoolClient(this, 'WorkoutWagerUserPoolClientForClientCreds', {
+    const userPoolClientForClientCreds = new cognito.UserPoolClient(this, `${prefix}WorkoutWagerUserPoolClientForClientCreds`, {
       userPool,
       generateSecret: true,
       oAuth: {
@@ -117,7 +132,7 @@ export class MyStack extends Stack {
     });
 
     // Define the API Gateway resource
-    const api = new apigateway.LambdaRestApi(this, 'WorkoutWagerAPI', {
+    const api = new apigateway.LambdaRestApi(this, `${prefix}WorkoutWagerAPI`, {
       handler: healthFunction,
       proxy: false,
     });
