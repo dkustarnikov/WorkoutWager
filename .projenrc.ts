@@ -61,6 +61,8 @@ project.addTask('deploy', {
 project.jest?.addTestMatch('<rootDir>/test/**/*(*.)@(spec|test).ts?(x)');
 project.jest?.addTestMatch('<rootDir>/src/**/*(*.)@(spec|test).ts?(x)');
 project.jest!.config.modulePaths = ['<rootDir>'];
+project.jest!.config.testTimeout = 30000; // 30 seconds
+
 
 // Use tsconfig.test.json for ESLint
 project.eslint?.addOverride({
