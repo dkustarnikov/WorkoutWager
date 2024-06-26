@@ -3,17 +3,18 @@ import { App, CfnOutput, Stack, StackProps, aws_lambda as lambda, aws_apigateway
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as iam from 'aws-cdk-lib/aws-iam';
 
 export class MyStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps = {}) {
     super(scope, id, props);
 
-     /**
-     * ========================
-     * Defining Lambdas
-     * ========================
-     */
-
+    /**
+    * ========================
+    * Defining Lambdas
+    * ========================
+    */
+   
     const healthFunction = new NodejsFunction(this, 'health', {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/health/index.ts'), // adjust the path as necessary
@@ -37,6 +38,7 @@ export class MyStack extends Stack {
         JWT_SECRET: 'Some secret',
       },
     });
+
 
     /**
      * ========================
@@ -71,7 +73,7 @@ export class MyStack extends Stack {
     const userPoolDomain = new cognito.UserPoolDomain(this, 'UserPoolDomain', {
       userPool,
       cognitoDomain: {
-        domainPrefix: 'workout-wager', // Use a unique domain prefix
+        domainPrefix: process.env.STACK_NAME ? `${process.env.STACK_NAME}-workout-wager` : 'workout-wager',
       },
     });
 
@@ -87,7 +89,7 @@ export class MyStack extends Stack {
 
     const resourceServer = new cognito.UserPoolResourceServer(this, 'ResourceServer', {
       userPool,
-      identifier: 'workout-wager',
+      identifier: process.env.STACK_NAME ? `${process.env.STACK_NAME}-workout-wager` : 'workout-wager',
       scopes: [resourceServerScope],
     });
 
@@ -126,6 +128,27 @@ export class MyStack extends Stack {
       authorizer: authorizer,
     });
 
+    const getUserInfoFunction = new NodejsFunction(this, 'get-user-info', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      entry: path.join(__dirname, 'lambdas/get-user-info-get/index.ts'), // adjust the path as necessary
+      handler: 'handler',
+      bundling: {
+        externalModules: [],
+      },
+      environment: {
+        COGNITO_USER_POOL_ID: userPool.userPoolId,
+      },
+    });
+
+    api.root.addResource('get-user-info').addMethod('POST', new apigateway.LambdaIntegration(getUserInfoFunction), {
+      authorizer: authorizer
+    });
+
+    // Grant the Lambda function permission to access Cognito
+    getUserInfoFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['cognito-idp:AdminGetUser', 'cognito-idp:ListUsers'],
+      resources: [`arn:aws:cognito-idp:${this.region}:${this.account}:userpool/${userPool.userPoolId}`],
+    }));
 
     // Output User Pool ID
     new CfnOutput(this, 'UserPoolId', {
@@ -146,7 +169,7 @@ export class MyStack extends Stack {
     new CfnOutput(this, 'UserPoolClientIdForClientCreds', {
       value: userPoolClientForClientCreds.userPoolClientId,
     });
-    
+
     new CfnOutput(this, 'TestBucket', { value: '' });
   }
 }
@@ -158,7 +181,8 @@ const devEnv = {
 };
 
 const app = new App();
+const stackName = `workout-wager-${process.env.STACK_NAME}` || 'workout-wager-dev';
 
-new MyStack(app, 'workout-wager-dev', { env: devEnv });
+new MyStack(app, stackName, { env: devEnv });
 
 app.synth();
