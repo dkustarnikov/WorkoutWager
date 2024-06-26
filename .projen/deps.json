@@ -13,6 +13,10 @@
       "type": "build"
     },
     {
+      "name": "@types/jwk-to-pem",
+      "type": "build"
+    },
+    {
       "name": "@types/node",
       "version": "^18",
       "type": "build"
@@ -71,6 +75,10 @@
       "type": "build"
     },
     {
+      "name": "jwk-to-pem",
+      "type": "build"
+    },
+    {
       "name": "jwks-rsa",
       "type": "build"
     },
@@ -104,8 +112,20 @@
       "type": "runtime"
     },
     {
+      "name": "aws-sdk",
+      "type": "runtime"
+    },
+    {
+      "name": "axios",
+      "type": "runtime"
+    },
+    {
       "name": "constructs",
       "version": "^10.0.5",
+      "type": "runtime"
+    },
+    {
+      "name": "dotenv-cli",
       "type": "runtime"
     },
     {
