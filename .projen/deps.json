@@ -125,6 +125,10 @@
       "type": "runtime"
     },
     {
+      "name": "dotenv",
+      "type": "runtime"
+    },
+    {
       "name": "dotenv-cli",
       "type": "runtime"
     },

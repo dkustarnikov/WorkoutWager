@@ -1,7 +1,6 @@
-// check-branch.ts
-import { execSync } from 'child_process';
-import * as fs from 'fs';
-import * as path from 'path';
+const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 
 try {
   const branch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
@@ -11,13 +10,24 @@ try {
     console.log('Deploying to the dev stack');
     stackName = 'dev';
   } else {
-    console.log(`Deploying to the ${branch} stack`);
+    console.log(`The branch we are on is ${branch} stack`);
     stackName = branch;
   }
 
-  // Write the stack name to a .env file
+  // Read the .env file if it exists
   const envFilePath = path.join(__dirname, '.env');
-  fs.writeFileSync(envFilePath, `STACK_NAME=${stackName}\n`);
+  let envFileContent = '';
+  if (fs.existsSync(envFilePath)) {
+    envFileContent = fs.readFileSync(envFilePath, 'utf8');
+  }
+
+  // Check if STACK_NAME is already present
+  if (!envFileContent.includes('STACK_NAME=')) {
+    // Append the stack name to the .env file
+    fs.appendFileSync(envFilePath, `STACK_NAME=${stackName}\n`);
+  } else {
+    console.log('STACK_NAME is already set in the .env file');
+  }
 
 } catch (error) {
   console.error('Failed to determine the branch name', error);
