@@ -10,7 +10,9 @@ export class MyStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps = {}) {
     super(scope, id, props);
 
-    const prefix = process.env.STACK_NAME === 'main' ? '' : `{process.env.STACK_NAME}-`;
+    const stackName = process.env.STACK_NAME || 'dev';
+    const prefix = stackName === 'main' ? '' : `${stackName}-`;
+
     /**
     * ========================
     * Defining Lambdas
@@ -55,6 +57,19 @@ export class MyStack extends Stack {
       indexName: 'userIdIndex',
       partitionKey: { name: 'userId', type: AttributeType.STRING },
     });
+
+    // Rules table
+    const rulesTable = new Table(this, `${prefix}Rules`, {
+      partitionKey: { name: 'ruleId', type: AttributeType.STRING },
+      billingMode: BillingMode.PAY_PER_REQUEST,
+    });
+
+    // Add a global secondary index for PlanId
+    rulesTable.addGlobalSecondaryIndex({
+      indexName: 'planIdIndex',
+      partitionKey: { name: 'planId', type: AttributeType.STRING },
+    });
+
     /**
      * ========================
      * Defining Cognito User Pool
@@ -185,6 +200,11 @@ export class MyStack extends Stack {
       value: userPoolClientForClientCreds.userPoolClientId,
     });
 
+    // Output Process.env.STACK_NAME
+    new CfnOutput(this, 'StackName', {
+      value: `${process.env.STACK_NAME}`,
+    });
+
     new CfnOutput(this, 'TestBucket', { value: '' });
   }
 }
@@ -196,7 +216,7 @@ const devEnv = {
 };
 
 const app = new App();
-const stackName = `workout-wager-${process.env.STACK_NAME}` || 'workout-wager-dev';
+const stackName = process.env.STACK_NAME ? `workout-wager-${process.env.STACK_NAME}` : 'workout-wager-dev';
 
 new MyStack(app, stackName, { env: devEnv });
 

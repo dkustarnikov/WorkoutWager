@@ -13,7 +13,8 @@ const project = new awscdk.AwsCdkTypeScriptApp({
     'jsonwebtoken',
     'axios',
     'aws-sdk',
-    'dotenv-cli'
+    'dotenv-cli',
+    'dotenv'
   ], // Runtime dependencies of this module.
   devDeps: [
     'aws-cdk-lib',
@@ -47,7 +48,7 @@ const project = new awscdk.AwsCdkTypeScriptApp({
 project.addScripts({
   projen: 'ts-node --project tsconfig.dev.json .projenrc.ts',
   build: 'tsc',
-  checkBranch: 'node check-branch.js'
+  checkBranch: 'node check-branch.ts'
 });
 
 // Remove the existing deploy task
