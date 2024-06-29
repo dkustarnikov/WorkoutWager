@@ -10,45 +10,13 @@ export class MyStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps = {}) {
     super(scope, id, props);
 
-    const stackName = process.env.STACK_NAME || 'dev';
-    const prefix = stackName === 'main' ? '' : `${stackName}-`;
-
-    /**
-    * ========================
-    * Defining Lambdas
-    * ========================
-    */
-    const healthFunction = new NodejsFunction(this, 'health', {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/health/index.ts'), // adjust the path as necessary
-      handler: 'handler',
-      bundling: {
-        externalModules: [],
-      },
-      environment: {
-        SOME_KEY: 'some_key variable',
-      },
-    });
-
-    const authorizerFunction = new NodejsFunction(this, 'authorizer', {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/authorizer/index.ts'), // adjust the path as necessary
-      handler: 'handler',
-      bundling: {
-        externalModules: [],
-      },
-      environment: {
-        JWT_SECRET: 'Some secret',
-      },
-    });
-
     /**
      * ========================
      * Defining DynamoDB Tables
      * ========================
      */
     // SavingsPlans Table
-    const savingsPlansTable = new Table(this, `${prefix}SavingsPlans`, {
+    const savingsPlansTable = new Table(this, `SavingsPlans`, {
       partitionKey: { name: 'planId', type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST,
     });
@@ -59,7 +27,7 @@ export class MyStack extends Stack {
     });
 
     // Rules table
-    const rulesTable = new Table(this, `${prefix}Rules`, {
+    const rulesTable = new Table(this, `Rules`, {
       partitionKey: { name: 'ruleId', type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST,
     });
@@ -71,11 +39,11 @@ export class MyStack extends Stack {
     });
 
     /**
-     * ========================
-     * Defining Cognito User Pool
-     * ========================
-     */
-    const userPool = new cognito.UserPool(this, `${prefix}WorkoutWagerUserPool`, {
+    * ========================
+    * Defining Cognito User Pool
+    * ========================
+    */
+    const userPool = new cognito.UserPool(this, `WorkoutWagerUserPool`, {
       selfSignUpEnabled: true,
       signInAliases: { email: true },
       autoVerify: { email: true },
@@ -96,14 +64,54 @@ export class MyStack extends Stack {
     });
 
     /**
+    * ========================
+    * Defining Lambdas
+    * ========================
+    */
+    const healthFunction = new NodejsFunction(this, `health`, {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      entry: path.join(__dirname, 'lambdas/health/index.ts'), // adjust the path as necessary
+      handler: 'handler',
+      bundling: {
+        externalModules: [],
+      },
+      environment: {
+        SOME_KEY: 'some_key variable',
+      },
+    });
+
+    const authorizerFunction = new NodejsFunction(this, `authorizer`, {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      entry: path.join(__dirname, 'lambdas/authorizer/index.ts'), // adjust the path as necessary
+      handler: 'handler',
+      bundling: {
+        externalModules: [],
+      },
+      environment: {
+        USER_POOL_CONGNITO_URI: userPool.userPoolProviderUrl,
+      },
+    });
+
+    const createSavingsPlanFunction = new NodejsFunction(this, `create-savings-plan`, {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      entry: path.join(__dirname, 'lambdas/create-savings-plan/index.ts'), // Adjust the path as necessary
+      handler: 'handler',
+      environment: {
+        SAVINGS_PLANS_TABLE: savingsPlansTable.tableName,
+      },
+    });
+
+    savingsPlansTable.grantReadWriteData(createSavingsPlanFunction);
+
+    /**
      * ========================
      * Defining Cognito Domain
      * ========================
      */
-    const userPoolDomain = new cognito.UserPoolDomain(this, `${prefix}UserPoolDomain`, {
+    const userPoolDomain = new cognito.UserPoolDomain(this, `UserPoolDomain`, {
       userPool,
       cognitoDomain: {
-        domainPrefix: process.env.STACK_NAME ? `${process.env.STACK_NAME}-workout-wager` : 'workout-wager',
+        domainPrefix: 'workout-wager',
       },
     });
 
@@ -117,9 +125,9 @@ export class MyStack extends Stack {
       scopeDescription: 'Custom Scope Description',
     });
 
-    const resourceServer = new cognito.UserPoolResourceServer(this, `${prefix}ResourceServer`, {
+    const resourceServer = new cognito.UserPoolResourceServer(this, `ResourceServer`, {
       userPool,
-      identifier: process.env.STACK_NAME ? `${process.env.STACK_NAME}-workout-wager` : 'workout-wager',
+      identifier: 'workout-wager',
       scopes: [resourceServerScope],
     });
 
@@ -128,7 +136,7 @@ export class MyStack extends Stack {
      * Creating User Pool Client for client_credentials flow
      * ========================
      */
-    const userPoolClientForClientCreds = new cognito.UserPoolClient(this, `${prefix}WorkoutWagerUserPoolClientForClientCreds`, {
+    const userPoolClientForClientCreds = new cognito.UserPoolClient(this, `WorkoutWagerUserPoolClientForClientCreds`, {
       userPool,
       generateSecret: true,
       oAuth: {
@@ -142,12 +150,12 @@ export class MyStack extends Stack {
     });
 
     // Create the custom authorizer
-    const authorizer = new apigateway.TokenAuthorizer(this, 'MyAuthorizer', {
+    const authorizer = new apigateway.TokenAuthorizer(this, `MyAuthorizer`, {
       handler: authorizerFunction,
     });
 
     // Define the API Gateway resource
-    const api = new apigateway.LambdaRestApi(this, `${prefix}WorkoutWagerAPI`, {
+    const api = new apigateway.LambdaRestApi(this, `WorkoutWagerAPI`, {
       handler: healthFunction,
       proxy: false,
     });
@@ -156,9 +164,10 @@ export class MyStack extends Stack {
     const healthEndpoint = api.root.addResource('health');
     healthEndpoint.addMethod('GET', new apigateway.LambdaIntegration(healthFunction), {
       authorizer: authorizer,
+      authorizationType: apigateway.AuthorizationType.CUSTOM
     });
 
-    const getUserInfoFunction = new NodejsFunction(this, 'get-user-info', {
+    const getUserInfoFunction = new NodejsFunction(this, `get-user-info`, {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/get-user-info-get/index.ts'), // adjust the path as necessary
       handler: 'handler',
@@ -171,7 +180,8 @@ export class MyStack extends Stack {
     });
 
     api.root.addResource('get-user-info').addMethod('POST', new apigateway.LambdaIntegration(getUserInfoFunction), {
-      authorizer: authorizer
+      authorizer: authorizer,
+      authorizationType: apigateway.AuthorizationType.CUSTOM
     });
 
     // Grant the Lambda function permission to access Cognito
@@ -179,6 +189,11 @@ export class MyStack extends Stack {
       actions: ['cognito-idp:AdminGetUser', 'cognito-idp:ListUsers'],
       resources: [`arn:aws:cognito-idp:${this.region}:${this.account}:userpool/${userPool.userPoolId}`],
     }));
+
+    api.root.addResource('create-savings-plan').addMethod('POST', new apigateway.LambdaIntegration(createSavingsPlanFunction), {
+      authorizer: authorizer,
+      authorizationType: apigateway.AuthorizationType.CUSTOM
+    });
 
     // Output User Pool ID
     new CfnOutput(this, 'UserPoolId', {
@@ -200,11 +215,6 @@ export class MyStack extends Stack {
       value: userPoolClientForClientCreds.userPoolClientId,
     });
 
-    // Output Process.env.STACK_NAME
-    new CfnOutput(this, 'StackName', {
-      value: `${process.env.STACK_NAME}`,
-    });
-
     new CfnOutput(this, 'TestBucket', { value: '' });
   }
 }
@@ -216,7 +226,7 @@ const devEnv = {
 };
 
 const app = new App();
-const stackName = process.env.STACK_NAME ? `workout-wager-${process.env.STACK_NAME}` : 'workout-wager-dev';
+const stackName = 'workout-wager-dev';
 
 new MyStack(app, stackName, { env: devEnv });
 

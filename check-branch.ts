@@ -6,7 +6,7 @@ try {
   const branch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
   let stackName = '';
 
-  if (branch === 'main' || branch === 'master') {
+  if (branch === 'main' || branch === 'dev') {
     console.log('Deploying to the dev stack');
     stackName = 'dev';
   } else {
@@ -21,12 +21,12 @@ try {
     envFileContent = fs.readFileSync(envFilePath, 'utf8');
   }
 
-  // Check if STACK_NAME is already present
-  if (!envFileContent.includes('STACK_NAME=')) {
+  // Check if BRANCH_NAME is already present
+  if (!envFileContent.includes(branch)) {
     // Append the stack name to the .env file
-    fs.appendFileSync(envFilePath, `STACK_NAME=${stackName}\n`);
+    fs.appendFileSync(envFilePath, `BRANCH_NAME=${stackName}\n`);
   } else {
-    console.log('STACK_NAME is already set in the .env file');
+    console.log('BRANCH_NAME is already set in the .env file');
   }
 
 } catch (error) {

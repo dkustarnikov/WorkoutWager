@@ -2,8 +2,7 @@ import { APIGatewayTokenAuthorizerEvent, APIGatewayAuthorizerResult, Context } f
 import jwt, { JwtHeader, SigningKeyCallback } from 'jsonwebtoken';
 import jwksClient, { JwksClient } from 'jwks-rsa';
 
-// Replace with your actual JWKS URL from the AWS console
-const jwksUri = 'https://cognito-idp.us-east-1.amazonaws.com/us-east-1_5W8sv8KFn/.well-known/jwks.json';
+const jwksUri = `${process.env.USER_POOL_CONGNITO_URI}/.well-known/jwks.json` || '';
 
 const client: JwksClient = jwksClient({
   jwksUri: jwksUri
@@ -34,16 +33,16 @@ export const handler = async (event: APIGatewayTokenAuthorizerEvent, context: Co
     return new Promise((resolve) => {
       jwt.verify(tokenWithoutBearer, getKey, { algorithms: ['RS256'] }, (err, decoded) => {
         if (err) {
-          console.log('User should be denied:', err);
+          console.log('JWT verification failed:', err);
           resolve(generateDenyPolicy('user', event.methodArn));
           return;
         }
-        console.log('User should be allowed:', decoded);
+        console.log('JWT verification succeeded:', decoded);
         resolve(generateAllowPolicy((decoded as any).sub, event.methodArn));
       });
     });
   } catch (err) {
-    console.log('User should be denied:', err);
+    console.log('Error in authorization function:', err);
     return generateDenyPolicy('user', event.methodArn);
   }
 };
