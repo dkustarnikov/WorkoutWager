@@ -5,7 +5,7 @@ import { getApiResponse } from '../../common/helpers'; // Adjust the path as nec
 import { SavingsPlan } from '../../common/models'
 
 const dynamoDb = new DynamoDB.DocumentClient();
-const TABLE_NAME = process.env.SAVINGS_PLANS_TABLE || 'dev-SavingsPlans';
+const TABLE_NAME = process.env.SAVINGS_PLANS_TABLE || 'SavingsPlans';
 
 export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProxyEvent) => {
   try {
