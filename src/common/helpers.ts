@@ -1,6 +1,7 @@
 import axios from 'axios';
 import jwkToPem from 'jwk-to-pem';
 import * as jwt from 'jsonwebtoken';
+import * as yup from 'yup';
 
 export function getApiResponse(statusCode: number, body: string) {
   return {
@@ -52,3 +53,28 @@ export const verifyJwtToken = async (token: string, userPoolId: string, region: 
     throw new Error('Invalid token');
   }
 };
+
+export const milestoneSchema = yup.object().shape({
+  milestoneName: yup.string().required('Milestone name is required'),
+  type: yup.string().required('Milestone type is required'),
+  completion: yup.boolean().required('Milestone completion status is required'),
+  milestoneCounter: yup.number().required('Milestone counter is required'),
+  milestoneDeadline: yup.string().required('Milestone deadline is required').matches(
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/,
+    'Milestone deadline must be a valid ISO 8601 date string'
+  ),
+  monetaryValue: yup.number().required('Milestone monetary value is required'),
+});
+
+export const ruleSchema = yup.object().shape({
+  planId: yup.string().required('Plan ID is required'),
+  ruleType: yup.string().required('Rule type is required'),
+  ruleName: yup.string().required('Rule name is required'),
+  generalObjective: yup.string().required('General objective is required'),
+  totalAmount: yup.number().required('Total amount is required'),
+  deadline: yup.string().required('Deadline is required').matches(
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/,
+    'Deadline must be a valid ISO 8601 date string'
+  ),
+  milestones: yup.array().of(milestoneSchema).required('Milestones are required'),
+});

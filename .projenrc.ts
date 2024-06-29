@@ -15,7 +15,8 @@ const project = new awscdk.AwsCdkTypeScriptApp({
     'aws-sdk',
     'dotenv-cli',
     'dotenv',
-    'uuid'
+    'uuid',
+    'yup'
   ], // Runtime dependencies of this module.
   devDeps: [
     'aws-cdk-lib',
@@ -53,13 +54,6 @@ project.addScripts({
   checkBranch: 'node check-branch.ts'
 });
 
-// // Remove the existing deploy task
-// project.removeTask('deploy');
-
-// // Add a new deploy task
-// project.addTask('deploy', {
-//   exec: 'ts-node check-branch.ts && dotenv -e .env -- cdk deploy --require-approval never --stack-name $BRANCH_NAME',
-// });
 // Enables unit tests on windows
 project.jest?.addTestMatch('<rootDir>/test/**/*(*.)@(spec|test).ts?(x)');
 project.jest?.addTestMatch('<rootDir>/src/**/*(*.)@(spec|test).ts?(x)');
