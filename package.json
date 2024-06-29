@@ -60,7 +60,8 @@
     "dotenv": "^16.4.5",
     "dotenv-cli": "^7.4.2",
     "jsonwebtoken": "^9.0.2",
-    "uuid": "^10.0.0"
+    "uuid": "^10.0.0",
+    "yup": "^1.4.0"
   },
   "license": "Apache-2.0",
   "publishConfig": {

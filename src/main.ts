@@ -64,46 +64,6 @@ export class MyStack extends Stack {
     });
 
     /**
-    * ========================
-    * Defining Lambdas
-    * ========================
-    */
-    const healthFunction = new NodejsFunction(this, `health`, {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/health/index.ts'), // adjust the path as necessary
-      handler: 'handler',
-      bundling: {
-        externalModules: [],
-      },
-      environment: {
-        SOME_KEY: 'some_key variable',
-      },
-    });
-
-    const authorizerFunction = new NodejsFunction(this, `authorizer`, {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/authorizer/index.ts'), // adjust the path as necessary
-      handler: 'handler',
-      bundling: {
-        externalModules: [],
-      },
-      environment: {
-        USER_POOL_CONGNITO_URI: userPool.userPoolProviderUrl,
-      },
-    });
-
-    const createSavingsPlanFunction = new NodejsFunction(this, `create-savings-plan`, {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/create-savings-plan/index.ts'), // Adjust the path as necessary
-      handler: 'handler',
-      environment: {
-        SAVINGS_PLANS_TABLE: savingsPlansTable.tableName,
-      },
-    });
-
-    savingsPlansTable.grantReadWriteData(createSavingsPlanFunction);
-
-    /**
      * ========================
      * Defining Cognito Domain
      * ========================
@@ -149,22 +109,52 @@ export class MyStack extends Stack {
       },
     });
 
-    // Create the custom authorizer
-    const authorizer = new apigateway.TokenAuthorizer(this, `MyAuthorizer`, {
-      handler: authorizerFunction,
+
+    /**
+    * ========================
+    * Defining Lambdas
+    * ========================
+    */
+    const healthFunction = new NodejsFunction(this, `health`, {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      entry: path.join(__dirname, 'lambdas/health/index.ts'), // adjust the path as necessary
+      handler: 'handler',
+      bundling: {
+        externalModules: [],
+      },
+      environment: {
+        SOME_KEY: 'some_key variable',
+      },
     });
 
-    // Define the API Gateway resource
-    const api = new apigateway.LambdaRestApi(this, `WorkoutWagerAPI`, {
-      handler: healthFunction,
-      proxy: false,
+    const authorizerFunction = new NodejsFunction(this, `authorizer`, {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      entry: path.join(__dirname, 'lambdas/authorizer/index.ts'), // adjust the path as necessary
+      handler: 'handler',
+      bundling: {
+        externalModules: [],
+      },
+      environment: {
+        USER_POOL_CONGNITO_URI: userPool.userPoolProviderUrl,
+      },
     });
 
-    // Define the '/health' resource with a GET method and attach the authorizer
-    const healthEndpoint = api.root.addResource('health');
-    healthEndpoint.addMethod('GET', new apigateway.LambdaIntegration(healthFunction), {
-      authorizer: authorizer,
-      authorizationType: apigateway.AuthorizationType.CUSTOM
+    const createSavingsPlanFunction = new NodejsFunction(this, `create-savings-plan`, {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      entry: path.join(__dirname, 'lambdas/create-savings-plan/index.ts'), // Adjust the path as necessary
+      handler: 'handler',
+      environment: {
+        SAVINGS_PLANS_TABLE: savingsPlansTable.tableName,
+      },
+    });
+
+    const createRuleFunction = new NodejsFunction(this, `create-rule`, {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      entry: path.join(__dirname, 'lambdas/create-rule/index.ts'), // Adjust the path as necessary
+      handler: 'handler',
+      environment: {
+        RULES_TABLE: rulesTable.tableName,
+      },
     });
 
     const getUserInfoFunction = new NodejsFunction(this, `get-user-info`, {
@@ -178,22 +168,65 @@ export class MyStack extends Stack {
         COGNITO_USER_POOL_ID: userPool.userPoolId,
       },
     });
+    
+    /**
+    * ========================
+    * Defining Custom Authorizer
+    * ========================
+    */
+    const authorizer = new apigateway.TokenAuthorizer(this, `MyAuthorizer`, {
+      handler: authorizerFunction,
+    });
+
+    /**
+    * ========================
+    * Defining the API Gateway Resource
+    * ========================
+    */
+    const api = new apigateway.LambdaRestApi(this, `WorkoutWagerAPI`, {
+      handler: healthFunction,
+      proxy: false,
+    });
+
+    /**
+    * ========================
+    * Degining API Gateway Endpoints
+    * ========================
+    */
+
+    api.root.addResource('health').addMethod('GET', new apigateway.LambdaIntegration(healthFunction), {
+      authorizer: authorizer,
+      authorizationType: apigateway.AuthorizationType.CUSTOM
+    });
 
     api.root.addResource('get-user-info').addMethod('POST', new apigateway.LambdaIntegration(getUserInfoFunction), {
       authorizer: authorizer,
       authorizationType: apigateway.AuthorizationType.CUSTOM
     });
 
+    api.root.addResource('create-savings-plan').addMethod('POST', new apigateway.LambdaIntegration(createSavingsPlanFunction), {
+      authorizer: authorizer,
+      authorizationType: apigateway.AuthorizationType.CUSTOM
+    });
+
+    api.root.addResource('create-rule').addMethod('POST', new apigateway.LambdaIntegration(createRuleFunction), {
+      authorizer: authorizer,
+      authorizationType: apigateway.AuthorizationType.CUSTOM
+    });
+
+    /**
+    * ========================
+    * Defining Permissions
+    * ========================
+    */
     // Grant the Lambda function permission to access Cognito
     getUserInfoFunction.addToRolePolicy(new iam.PolicyStatement({
       actions: ['cognito-idp:AdminGetUser', 'cognito-idp:ListUsers'],
       resources: [`arn:aws:cognito-idp:${this.region}:${this.account}:userpool/${userPool.userPoolId}`],
     }));
 
-    api.root.addResource('create-savings-plan').addMethod('POST', new apigateway.LambdaIntegration(createSavingsPlanFunction), {
-      authorizer: authorizer,
-      authorizationType: apigateway.AuthorizationType.CUSTOM
-    });
+    savingsPlansTable.grantReadWriteData(createSavingsPlanFunction);
+    rulesTable.grantReadWriteData(createRuleFunction);
 
     // Output User Pool ID
     new CfnOutput(this, 'UserPoolId', {
@@ -215,7 +248,10 @@ export class MyStack extends Stack {
       value: userPoolClientForClientCreds.userPoolClientId,
     });
 
-    new CfnOutput(this, 'TestBucket', { value: '' });
+    // Output the table name
+    new CfnOutput(this, 'RulesTableName', {
+      value: rulesTable.tableName,
+    });
   }
 }
 
