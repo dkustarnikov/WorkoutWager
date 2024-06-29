@@ -14,7 +14,8 @@ const project = new awscdk.AwsCdkTypeScriptApp({
     'axios',
     'aws-sdk',
     'dotenv-cli',
-    'dotenv'
+    'dotenv',
+    'uuid'
   ], // Runtime dependencies of this module.
   devDeps: [
     'aws-cdk-lib',
@@ -23,6 +24,7 @@ const project = new awscdk.AwsCdkTypeScriptApp({
     '@types/jsonwebtoken',
     '@types/jwk-to-pem',
     '@types/aws-lambda',
+    '@types/uuid',
     'typescript',
     'copyfiles',
     'ts-dotenv',
@@ -51,13 +53,13 @@ project.addScripts({
   checkBranch: 'node check-branch.ts'
 });
 
-// Remove the existing deploy task
-project.removeTask('deploy');
+// // Remove the existing deploy task
+// project.removeTask('deploy');
 
-// Add a new deploy task
-project.addTask('deploy', {
-  exec: 'ts-node check-branch.ts && dotenv -e .env -- cdk deploy --require-approval never --stack-name $STACK_NAME',
-});
+// // Add a new deploy task
+// project.addTask('deploy', {
+//   exec: 'ts-node check-branch.ts && dotenv -e .env -- cdk deploy --require-approval never --stack-name $BRANCH_NAME',
+// });
 // Enables unit tests on windows
 project.jest?.addTestMatch('<rootDir>/test/**/*(*.)@(spec|test).ts?(x)');
 project.jest?.addTestMatch('<rootDir>/src/**/*(*.)@(spec|test).ts?(x)');
