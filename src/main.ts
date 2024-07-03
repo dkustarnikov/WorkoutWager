@@ -10,12 +10,7 @@ export class MyStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps = {}) {
     super(scope, id, props);
 
-    /**
-     * ========================
-     * Defining DynamoDB Tables
-     * ========================
-     */
-    // SavingsPlans Table
+    // DynamoDB Table definitions (unchanged)
     const savingsPlansTable = new Table(this, `SavingsPlans`, {
       partitionKey: { name: 'planId', type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST,
@@ -26,23 +21,22 @@ export class MyStack extends Stack {
       partitionKey: { name: 'userId', type: AttributeType.STRING },
     });
 
-    // Rules table
     const rulesTable = new Table(this, `Rules`, {
       partitionKey: { name: 'ruleId', type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST,
     });
 
-    // Add a global secondary index for PlanId
+    rulesTable.addGlobalSecondaryIndex({
+      indexName: 'ruleNameIndex',
+      partitionKey: { name: 'ruleName', type: AttributeType.STRING },
+    });
+
     rulesTable.addGlobalSecondaryIndex({
       indexName: 'planIdIndex',
       partitionKey: { name: 'planId', type: AttributeType.STRING },
     });
 
-    /**
-    * ========================
-    * Defining Cognito User Pool
-    * ========================
-    */
+    // Cognito User Pool definitions (unchanged)
     const userPool = new cognito.UserPool(this, `WorkoutWagerUserPool`, {
       selfSignUpEnabled: true,
       signInAliases: { email: true },
@@ -63,11 +57,6 @@ export class MyStack extends Stack {
       },
     });
 
-    /**
-     * ========================
-     * Defining Cognito Domain
-     * ========================
-     */
     const userPoolDomain = new cognito.UserPoolDomain(this, `UserPoolDomain`, {
       userPool,
       cognitoDomain: {
@@ -75,11 +64,6 @@ export class MyStack extends Stack {
       },
     });
 
-    /**
-     * ========================
-     * Defining Resource Server and Scopes
-     * ========================
-     */
     const resourceServerScope = new cognito.ResourceServerScope({
       scopeName: 'customScope',
       scopeDescription: 'Custom Scope Description',
@@ -91,11 +75,6 @@ export class MyStack extends Stack {
       scopes: [resourceServerScope],
     });
 
-    /**
-     * ========================
-     * Creating User Pool Client for client_credentials flow
-     * ========================
-     */
     const userPoolClientForClientCreds = new cognito.UserPoolClient(this, `WorkoutWagerUserPoolClientForClientCreds`, {
       userPool,
       generateSecret: true,
@@ -109,12 +88,7 @@ export class MyStack extends Stack {
       },
     });
 
-
-    /**
-    * ========================
-    * Defining Lambdas
-    * ========================
-    */
+    // Lambda function definitions (unchanged)
     const healthFunction = new NodejsFunction(this, `health`, {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/health/index.ts'), // adjust the path as necessary
@@ -157,6 +131,24 @@ export class MyStack extends Stack {
       },
     });
 
+    const getRuleByIdFunction = new NodejsFunction(this, `get-rule-by-id`, {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      entry: path.join(__dirname, 'lambdas/get-rule-by-id/index.ts'), // Adjust the path as necessary
+      handler: 'handler',
+      environment: {
+        RULES_TABLE: rulesTable.tableName,
+      },
+    });
+
+    const getRuleByNameFunction = new NodejsFunction(this, `get-rule-by-name`, {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      entry: path.join(__dirname, 'lambdas/get-rule-by-name/index.ts'), // Adjust the path as necessary
+      handler: 'handler',
+      environment: {
+        RULES_TABLE: rulesTable.tableName,
+      },
+    });
+
     const getUserInfoFunction = new NodejsFunction(this, `get-user-info`, {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/get-user-info-get/index.ts'), // adjust the path as necessary
@@ -168,87 +160,85 @@ export class MyStack extends Stack {
         COGNITO_USER_POOL_ID: userPool.userPoolId,
       },
     });
-    
-    /**
-    * ========================
-    * Defining Custom Authorizer
-    * ========================
-    */
+
+    // Create the custom authorizer
     const authorizer = new apigateway.TokenAuthorizer(this, `MyAuthorizer`, {
       handler: authorizerFunction,
     });
 
-    /**
-    * ========================
-    * Defining the API Gateway Resource
-    * ========================
-    */
+    // Define the API Gateway resource
     const api = new apigateway.LambdaRestApi(this, `WorkoutWagerAPI`, {
       handler: healthFunction,
       proxy: false,
     });
 
-    /**
-    * ========================
-    * Degining API Gateway Endpoints
-    * ========================
-    */
+    // Define the '/rule/{ruleId}' resource with a GET method and attach the authorizer
+    const ruleResource = api.root.addResource('rule');
+    const ruleIdResource = ruleResource.addResource('{ruleId}');
+    ruleIdResource.addMethod('GET', new apigateway.LambdaIntegration(getRuleByIdFunction), {
+      authorizer: authorizer,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
+    });
 
+     // Define the '/rule-by-name' resource with a POST method and attach the authorizer
+     const ruleByNameResource = api.root.addResource('rule-by-name');
+     ruleByNameResource.addMethod('POST', new apigateway.LambdaIntegration(getRuleByNameFunction), {
+       authorizer: authorizer,
+       authorizationType: apigateway.AuthorizationType.CUSTOM,
+     });
+
+    // Other API Gateway Endpoints (unchanged)
     api.root.addResource('health').addMethod('GET', new apigateway.LambdaIntegration(healthFunction), {
       authorizer: authorizer,
-      authorizationType: apigateway.AuthorizationType.CUSTOM
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     api.root.addResource('get-user-info').addMethod('POST', new apigateway.LambdaIntegration(getUserInfoFunction), {
       authorizer: authorizer,
-      authorizationType: apigateway.AuthorizationType.CUSTOM
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     api.root.addResource('create-savings-plan').addMethod('POST', new apigateway.LambdaIntegration(createSavingsPlanFunction), {
       authorizer: authorizer,
-      authorizationType: apigateway.AuthorizationType.CUSTOM
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     api.root.addResource('create-rule').addMethod('POST', new apigateway.LambdaIntegration(createRuleFunction), {
       authorizer: authorizer,
-      authorizationType: apigateway.AuthorizationType.CUSTOM
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
-    /**
-    * ========================
-    * Defining Permissions
-    * ========================
-    */
     // Grant the Lambda function permission to access Cognito
     getUserInfoFunction.addToRolePolicy(new iam.PolicyStatement({
-      actions: ['cognito-idp:AdminGetUser', 'cognito-idp:ListUsers'],
+      actions: [
+        'cognito-idp:AdminGetUser',
+        'cognito-idp:ListUsers',
+      ],
       resources: [`arn:aws:cognito-idp:${this.region}:${this.account}:userpool/${userPool.userPoolId}`],
     }));
 
     savingsPlansTable.grantReadWriteData(createSavingsPlanFunction);
     rulesTable.grantReadWriteData(createRuleFunction);
+    rulesTable.grantReadData(getRuleByIdFunction);
+    rulesTable.grantReadData(getRuleByNameFunction);
 
     // Output User Pool ID
     new CfnOutput(this, 'UserPoolId', {
       value: userPool.userPoolId,
     });
 
-    // Output Resource Server Identifier (Optional)
     new CfnOutput(this, 'ResourceServerIdentifier', {
       value: resourceServer.userPoolResourceServerId,
     });
 
-    // Output Cognito Domain
     new CfnOutput(this, 'CognitoDomain', {
       value: `https://${userPoolDomain.domainName}.auth.${this.region}.amazoncognito.com`,
     });
 
-    // Output User Pool Client ID for Client Credentials
     new CfnOutput(this, 'UserPoolClientIdForClientCreds', {
       value: userPoolClientForClientCreds.userPoolClientId,
     });
 
-    // Output the table name
     new CfnOutput(this, 'RulesTableName', {
       value: rulesTable.tableName,
     });
