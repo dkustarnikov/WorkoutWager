@@ -140,6 +140,15 @@ export class MyStack extends Stack {
       },
     });
 
+    const updateRuleFunction = new NodejsFunction(this, `update-rule`, {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      entry: path.join(__dirname, 'lambdas/update-rule/index.ts'), // Adjust the path as necessary
+      handler: 'handler',
+      environment: {
+        RULES_TABLE: rulesTable.tableName,
+      },
+    });
+
     const getRuleByIdFunction = new NodejsFunction(this, `get-rule-by-id`, {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/get-rule-by-id/index.ts'), // Adjust the path as necessary
@@ -194,12 +203,17 @@ export class MyStack extends Stack {
       authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
-     // Define the '/rule-by-name' resource with a POST method and attach the authorizer
-     const ruleByNameResource = api.root.addResource('rule-by-name');
-     ruleByNameResource.addMethod('POST', new apigateway.LambdaIntegration(getRuleByNameFunction), {
-       authorizer: authorizer,
-       authorizationType: apigateway.AuthorizationType.CUSTOM,
-     });
+    ruleIdResource.addMethod('PUT', new apigateway.LambdaIntegration(updateRuleFunction), {
+      authorizer: authorizer,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
+    });
+
+    // Define the '/rule-by-name' resource with a POST method and attach the authorizer
+    const ruleByNameResource = api.root.addResource('rule-by-name');
+    ruleByNameResource.addMethod('POST', new apigateway.LambdaIntegration(getRuleByNameFunction), {
+      authorizer: authorizer,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
+    });
 
     // Other API Gateway Endpoints (unchanged)
     api.root.addResource('health').addMethod('GET', new apigateway.LambdaIntegration(healthFunction), {
@@ -234,6 +248,7 @@ export class MyStack extends Stack {
     savingsPlansTable.grantReadWriteData(createSavingsPlanFunction);
     rulesTable.grantReadWriteData(createRuleFunction);
     rulesTable.grantReadWriteData(deleteRuleFunction);
+    rulesTable.grantReadWriteData(updateRuleFunction);
     rulesTable.grantReadData(getRuleByIdFunction);
     rulesTable.grantReadData(getRuleByNameFunction);
 
