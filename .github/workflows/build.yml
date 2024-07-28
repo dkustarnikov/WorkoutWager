@@ -8,7 +8,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     outputs:
       self_mutation_happened: ${{ steps.self_mutation.outputs.self_mutation_happened }}
     env:
@@ -20,34 +20,54 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
       - name: Install dependencies
-        run: npm install
-      - name: build
+        run: yarn install --check-files
+      - name: Build project
+        run: yarn build
+      - name: Build with Projen
         run: npx projen build
       - name: Find mutations
         id: self_mutation
-        run: |-
-          git add .
-          git diff --staged --patch --exit-code > .repo.patch || echo "self_mutation_happened=true" >> $GITHUB_OUTPUT
-        working-directory: ./
+        run: "
+
+          \          git add .
+
+          \          if git diff --staged --quiet; then
+
+          \            echo \"self_mutation_happened=false\" >> $GITHUB_ENV
+
+          \          else
+
+          \            git diff --staged --patch > .repo.patch
+
+          \            echo \"self_mutation_happened=true\" >> $GITHUB_ENV
+
+          \          fi
+
+          \        "
       - name: Upload patch
-        if: steps.self_mutation.outputs.self_mutation_happened
+        if: env.self_mutation_happened == true
         uses: actions/upload-artifact@v4
         with:
           name: .repo.patch
           path: .repo.patch
           overwrite: true
       - name: Fail build on mutation
-        if: steps.self_mutation.outputs.self_mutation_happened
-        run: |-
-          echo "::error::Files were changed during build (see build log). If this was triggered from a fork, you will need to update your branch."
-          cat .repo.patch
-          exit 1
+        if: env.self_mutation_happened == true
+        run: "
+
+          \          echo \"::error::Files were changed during build (see build log). If this was triggered from a fork, you will need to update your branch.\"
+
+          \          cat .repo.patch
+
+          \          exit 1
+
+          \        "
   self-mutation:
     needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    if: always() && needs.build.outputs.self_mutation_happened && !(github.event.pull_request.head.repo.full_name != github.repository)
+    if: always() && needs.build.outputs.self_mutation_happened == true && !(github.event.pull_request.head.repo.full_name != github.repository)
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -63,13 +83,22 @@ jobs:
       - name: Apply patch
         run: '[ -s ${{ runner.temp }}/.repo.patch ] && git apply ${{ runner.temp }}/.repo.patch || echo "Empty patch. Skipping."'
       - name: Set git identity
-        run: |-
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+        run: "
+
+          \          git config user.name \"github-actions\"
+
+          \          git config user.email \"github-actions@github.com\"
+
+          \        "
       - name: Push changes
         env:
           PULL_REQUEST_REF: ${{ github.event.pull_request.head.ref }}
-        run: |-
-          git add .
-          git commit -s -m "chore: self mutation"
-          git push origin HEAD:$PULL_REQUEST_REF
+        run: "
+
+          \          git add .
+
+          \          git commit -s -m \"chore: self mutation\"
+
+          \          git push origin HEAD:$PULL_REQUEST_REF
+
+          \        "
