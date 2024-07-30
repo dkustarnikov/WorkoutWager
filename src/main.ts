@@ -167,6 +167,15 @@ export class MyStack extends Stack {
       },
     });
 
+    const getAllRulesFunction = new NodejsFunction(this, `get-all-rules`, {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      entry: path.join(__dirname, 'lambdas/get-rule-by-name/index.ts'), // Adjust the path as necessary
+      handler: 'handler',
+      environment: {
+        RULES_TABLE: rulesTable.tableName,
+      },
+    });
+
     const getUserInfoFunction = new NodejsFunction(this, `get-user-info`, {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/get-user-info-get/index.ts'), // adjust the path as necessary
@@ -235,6 +244,11 @@ export class MyStack extends Stack {
       authorizer: authorizer,
       authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
+    
+    api.root.addResource('get-all-rules').addMethod('GET', new apigateway.LambdaIntegration(getAllRulesFunction), {
+      authorizer: authorizer,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
+    });
 
     // Grant the Lambda function permission to access Cognito
     getUserInfoFunction.addToRolePolicy(new iam.PolicyStatement({
@@ -251,6 +265,7 @@ export class MyStack extends Stack {
     rulesTable.grantReadWriteData(updateRuleFunction);
     rulesTable.grantReadData(getRuleByIdFunction);
     rulesTable.grantReadData(getRuleByNameFunction);
+    rulesTable.grantReadData(getAllRulesFunction);
 
     // Output User Pool ID
     new CfnOutput(this, 'UserPoolId', {
