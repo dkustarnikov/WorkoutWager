@@ -1,5 +1,6 @@
 export interface Milestone {
   milestoneName: string;
+  milestoneId: string;
   type: string;
   completion: boolean;
   milestoneCounter: number; // Counter to keep track of milestones
@@ -9,7 +10,7 @@ export interface Milestone {
 
 export interface Rule {
   ruleId: string; // Primary Key
-  planId: string; // Foreign Key, references SavingsPlans
+  userId: string; // the user id who owns this plan
   ruleType: string;
   ruleName: string;
   generalObjective: string;
@@ -18,14 +19,11 @@ export interface Rule {
   milestones: Milestone[];
   createdAt: string; // ISO 8601 date string
   updatedAt: string; // ISO 8601 date string
+  status: RuleStatus;
 }
 
-// Interface for SavingsPlans table items
-export interface SavingsPlan {
-  planId: string; // Primary Key
-  userId: string; // Foreign Key, references Users
-  planName: string;
-  amount: number;
-  createdAt: string; // ISO 8601 date string
-  updatedAt: string; // ISO 8601 date string
+export enum RuleStatus {
+  created = 'created',
+  in_progress = 'inProgress',
+  completed = 'completed' 
 }
