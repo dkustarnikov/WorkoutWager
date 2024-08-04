@@ -10,17 +10,6 @@ export class MyStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps = {}) {
     super(scope, id, props);
 
-    // DynamoDB Table definitions (unchanged)
-    const savingsPlansTable = new Table(this, `SavingsPlans`, {
-      partitionKey: { name: 'planId', type: AttributeType.STRING },
-      billingMode: BillingMode.PAY_PER_REQUEST,
-    });
-
-    savingsPlansTable.addGlobalSecondaryIndex({
-      indexName: 'userIdIndex',
-      partitionKey: { name: 'userId', type: AttributeType.STRING },
-    });
-
     const rulesTable = new Table(this, `Rules`, {
       partitionKey: { name: 'ruleId', type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST,
@@ -29,11 +18,6 @@ export class MyStack extends Stack {
     rulesTable.addGlobalSecondaryIndex({
       indexName: 'ruleNameIndex',
       partitionKey: { name: 'ruleName', type: AttributeType.STRING },
-    });
-
-    rulesTable.addGlobalSecondaryIndex({
-      indexName: 'planIdIndex',
-      partitionKey: { name: 'planId', type: AttributeType.STRING },
     });
 
     // Cognito User Pool definitions (unchanged)
@@ -113,15 +97,6 @@ export class MyStack extends Stack {
       },
     });
 
-    const createSavingsPlanFunction = new NodejsFunction(this, `create-savings-plan`, {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/create-savings-plan/index.ts'), // Adjust the path as necessary
-      handler: 'handler',
-      environment: {
-        SAVINGS_PLANS_TABLE: savingsPlansTable.tableName,
-      },
-    });
-
     const createRuleFunction = new NodejsFunction(this, `create-rule`, {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/create-rule/index.ts'), // Adjust the path as necessary
@@ -169,7 +144,7 @@ export class MyStack extends Stack {
 
     const getAllRulesFunction = new NodejsFunction(this, `get-all-rules`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/get-rule-by-name/index.ts'), // Adjust the path as necessary
+      entry: path.join(__dirname, 'lambdas/get-all-rules/index.ts'), // Adjust the path as necessary
       handler: 'handler',
       environment: {
         RULES_TABLE: rulesTable.tableName,
@@ -185,6 +160,24 @@ export class MyStack extends Stack {
       },
       environment: {
         COGNITO_USER_POOL_ID: userPool.userPoolId,
+      },
+    });
+
+    const addMilestoneFunction = new NodejsFunction(this, `add-milestone`, {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      entry: path.join(__dirname, 'lambdas/add-milestone/index.ts'), // Adjust the path as necessary
+      handler: 'handler',
+      environment: {
+        RULES_TABLE: rulesTable.tableName,
+      },
+    });
+
+    const updateMilestoneFunction = new NodejsFunction(this, `update-milestone`, {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      entry: path.join(__dirname, 'lambdas/update-milestone/index.ts'), // Adjust the path as necessary
+      handler: 'handler',
+      environment: {
+        RULES_TABLE: rulesTable.tableName,
       },
     });
 
@@ -235,15 +228,19 @@ export class MyStack extends Stack {
       authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
-    api.root.addResource('create-savings-plan').addMethod('POST', new apigateway.LambdaIntegration(createSavingsPlanFunction), {
-      authorizer: authorizer,
-      authorizationType: apigateway.AuthorizationType.CUSTOM,
-    });
-
     api.root.addResource('create-rule').addMethod('POST', new apigateway.LambdaIntegration(createRuleFunction), {
       authorizer: authorizer,
       authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
+    api.root.addResource('add-milestone').addResource('{ruleId}').addMethod('POST', new apigateway.LambdaIntegration(addMilestoneFunction), {
+      authorizer: authorizer,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
+    });
+    api.root.addResource('update-milestone').addResource('{ruleId}').addResource('{milestoneId}').addMethod('PUT', new apigateway.LambdaIntegration(updateMilestoneFunction), {
+      authorizer: authorizer,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
+    });
+
     
     api.root.addResource('get-all-rules').addMethod('GET', new apigateway.LambdaIntegration(getAllRulesFunction), {
       authorizer: authorizer,
@@ -258,14 +255,15 @@ export class MyStack extends Stack {
       ],
       resources: [`arn:aws:cognito-idp:${this.region}:${this.account}:userpool/${userPool.userPoolId}`],
     }));
-
-    savingsPlansTable.grantReadWriteData(createSavingsPlanFunction);
     rulesTable.grantReadWriteData(createRuleFunction);
     rulesTable.grantReadWriteData(deleteRuleFunction);
     rulesTable.grantReadWriteData(updateRuleFunction);
     rulesTable.grantReadData(getRuleByIdFunction);
     rulesTable.grantReadData(getRuleByNameFunction);
     rulesTable.grantReadData(getAllRulesFunction);
+    rulesTable.grantReadWriteData(addMilestoneFunction);
+    rulesTable.grantReadWriteData(updateMilestoneFunction);
+
 
     // Output User Pool ID
     new CfnOutput(this, 'UserPoolId', {

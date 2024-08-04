@@ -21,7 +21,7 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
       throw validationError; // rethrow if it's not a validation error
     }
 
-    const { planId, ruleType, ruleName, generalObjective, totalAmount, deadline, milestones } = requestBody;
+    const { userId, ruleType, ruleName, generalObjective, totalAmount, deadline, milestones, status } = requestBody;
 
     // Validate milestones total monetary value
     let calculatedTotalAmount = 0;
@@ -39,7 +39,7 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
 
     const newRule: Rule = {
       ruleId,
-      planId,
+      userId,
       ruleType,
       ruleName,
       generalObjective,
@@ -48,6 +48,7 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
       milestones,
       createdAt,
       updatedAt,
+      status
     };
 
     const params = {
