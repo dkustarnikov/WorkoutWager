@@ -75,7 +75,7 @@ export class MyStack extends Stack {
     // Lambda function definitions (unchanged)
     const healthFunction = new NodejsFunction(this, `health`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/health/index.ts'), // adjust the path as necessary
+      entry: path.join(__dirname, 'lambdas/health/index.ts'), 
       handler: 'handler',
       bundling: {
         externalModules: [],
@@ -87,7 +87,7 @@ export class MyStack extends Stack {
 
     const authorizerFunction = new NodejsFunction(this, `authorizer`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/authorizer/index.ts'), // adjust the path as necessary
+      entry: path.join(__dirname, 'lambdas/authorizer/index.ts'), 
       handler: 'handler',
       bundling: {
         externalModules: [],
@@ -97,18 +97,28 @@ export class MyStack extends Stack {
       },
     });
 
-    const createRuleFunction = new NodejsFunction(this, `create-rule`, {
+    const milestoneHandlerFunction = new NodejsFunction(this, `milestone-handler`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/create-rule/index.ts'), // Adjust the path as necessary
+      entry: path.join(__dirname, 'lambdas/milestone-handler/index.ts'), 
       handler: 'handler',
       environment: {
         RULES_TABLE: rulesTable.tableName,
       },
     });
 
+    const createRuleFunction = new NodejsFunction(this, `create-rule`, {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      entry: path.join(__dirname, 'lambdas/create-rule/index.ts'), 
+      handler: 'handler',
+      environment: {
+        RULES_TABLE: rulesTable.tableName,
+        LAMBDA_FUNCTION_ARN: milestoneHandlerFunction.functionArn, 
+      },
+    });
+
     const deleteRuleFunction = new NodejsFunction(this, `delete-rule`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/delete-rule/index.ts'), // Adjust the path as necessary
+      entry: path.join(__dirname, 'lambdas/delete-rule/index.ts'), 
       handler: 'handler',
       environment: {
         RULES_TABLE: rulesTable.tableName,
@@ -117,16 +127,17 @@ export class MyStack extends Stack {
 
     const updateRuleFunction = new NodejsFunction(this, `update-rule`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/update-rule/index.ts'), // Adjust the path as necessary
+      entry: path.join(__dirname, 'lambdas/update-rule/index.ts'), 
       handler: 'handler',
       environment: {
         RULES_TABLE: rulesTable.tableName,
+        LAMBDA_FUNCTION_ARN: milestoneHandlerFunction.functionArn,
       },
     });
 
     const getRuleByIdFunction = new NodejsFunction(this, `get-rule-by-id`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/get-rule-by-id/index.ts'), // Adjust the path as necessary
+      entry: path.join(__dirname, 'lambdas/get-rule-by-id/index.ts'), 
       handler: 'handler',
       environment: {
         RULES_TABLE: rulesTable.tableName,
@@ -135,7 +146,7 @@ export class MyStack extends Stack {
 
     const getRuleByNameFunction = new NodejsFunction(this, `get-rule-by-name`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/get-rule-by-name/index.ts'), // Adjust the path as necessary
+      entry: path.join(__dirname, 'lambdas/get-rule-by-name/index.ts'), 
       handler: 'handler',
       environment: {
         RULES_TABLE: rulesTable.tableName,
@@ -144,7 +155,7 @@ export class MyStack extends Stack {
 
     const getAllRulesFunction = new NodejsFunction(this, `get-all-rules`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/get-all-rules/index.ts'), // Adjust the path as necessary
+      entry: path.join(__dirname, 'lambdas/get-all-rules/index.ts'), 
       handler: 'handler',
       environment: {
         RULES_TABLE: rulesTable.tableName,
@@ -153,7 +164,7 @@ export class MyStack extends Stack {
 
     const getUserInfoFunction = new NodejsFunction(this, `get-user-info`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/get-user-info-get/index.ts'), // adjust the path as necessary
+      entry: path.join(__dirname, 'lambdas/get-user-info-get/index.ts'), 
       handler: 'handler',
       bundling: {
         externalModules: [],
@@ -165,19 +176,21 @@ export class MyStack extends Stack {
 
     const addMilestoneFunction = new NodejsFunction(this, `add-milestone`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/add-milestone/index.ts'), // Adjust the path as necessary
+      entry: path.join(__dirname, 'lambdas/add-milestone/index.ts'), 
       handler: 'handler',
       environment: {
         RULES_TABLE: rulesTable.tableName,
+        LAMBDA_FUNCTION_ARN: milestoneHandlerFunction.functionArn,
       },
     });
 
     const updateMilestoneFunction = new NodejsFunction(this, `update-milestone`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/update-milestone/index.ts'), // Adjust the path as necessary
+      entry: path.join(__dirname, 'lambdas/update-milestone/index.ts'), 
       handler: 'handler',
       environment: {
         RULES_TABLE: rulesTable.tableName,
+        LAMBDA_FUNCTION_ARN: milestoneHandlerFunction.functionArn,
       },
     });
 
@@ -255,6 +268,13 @@ export class MyStack extends Stack {
       ],
       resources: [`arn:aws:cognito-idp:${this.region}:${this.account}:userpool/${userPool.userPoolId}`],
     }));
+
+    // Allow EventBridge to invoke the Lambda function
+    milestoneHandlerFunction.addPermission('InvokeByEventBridge', {
+      principal: new iam.ServicePrincipal('events.amazonaws.com'),
+    });
+
+    //Give table permissions for the functions
     rulesTable.grantReadWriteData(createRuleFunction);
     rulesTable.grantReadWriteData(deleteRuleFunction);
     rulesTable.grantReadWriteData(updateRuleFunction);
@@ -263,8 +283,31 @@ export class MyStack extends Stack {
     rulesTable.grantReadData(getAllRulesFunction);
     rulesTable.grantReadWriteData(addMilestoneFunction);
     rulesTable.grantReadWriteData(updateMilestoneFunction);
+    rulesTable.grantReadWriteData(milestoneHandlerFunction);
 
 
+    // Grant EventBridge permissions to the Lambda functions
+    const eventBridgePolicy = new iam.PolicyStatement({
+      actions: [
+        'events:PutRule',
+        'events:PutTargets',
+        'events:RemoveTargets',
+        'events:DeleteRule',
+        'events:DescribeRule',
+        'events:ListRules',
+        'events:ListTargetsByRule',
+      ],
+      resources: ['*'],
+    });
+    createRuleFunction.addToRolePolicy(eventBridgePolicy);
+    updateRuleFunction.addToRolePolicy(eventBridgePolicy);
+
+    //Give eventBridge permissions to the functions
+    createRuleFunction.addToRolePolicy(eventBridgePolicy);
+    updateRuleFunction.addToRolePolicy(eventBridgePolicy);
+    addMilestoneFunction.addToRolePolicy(eventBridgePolicy);
+    updateMilestoneFunction.addToRolePolicy(eventBridgePolicy);
+    
     // Output User Pool ID
     new CfnOutput(this, 'UserPoolId', {
       value: userPool.userPoolId,

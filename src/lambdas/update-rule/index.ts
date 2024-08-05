@@ -1,10 +1,14 @@
 import * as awsLambda from 'aws-lambda';
-import { DynamoDB } from 'aws-sdk';
-import { getApiResponse, ruleSchema } from '../../common/helpers'; // Adjust the path as necessary
+import { DynamoDB, EventBridge } from 'aws-sdk';
+import { getApiResponse, ruleSchema, convertToCronExpression } from '../../common/helpers'; // Adjust the path as necessary
 import * as yup from 'yup';
+import { v4 as uuidv4 } from 'uuid';
+import { Rule } from '../../common/models';
 
 const dynamoDb = new DynamoDB.DocumentClient();
+const eventBridge = new EventBridge();
 const TABLE_NAME = process.env.RULES_TABLE || 'Rules';
+const LAMBDA_FUNCTION_ARN = process.env.LAMBDA_FUNCTION_ARN || '';
 
 export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProxyEvent) => {
   try {
@@ -15,6 +19,7 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
 
     const requestBody = JSON.parse(event.body || '{}');
 
+    // Validate the request body against the schema
     try {
       await ruleSchema.validate(requestBody, { abortEarly: false });
     } catch (validationError) {
@@ -24,38 +29,93 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
       throw validationError;
     }
 
-    const params = {
-      TableName: TABLE_NAME,
-      Key: { ruleId },
-    };
+    const { userId, ruleType, ruleName, generalObjective, totalAmount, deadline, milestones, status } = requestBody;
 
-    const existingRule = await dynamoDb.get(params).promise();
+    // Ensure the rule deadline is in the future
+    if (new Date(deadline) <= new Date()) {
+      return getApiResponse(400, JSON.stringify({ message: 'Rule deadline must be in the future' }));
+    }
 
+    // Validate milestones total monetary value
+    let calculatedTotalAmount = 0;
+    for (const milestone of milestones) {
+      calculatedTotalAmount += milestone.monetaryValue;
+      if (!milestone.milestoneId) {
+        milestone.milestoneId = uuidv4();
+      }
+    }
+
+    if (calculatedTotalAmount !== totalAmount) {
+      return getApiResponse(400, JSON.stringify({ message: 'Total monetary value of milestones does not match total amount of the rule' }));
+    }
+
+    // Ensure there is at least one milestone
+    let updatedMilestones = milestones;
+    if (updatedMilestones.length === 0) {
+      updatedMilestones = [{
+        milestoneName: 'Week 1',
+        type: 'common',
+        completion: false,
+        milestoneCounter: 1,
+        milestoneDeadline: deadline,
+        monetaryValue: 0
+      }];
+    }
+
+    // Ensure the last milestone deadline matches the rule deadline
+    const lastMilestone = updatedMilestones[updatedMilestones.length - 1];
+    if (lastMilestone.milestoneDeadline !== deadline) {
+      return getApiResponse(400, JSON.stringify({ message: 'Last milestone deadline must match the rule deadline' }));
+    }
+
+    const existingRule = await dynamoDb.get({ TableName: TABLE_NAME, Key: { ruleId } }).promise();
     if (!existingRule.Item) {
       return getApiResponse(404, JSON.stringify({ message: 'Rule not found' }));
     }
 
-    const updatedRule = {
-      ...existingRule.Item,
-      ...requestBody,
+    const rule = existingRule.Item as Rule;
+
+    const updatedRule: Rule = {
+      ...rule,
+      userId,
+      ruleType,
+      ruleName,
+      generalObjective,
+      totalAmount,
+      deadline,
+      milestones: updatedMilestones,
+      status,
       updatedAt: new Date().toISOString(),
     };
-
-    try {
-      await ruleSchema.validate(updatedRule, { abortEarly: false });
-    } catch (validationError) {
-      if (validationError instanceof yup.ValidationError) {
-        return getApiResponse(400, JSON.stringify({ message: 'Validation failed', errors: validationError.errors }));
-      }
-      throw validationError;
-    }
 
     const updateParams = {
       TableName: TABLE_NAME,
       Item: updatedRule,
     };
 
+    // Save the updated rule to DynamoDB
     await dynamoDb.put(updateParams).promise();
+
+    // Create EventBridge rules for each milestone
+    for (const milestone of updatedRule.milestones) {
+      const milestoneRuleName = `MilestoneRule_${milestone.milestoneId}`;
+      const scheduleExpression = `cron(${convertToCronExpression(milestone.milestoneDeadline)})`;
+
+      await eventBridge.putRule({
+        Name: milestoneRuleName,
+        ScheduleExpression: scheduleExpression,
+        State: 'ENABLED',
+      }).promise();
+
+      await eventBridge.putTargets({
+        Rule: milestoneRuleName,
+        Targets: [{
+          Id: milestoneRuleName,
+          Arn: LAMBDA_FUNCTION_ARN,
+          Input: JSON.stringify({ ruleId, milestoneId: milestone.milestoneId }),
+        }],
+      }).promise();
+    }
 
     return getApiResponse(200, JSON.stringify(updatedRule));
   } catch (error) {

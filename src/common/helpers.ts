@@ -77,3 +77,19 @@ export const ruleSchema = yup.object().shape({
   ),
   milestones: yup.array().of(milestoneSchema).required('Milestones are required'),
 });
+
+export function convertToCronExpression(isoString: string): string {
+  const date = new Date(isoString);
+  const minutes = date.getUTCMinutes();
+  const hours = date.getUTCHours();
+  const dayOfMonth = date.getUTCDate();
+  const month = date.getUTCMonth() + 1; // getUTCMonth returns 0-11, so we add 1
+  const year = date.getUTCFullYear();
+  
+  // Ensure all values are within valid ranges
+  if (minutes < 0 || minutes > 59 || hours < 0 || hours > 23 || dayOfMonth < 1 || dayOfMonth > 31 || month < 1 || month > 12) {
+    throw new Error('Invalid date for cron expression');
+  }
+
+  return `${minutes} ${hours} ${dayOfMonth} ${month} ? ${year}`;
+}
