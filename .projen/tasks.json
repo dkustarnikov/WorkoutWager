@@ -211,13 +211,13 @@
       },
       "steps": [
         {
-          "exec": "npx npm-check-updates@16 --upgrade --target=minor --peer --dep=dev,peer,prod,optional --filter=@types/aws-lambda,@types/jest,@types/jsonwebtoken,@types/jwk-to-pem,@types/uuid,aws-cdk-lib,aws-lambda-mock-context,copyfiles,esbuild,eslint-import-resolver-typescript,eslint-plugin-import,jest,jwk-to-pem,jwks-rsa,projen,ts-dotenv,ts-jest,ts-node,typescript,aws-sdk,axios,dotenv,dotenv-cli,jsonwebtoken,uuid,yup"
+          "exec": "npx npm-check-updates@16 --upgrade --target=minor --peer --dep=dev,peer,prod,optional --filter=@types/aws-lambda,@types/jest,@types/jsonwebtoken,@types/jwk-to-pem,@types/uuid,aws-cdk-lib,aws-lambda-mock-context,copyfiles,esbuild,eslint-import-resolver-typescript,eslint-plugin-import,jest,jwk-to-pem,jwks-rsa,projen,ts-dotenv,ts-jest,ts-node,typescript,@aws-cdk/aws-dynamodb,@aws-cdk/aws-events,@aws-cdk/aws-events-targets,@aws-cdk/aws-lambda,aws-sdk,axios,dotenv,dotenv-cli,jsonwebtoken,uuid,yup"
         },
         {
           "exec": "npm install"
         },
         {
-          "exec": "npm update @types/aws-lambda @types/jest @types/jsonwebtoken @types/jwk-to-pem @types/node @types/uuid @typescript-eslint/eslint-plugin @typescript-eslint/parser aws-cdk-lib aws-cdk aws-lambda-mock-context copyfiles esbuild eslint-import-resolver-typescript eslint-plugin-import eslint jest jest-junit jwk-to-pem jwks-rsa projen ts-dotenv ts-jest ts-node typescript aws-sdk axios constructs dotenv dotenv-cli jsonwebtoken uuid yup"
+          "exec": "npm update @types/aws-lambda @types/jest @types/jsonwebtoken @types/jwk-to-pem @types/node @types/uuid @typescript-eslint/eslint-plugin @typescript-eslint/parser aws-cdk-lib aws-cdk aws-lambda-mock-context copyfiles esbuild eslint-import-resolver-typescript eslint-plugin-import eslint jest jest-junit jwk-to-pem jwks-rsa projen ts-dotenv ts-jest ts-node typescript @aws-cdk/aws-dynamodb @aws-cdk/aws-events @aws-cdk/aws-events-targets @aws-cdk/aws-lambda aws-sdk axios constructs dotenv dotenv-cli jsonwebtoken uuid yup"
         },
         {
           "exec": "npx projen"
