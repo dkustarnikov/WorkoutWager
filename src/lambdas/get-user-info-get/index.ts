@@ -3,6 +3,8 @@ import { getApiResponse } from '../../common/helpers';
 import * as AWS from 'aws-sdk';
 
 const cognito = new AWS.CognitoIdentityServiceProvider();
+const dynamoDb = new AWS.DynamoDB.DocumentClient();
+const TABLE_NAME = process.env.RULES_TABLE || 'Rules';
 
 export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProxyEvent) => {
   try {
@@ -48,10 +50,24 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
     const emailAttribute = user.UserAttributes.find((attr) => attr.Name === 'email');
     const userEmail = emailAttribute ? emailAttribute.Value : 'Email not found';
 
+    // Query the Rules table to get ruleIds associated with the user
+    const rulesParams = {
+      TableName: TABLE_NAME,
+      IndexName: 'userIdIndex', // Use the new index
+      KeyConditionExpression: 'userId = :userId',
+      ExpressionAttributeValues: {
+        ':userId': user.Username,
+      },
+    };
+
+    const rulesData = await dynamoDb.query(rulesParams).promise();
+    const ruleIds = rulesData.Items ? rulesData.Items.map(item => item.ruleId) : [];
+
     const userInfo = {
       userId: user.Username,
       username: user.Username,
       email: userEmail,
+      ruleIds: ruleIds,
     };
 
     return getApiResponse(200, JSON.stringify(userInfo));

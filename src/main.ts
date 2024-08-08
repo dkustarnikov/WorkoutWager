@@ -20,6 +20,11 @@ export class MyStack extends Stack {
       partitionKey: { name: 'ruleName', type: AttributeType.STRING },
     });
 
+    rulesTable.addGlobalSecondaryIndex({
+      indexName: 'userIdIndex',
+      partitionKey: { name: 'userId', type: AttributeType.STRING },
+    });
+
     // Cognito User Pool definitions (unchanged)
     const userPool = new cognito.UserPool(this, `WorkoutWagerUserPool`, {
       selfSignUpEnabled: true,
@@ -171,6 +176,7 @@ export class MyStack extends Stack {
       },
       environment: {
         COGNITO_USER_POOL_ID: userPool.userPoolId,
+        RULES_TABLE: rulesTable.tableName,
       },
     });
 
@@ -283,6 +289,7 @@ export class MyStack extends Stack {
     rulesTable.grantReadData(getAllRulesFunction);
     rulesTable.grantReadWriteData(addMilestoneFunction);
     rulesTable.grantReadWriteData(updateMilestoneFunction);
+    rulesTable.grantReadData(getUserInfoFunction);
     rulesTable.grantReadWriteData(milestoneHandlerFunction);
 
 
