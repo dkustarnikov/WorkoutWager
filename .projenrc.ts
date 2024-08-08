@@ -16,7 +16,11 @@ const project = new awscdk.AwsCdkTypeScriptApp({
     'dotenv-cli',
     'dotenv',
     'uuid',
-    'yup'
+    'yup',
+    '@aws-cdk/aws-dynamodb',
+    '@aws-cdk/aws-events',
+    '@aws-cdk/aws-events-targets',
+    '@aws-cdk/aws-lambda',
   ], // Runtime dependencies of this module.
   devDeps: [
     'aws-cdk-lib',

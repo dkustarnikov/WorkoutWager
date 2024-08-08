@@ -25,7 +25,7 @@
     "checkBranch": "node check-branch.ts"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.140",
+    "@types/aws-lambda": "^8.10.142",
     "@types/jest": "^29.5.12",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/jwk-to-pem": "^2.0.3",
@@ -45,17 +45,21 @@
     "jest-junit": "^15",
     "jwk-to-pem": "^2.0.5",
     "jwks-rsa": "^3.1.0",
-    "projen": "^0.83.1",
+    "projen": "^0.84.13",
     "ts-dotenv": "^0.9.1",
-    "ts-jest": "^29.1.5",
+    "ts-jest": "^29.2.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.4"
   },
   "dependencies": {
-    "@types/aws-lambda": "^8.10.140",
+    "@aws-cdk/aws-dynamodb": "^1.203.0",
+    "@aws-cdk/aws-events": "^1.203.0",
+    "@aws-cdk/aws-events-targets": "^1.203.0",
+    "@aws-cdk/aws-lambda": "^1.203.0",
+    "@types/aws-lambda": "^8.10.142",
     "aws-cdk-lib": "^2.1.0",
-    "aws-sdk": "^2.1654.0",
-    "axios": "^1.7.2",
+    "aws-sdk": "^2.1667.0",
+    "axios": "^1.7.3",
     "constructs": "^10.0.5",
     "dotenv": "^16.4.5",
     "dotenv-cli": "^7.4.2",
@@ -71,10 +75,12 @@
   "jest": {
     "coverageProvider": "v8",
     "testMatch": [
-      "<rootDir>/src/**/__tests__/**/*.ts?(x)",
-      "<rootDir>/@(test|src)/**/*(*.)@(spec|test).ts?(x)",
+      "<rootDir>/@(src|test)/**/*(*.)@(spec|test).ts?(x)",
+      "<rootDir>/@(src|test)/**/__tests__/**/*.ts?(x)",
       "<rootDir>/test/**/*(*.)@(spec|test).ts?(x)",
-      "<rootDir>/src/**/*(*.)@(spec|test).ts?(x)"
+      "<rootDir>/src/**/*(*.)@(spec|test).ts?(x)",
+      "<rootDir>/@(projenrc)/**/*(*.)@(spec|test).ts?(x)",
+      "<rootDir>/@(projenrc)/**/__tests__/**/*.ts?(x)"
     ],
     "clearMocks": true,
     "collectCoverage": true,

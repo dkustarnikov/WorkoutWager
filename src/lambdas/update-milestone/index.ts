@@ -1,12 +1,14 @@
 import * as awsLambda from 'aws-lambda';
-import { DynamoDB } from 'aws-sdk';
-import { getApiResponse, milestoneSchema } from '../../common/helpers'; // Adjust the path as necessary
+import { DynamoDB, EventBridge } from 'aws-sdk';
+import { getApiResponse, milestoneSchema, convertToCronExpression } from '../../common/helpers'; // Adjust the path as necessary
 import * as yup from 'yup';
 import { Rule, RuleStatus } from '../../common/models'; // Adjust the path as necessary
 import { v4 as uuidv4 } from 'uuid';
 
 const dynamoDb = new DynamoDB.DocumentClient();
+const eventBridge = new EventBridge();
 const TABLE_NAME = process.env.RULES_TABLE || 'Rules';
+const LAMBDA_FUNCTION_ARN = process.env.LAMBDA_FUNCTION_ARN || '';
 
 export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProxyEvent) => {
   try {
@@ -95,6 +97,25 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
 
     // Save the updated rule to DynamoDB
     await dynamoDb.put(updateParams).promise();
+
+    // Create EventBridge rule for the updated milestone
+    const milestoneRuleName = `MilestoneRule_${milestoneId}`;
+    const scheduleExpression = `cron(${convertToCronExpression(newMilestone.milestoneDeadline)})`;
+
+    await eventBridge.putRule({
+      Name: milestoneRuleName,
+      ScheduleExpression: scheduleExpression,
+      State: 'ENABLED',
+    }).promise();
+
+    await eventBridge.putTargets({
+      Rule: milestoneRuleName,
+      Targets: [{
+        Id: milestoneRuleName,
+        Arn: LAMBDA_FUNCTION_ARN,
+        Input: JSON.stringify({ ruleId, milestoneId }),
+      }],
+    }).promise();
 
     return getApiResponse(200, JSON.stringify(rule));
   } catch (error) {
