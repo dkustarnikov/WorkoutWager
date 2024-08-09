@@ -10,7 +10,8 @@ export class MyStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps = {}) {
     super(scope, id, props);
 
-    const rulesTable = new Table(this, `Rules`, {
+     // Create the Rules table
+     const rulesTable = new Table(this, 'Rules', {
       partitionKey: { name: 'ruleId', type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST,
     });
@@ -23,6 +24,12 @@ export class MyStack extends Stack {
     rulesTable.addGlobalSecondaryIndex({
       indexName: 'userIdIndex',
       partitionKey: { name: 'userId', type: AttributeType.STRING },
+    });
+
+    // Create the UserInfo table
+    const userInfoTable = new Table(this, 'UserInfo', {
+      partitionKey: { name: 'userId', type: AttributeType.STRING },
+      billingMode: BillingMode.PAY_PER_REQUEST,
     });
 
     // Cognito User Pool definitions (unchanged)
@@ -177,6 +184,21 @@ export class MyStack extends Stack {
       environment: {
         COGNITO_USER_POOL_ID: userPool.userPoolId,
         RULES_TABLE: rulesTable.tableName,
+        USER_INFO_TABLE: userInfoTable.tableName,
+      },
+    });
+
+    const configureUserFunction = new NodejsFunction(this, `configure-user`, {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      entry: path.join(__dirname, 'lambdas/configure-user/index.ts'), 
+      handler: 'handler',
+      bundling: {
+        externalModules: [],
+      },
+      environment: {
+        COGNITO_USER_POOL_ID: userPool.userPoolId,
+        RULES_TABLE: rulesTable.tableName,
+        USER_INFO_TABLE: userInfoTable.tableName,
       },
     });
 
@@ -259,6 +281,10 @@ export class MyStack extends Stack {
       authorizer: authorizer,
       authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
+    api.root.addResource('configure-user').addMethod('POST', new apigateway.LambdaIntegration(configureUserFunction), {
+      authorizer: authorizer,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
+    });
 
     
     api.root.addResource('get-all-rules').addMethod('GET', new apigateway.LambdaIntegration(getAllRulesFunction), {
@@ -268,6 +294,15 @@ export class MyStack extends Stack {
 
     // Grant the Lambda function permission to access Cognito
     getUserInfoFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'cognito-idp:AdminGetUser',
+        'cognito-idp:ListUsers',
+      ],
+      resources: [`arn:aws:cognito-idp:${this.region}:${this.account}:userpool/${userPool.userPoolId}`],
+    }));
+
+    // Grant the Lambda function permission to access Cognito
+    configureUserFunction.addToRolePolicy(new iam.PolicyStatement({
       actions: [
         'cognito-idp:AdminGetUser',
         'cognito-idp:ListUsers',
@@ -291,7 +326,10 @@ export class MyStack extends Stack {
     rulesTable.grantReadWriteData(updateMilestoneFunction);
     rulesTable.grantReadData(getUserInfoFunction);
     rulesTable.grantReadWriteData(milestoneHandlerFunction);
+    rulesTable.grantReadWriteData(configureUserFunction);
 
+    userInfoTable.grantReadWriteData(getUserInfoFunction);
+    userInfoTable.grantReadWriteData(configureUserFunction);
 
     // Grant EventBridge permissions to the Lambda functions
     const eventBridgePolicy = new iam.PolicyStatement({

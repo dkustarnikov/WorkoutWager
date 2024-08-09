@@ -25,5 +25,13 @@ export interface Rule {
 export enum RuleStatus {
   created = 'created',
   in_progress = 'inProgress',
-  completed = 'completed' 
+  completed = 'completed'
+}
+
+export interface User {
+  userId: string;
+  username: string;
+  email: string;
+  ruleIds: string[];
+  alpacaCreated?: boolean; 
 }

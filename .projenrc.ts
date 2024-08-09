@@ -21,6 +21,7 @@ const project = new awscdk.AwsCdkTypeScriptApp({
     '@aws-cdk/aws-events',
     '@aws-cdk/aws-events-targets',
     '@aws-cdk/aws-lambda',
+    '@alpacahq/alpaca-trade-api'
   ], // Runtime dependencies of this module.
   devDeps: [
     'aws-cdk-lib',

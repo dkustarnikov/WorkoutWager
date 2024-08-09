@@ -107,6 +107,10 @@
       "type": "build"
     },
     {
+      "name": "@alpacahq/alpaca-trade-api",
+      "type": "runtime"
+    },
+    {
       "name": "@aws-cdk/aws-dynamodb",
       "type": "runtime"
     },
