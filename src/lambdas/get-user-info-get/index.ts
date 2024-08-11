@@ -22,6 +22,8 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
     }
 
     let cognitoParams: AWS.CognitoIdentityServiceProvider.AdminGetUserRequest | undefined;
+    let alpacaAccountInfo = null;
+    let alpacaCreated = false;
 
     if (userId) {
       console.log('Searching for user by userId:', userId);
@@ -60,9 +62,6 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
     const userInfoResult = await dynamoDb.get(userInfoParams).promise();
     console.log('UserInfo table result:', userInfoResult);
 
-    let alpacaAccountInfo = null;
-    let alpacaCreated = false;
-
     if (alpacaApiKey && alpacaApiSecret) {
       try {
         console.log('Fetching Alpaca account information');
@@ -75,69 +74,61 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
         console.log('Alpaca account information retrieved successfully');
         alpacaCreated = true;
 
-        if (paperTrading) {
-          const updateParams = {
-            TableName: TABLE_NAME_USER_INFO,
-            Key: { userId: cognitoParams.Username },
-            UpdateExpression: 'set paperTrading = :paperTrading, alpacaCreated = :alpacaCreated',
-            ExpressionAttributeValues: {
-              ':paperTrading': true,
-              ':alpacaCreated': true,
-            },
-          };
-          await dynamoDb.update(updateParams).promise();
-          console.log('User record updated with paperTrading and alpacaCreated status');
-        }
-
       } catch (error) {
         console.error('Failed to retrieve Alpaca account info:', error);
       }
     }
 
+    let userInfo: User;
+
     if (userInfoResult.Item) {
-      console.log('User info exists in UserInfo table, returning response');
-      return getApiResponse(200, JSON.stringify({
-        ...userInfoResult.Item,
-        alpacaAccountInfo,
-      }));
+      console.log('User info exists in UserInfo table, updating with Alpaca info');
+      userInfo = {
+        userId: userInfoResult.Item.userId,
+        username: userInfoResult.Item.username,
+        email: userInfoResult.Item.email,
+        ruleIds: userInfoResult.Item.ruleIds,
+        alpacaCreated, // Update based on Alpaca retrieval
+        paperTrading
+      };    
+    } else {
+      console.log('User not found in UserInfo table, fetching from Cognito');
+      const user = await cognito.adminGetUser(cognitoParams).promise();
+      console.log('Cognito user data:', user);
+
+      if (!user.UserAttributes) {
+        console.log('User attributes not found in Cognito');
+        return getApiResponse(404, JSON.stringify({ message: 'User attributes not found' }));
+      }
+
+      const emailAttribute = user.UserAttributes.find((attr) => attr.Name === 'email');
+      const userEmail = emailAttribute ? emailAttribute.Value! : 'Email not found';
+
+      console.log('Querying Rules table for associated ruleIds');
+      const rulesParams = {
+        TableName: TABLE_NAME_RULES,
+        IndexName: 'userIdIndex',
+        KeyConditionExpression: 'userId = :userId',
+        ExpressionAttributeValues: {
+          ':userId': user.Username,
+        },
+      };
+
+      const rulesData = await dynamoDb.query(rulesParams).promise();
+      const ruleIds = rulesData.Items ? rulesData.Items.map(item => item.ruleId) : [];
+      console.log('Rules table data:', rulesData);
+
+      userInfo = {
+        userId: user.Username,
+        username: user.Username,
+        email: userEmail,
+        alpacaCreated,
+        ruleIds: ruleIds,
+        paperTrading,
+      };
     }
 
-    console.log('User not found in UserInfo table, fetching from Cognito');
-    const user = await cognito.adminGetUser(cognitoParams).promise();
-    console.log('Cognito user data:', user);
-
-    if (!user.UserAttributes) {
-      console.log('User attributes not found in Cognito');
-      return getApiResponse(404, JSON.stringify({ message: 'User attributes not found' }));
-    }
-
-    const emailAttribute = user.UserAttributes.find((attr) => attr.Name === 'email');
-    const userEmail = emailAttribute ? emailAttribute.Value! : 'Email not found';
-
-    console.log('Querying Rules table for associated ruleIds');
-    const rulesParams = {
-      TableName: TABLE_NAME_RULES,
-      IndexName: 'userIdIndex',
-      KeyConditionExpression: 'userId = :userId',
-      ExpressionAttributeValues: {
-        ':userId': user.Username,
-      },
-    };
-
-    const rulesData = await dynamoDb.query(rulesParams).promise();
-    const ruleIds = rulesData.Items ? rulesData.Items.map(item => item.ruleId) : [];
-    console.log('Rules table data:', rulesData);
-
-    const userInfo: User = {
-      userId: user.Username,
-      username: user.Username,
-      email: userEmail,
-      alpacaCreated,
-      ruleIds: ruleIds,
-      paperTrading: paperTrading,
-    };
-
-    console.log('Saving new user info to UserInfo table');
+    console.log('Saving updated user info to UserInfo table');
     const putParams = {
       TableName: TABLE_NAME_USER_INFO,
       Item: userInfo,
