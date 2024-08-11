@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { App, CfnOutput, Stack, StackProps, aws_lambda as lambda, aws_apigateway as apigateway } from 'aws-cdk-lib';
+import { App, CfnOutput, Stack, StackProps, aws_lambda as lambda, aws_apigateway as apigateway, Duration } from 'aws-cdk-lib';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
@@ -181,6 +181,8 @@ export class MyStack extends Stack {
       bundling: {
         externalModules: [],
       },
+      timeout: Duration.seconds(10), // Adjust the timeout as needed
+      memorySize: 256, // Allocates 256 MB of memory
       environment: {
         COGNITO_USER_POOL_ID: userPool.userPoolId,
         RULES_TABLE: rulesTable.tableName,

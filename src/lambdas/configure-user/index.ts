@@ -34,6 +34,7 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
         email,
         alpacaCreated: false,
         ruleIds: [],
+        paperTrading: false
       };
 
       const putParams = {

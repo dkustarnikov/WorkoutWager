@@ -34,4 +34,5 @@ export interface User {
   email: string;
   ruleIds: string[];
   alpacaCreated?: boolean; 
+  paperTrading: boolean;
 }
