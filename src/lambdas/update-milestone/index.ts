@@ -113,7 +113,7 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
       Targets: [{
         Id: milestoneRuleName,
         Arn: LAMBDA_FUNCTION_ARN,
-        Input: JSON.stringify({ ruleId, milestoneId }),
+        Input: JSON.stringify({ userId: rule.userId, milestone: newMilestone }),
       }],
     }).promise();
 

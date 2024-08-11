@@ -102,13 +102,13 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
       }).promise();
 
       await eventBridge.putTargets({
-        Rule: milestoneRuleName,
-        Targets: [{
-          Id: milestoneRuleName,
-          Arn: LAMBDA_FUNCTION_ARN,
-          Input: JSON.stringify({ ruleId, milestoneId: milestone.milestoneId }),
-        }],
-      }).promise();
+      Rule: milestoneRuleName,
+      Targets: [{
+        Id: milestoneRuleName,
+        Arn: LAMBDA_FUNCTION_ARN,
+        Input: JSON.stringify({ userId: newRule.userId, milestone: milestone }),
+      }],
+    }).promise();
     }
 
     return getApiResponse(201, JSON.stringify(newRule));
