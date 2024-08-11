@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { App, CfnOutput, Stack, StackProps, aws_lambda as lambda, aws_apigateway as apigateway, Duration } from 'aws-cdk-lib';
+import { App, CfnOutput, Stack, StackProps, aws_lambda as lambda, aws_apigateway as apigateway, Duration, Aws } from 'aws-cdk-lib';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
@@ -10,8 +10,8 @@ export class MyStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps = {}) {
     super(scope, id, props);
 
-     // Create the Rules table
-     const rulesTable = new Table(this, 'Rules', {
+    // Create the Rules table
+    const rulesTable = new Table(this, 'Rules', {
       partitionKey: { name: 'ruleId', type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST,
     });
@@ -87,7 +87,7 @@ export class MyStack extends Stack {
     // Lambda function definitions (unchanged)
     const healthFunction = new NodejsFunction(this, `health`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/health/index.ts'), 
+      entry: path.join(__dirname, 'lambdas/health/index.ts'),
       handler: 'handler',
       bundling: {
         externalModules: [],
@@ -99,7 +99,7 @@ export class MyStack extends Stack {
 
     const authorizerFunction = new NodejsFunction(this, `authorizer`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/authorizer/index.ts'), 
+      entry: path.join(__dirname, 'lambdas/authorizer/index.ts'),
       handler: 'handler',
       bundling: {
         externalModules: [],
@@ -111,26 +111,28 @@ export class MyStack extends Stack {
 
     const milestoneHandlerFunction = new NodejsFunction(this, `milestone-handler`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/milestone-handler/index.ts'), 
+      entry: path.join(__dirname, 'lambdas/milestone-handler/index.ts'),
       handler: 'handler',
+      timeout: Duration.minutes(2),
       environment: {
         RULES_TABLE: rulesTable.tableName,
+        USER_INFO_TABLE: userInfoTable.tableName
       },
     });
 
     const createRuleFunction = new NodejsFunction(this, `create-rule`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/create-rule/index.ts'), 
+      entry: path.join(__dirname, 'lambdas/create-rule/index.ts'),
       handler: 'handler',
       environment: {
         RULES_TABLE: rulesTable.tableName,
-        LAMBDA_FUNCTION_ARN: milestoneHandlerFunction.functionArn, 
+        LAMBDA_FUNCTION_ARN: milestoneHandlerFunction.functionArn,
       },
     });
 
     const deleteRuleFunction = new NodejsFunction(this, `delete-rule`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/delete-rule/index.ts'), 
+      entry: path.join(__dirname, 'lambdas/delete-rule/index.ts'),
       handler: 'handler',
       environment: {
         RULES_TABLE: rulesTable.tableName,
@@ -139,7 +141,7 @@ export class MyStack extends Stack {
 
     const updateRuleFunction = new NodejsFunction(this, `update-rule`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/update-rule/index.ts'), 
+      entry: path.join(__dirname, 'lambdas/update-rule/index.ts'),
       handler: 'handler',
       environment: {
         RULES_TABLE: rulesTable.tableName,
@@ -149,7 +151,7 @@ export class MyStack extends Stack {
 
     const getRuleByIdFunction = new NodejsFunction(this, `get-rule-by-id`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/get-rule-by-id/index.ts'), 
+      entry: path.join(__dirname, 'lambdas/get-rule-by-id/index.ts'),
       handler: 'handler',
       environment: {
         RULES_TABLE: rulesTable.tableName,
@@ -158,7 +160,7 @@ export class MyStack extends Stack {
 
     const getRuleByNameFunction = new NodejsFunction(this, `get-rule-by-name`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/get-rule-by-name/index.ts'), 
+      entry: path.join(__dirname, 'lambdas/get-rule-by-name/index.ts'),
       handler: 'handler',
       environment: {
         RULES_TABLE: rulesTable.tableName,
@@ -167,7 +169,7 @@ export class MyStack extends Stack {
 
     const getAllRulesFunction = new NodejsFunction(this, `get-all-rules`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/get-all-rules/index.ts'), 
+      entry: path.join(__dirname, 'lambdas/get-all-rules/index.ts'),
       handler: 'handler',
       environment: {
         RULES_TABLE: rulesTable.tableName,
@@ -176,7 +178,7 @@ export class MyStack extends Stack {
 
     const getUserInfoFunction = new NodejsFunction(this, `get-user-info`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/get-user-info-get/index.ts'), 
+      entry: path.join(__dirname, 'lambdas/get-user-info-get/index.ts'),
       handler: 'handler',
       bundling: {
         externalModules: [],
@@ -192,7 +194,7 @@ export class MyStack extends Stack {
 
     const configureUserFunction = new NodejsFunction(this, `configure-user`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/configure-user/index.ts'), 
+      entry: path.join(__dirname, 'lambdas/configure-user/index.ts'),
       handler: 'handler',
       bundling: {
         externalModules: [],
@@ -206,7 +208,7 @@ export class MyStack extends Stack {
 
     const addMilestoneFunction = new NodejsFunction(this, `add-milestone`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/add-milestone/index.ts'), 
+      entry: path.join(__dirname, 'lambdas/add-milestone/index.ts'),
       handler: 'handler',
       environment: {
         RULES_TABLE: rulesTable.tableName,
@@ -216,7 +218,7 @@ export class MyStack extends Stack {
 
     const updateMilestoneFunction = new NodejsFunction(this, `update-milestone`, {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, 'lambdas/update-milestone/index.ts'), 
+      entry: path.join(__dirname, 'lambdas/update-milestone/index.ts'),
       handler: 'handler',
       environment: {
         RULES_TABLE: rulesTable.tableName,
@@ -288,7 +290,11 @@ export class MyStack extends Stack {
       authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
-    
+    api.root.addResource('test-milestone-handler').addMethod('POST', new apigateway.LambdaIntegration(milestoneHandlerFunction), {
+      authorizer: authorizer,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
+    });
+
     api.root.addResource('get-all-rules').addMethod('GET', new apigateway.LambdaIntegration(getAllRulesFunction), {
       authorizer: authorizer,
       authorizationType: apigateway.AuthorizationType.CUSTOM,
@@ -332,6 +338,7 @@ export class MyStack extends Stack {
 
     userInfoTable.grantReadWriteData(getUserInfoFunction);
     userInfoTable.grantReadWriteData(configureUserFunction);
+    userInfoTable.grantReadData(milestoneHandlerFunction);
 
     // Grant EventBridge permissions to the Lambda functions
     const eventBridgePolicy = new iam.PolicyStatement({
@@ -354,7 +361,24 @@ export class MyStack extends Stack {
     updateRuleFunction.addToRolePolicy(eventBridgePolicy);
     addMilestoneFunction.addToRolePolicy(eventBridgePolicy);
     updateMilestoneFunction.addToRolePolicy(eventBridgePolicy);
-    
+
+    // Define the policy statement for Secrets Manager
+    const secretsManagerPolicy = new iam.PolicyStatement({
+      actions: [
+        'secretsmanager:CreateSecret',
+        'secretsmanager:PutSecretValue',
+        'secretsmanager:GetSecretValue',
+        'secretsmanager:UpdateSecret',
+        "secretsmanager:DescribeSecret"
+      ],
+      resources: [
+        `arn:aws:secretsmanager:${Aws.REGION}:${Aws.ACCOUNT_ID}:secret:alpaca/*`
+      ],
+    });
+
+    milestoneHandlerFunction.addToRolePolicy(secretsManagerPolicy);
+    getUserInfoFunction.addToRolePolicy(secretsManagerPolicy);
+
     // Output User Pool ID
     new CfnOutput(this, 'UserPoolId', {
       value: userPool.userPoolId,

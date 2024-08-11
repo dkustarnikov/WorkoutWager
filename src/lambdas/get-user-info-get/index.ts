@@ -6,6 +6,7 @@ import { createClient } from '@alpacahq/typescript-sdk';
 
 const cognito = new AWS.CognitoIdentityServiceProvider();
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
+const secretsManager = new AWS.SecretsManager(); // Initialize Secrets Manager
 const TABLE_NAME_RULES = process.env.RULES_TABLE || 'Rules';
 const TABLE_NAME_USER_INFO = process.env.USER_INFO_TABLE || 'UserInfo';
 
@@ -64,6 +65,13 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
 
     if (alpacaApiKey && alpacaApiSecret) {
       try {
+        console.log('Saving Alpaca API credentials to Secrets Manager');
+        const secretName = `alpaca/creds/${cognitoParams.Username}`;
+        await secretsManager.createSecret({
+          Name: secretName,
+          SecretString: JSON.stringify({ alpacaApiKey, alpacaApiSecret }),
+        }).promise();
+
         console.log('Fetching Alpaca account information');
         const alpacaClient = createClient({
           key: alpacaApiKey,
@@ -75,7 +83,7 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
         alpacaCreated = true;
 
       } catch (error) {
-        console.error('Failed to retrieve Alpaca account info:', error);
+        console.error('Failed to retrieve Alpaca account info or save credentials:', error);
       }
     }
 
@@ -89,7 +97,7 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
         email: userInfoResult.Item.email,
         ruleIds: userInfoResult.Item.ruleIds,
         alpacaCreated, // Update based on Alpaca retrieval
-        paperTrading
+        paperTrading: paperTrading !== undefined ? paperTrading : userInfoResult.Item.paperTrading,
       };    
     } else {
       console.log('User not found in UserInfo table, fetching from Cognito');
