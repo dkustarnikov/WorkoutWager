@@ -89,7 +89,7 @@ This version of the project has been superseded by a new repository with updated
 ---
 
 ## **New Repository**
-For the latest updates, features, and continued development, refer to the new repository: **[New Workout Wager Repository](https://github.com/dkustarnikov/WorkoutWagerV2)**.
+For the latest updates, features, and continued development, refer to the new repository: **[New Workout Wager Repository](https://github.com/dkustarnikov/GoalPledge)**.
 
 ---
 
