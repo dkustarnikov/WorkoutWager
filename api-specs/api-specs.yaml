@@ -5,7 +5,7 @@ info:
   version: 1.0.0
   description: This is the archived version of the Workout Wager API, showcasing the earlier implementation of user and workout management features.
 servers:
-  - url: https://your-api-gateway-url.{domain}.com/api
+  - url: https://api-gateway-url.{domain}.com/api
 paths:
   /users/signup:
     post:
