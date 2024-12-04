@@ -1,8 +1,8 @@
-import * as awsLambda from 'aws-lambda';
-import { getApiResponse } from '../../common/helpers';
-import * as AWS from 'aws-sdk';
-import { User } from '../../common/models';
 import { createClient } from '@alpacahq/typescript-sdk';
+import * as awsLambda from 'aws-lambda';
+import * as AWS from 'aws-sdk';
+import { getApiResponse } from '../../common/helpers';
+import { User } from '../../common/models';
 
 const cognito = new AWS.CognitoIdentityServiceProvider();
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
@@ -98,7 +98,7 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
         ruleIds: userInfoResult.Item.ruleIds,
         alpacaCreated, // Update based on Alpaca retrieval
         paperTrading: paperTrading !== undefined ? paperTrading : userInfoResult.Item.paperTrading,
-      };    
+      };
     } else {
       console.log('User not found in UserInfo table, fetching from Cognito');
       const user = await cognito.adminGetUser(cognitoParams).promise();

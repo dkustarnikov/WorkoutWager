@@ -33,6 +33,6 @@ export interface User {
   username: string;
   email: string;
   ruleIds: string[];
-  alpacaCreated?: boolean; 
+  alpacaCreated?: boolean;
   paperTrading: boolean;
 }

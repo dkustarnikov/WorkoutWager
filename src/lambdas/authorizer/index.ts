@@ -1,11 +1,12 @@
 import { APIGatewayTokenAuthorizerEvent, APIGatewayAuthorizerResult, Context } from 'aws-lambda';
 import jwt, { JwtHeader, SigningKeyCallback } from 'jsonwebtoken';
+// eslint-disable-next-line import/no-extraneous-dependencies
 import jwksClient, { JwksClient } from 'jwks-rsa';
 
 const jwksUri = `${process.env.USER_POOL_CONGNITO_URI}/.well-known/jwks.json` || '';
 
 const client: JwksClient = jwksClient({
-  jwksUri: jwksUri
+  jwksUri: jwksUri,
 });
 
 function getKey(header: JwtHeader, callback: SigningKeyCallback): void {
@@ -29,8 +30,9 @@ export const handler = async (event: APIGatewayTokenAuthorizerEvent, context: Co
     // Remove Bearer prefix if it exists
     const tokenWithoutBearer = token.startsWith('Bearer ') ? token.slice(7) : token;
 
-    // Verify the token using the JWKS
-    return new Promise((resolve) => {
+
+    // eslint-disable-next-line @typescript-eslint/return-await
+    return await new Promise((resolve) => {
       jwt.verify(tokenWithoutBearer, getKey, { algorithms: ['RS256'] }, (err, decoded) => {
         if (err) {
           console.log('JWT verification failed:', err);
@@ -56,10 +58,10 @@ function generateAllowPolicy(principalId: string, resource: string): APIGatewayA
         {
           Action: 'execute-api:Invoke',
           Effect: 'Allow',
-          Resource: resource
-        }
-      ]
-    }
+          Resource: resource,
+        },
+      ],
+    },
   };
 }
 
@@ -72,9 +74,9 @@ function generateDenyPolicy(principalId: string, resource: string): APIGatewayAu
         {
           Action: 'execute-api:Invoke',
           Effect: 'Deny',
-          Resource: resource
-        }
-      ]
-    }
+          Resource: resource,
+        },
+      ],
+    },
   };
 }

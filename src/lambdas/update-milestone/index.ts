@@ -1,9 +1,9 @@
 import * as awsLambda from 'aws-lambda';
 import { DynamoDB, EventBridge } from 'aws-sdk';
-import { getApiResponse, milestoneSchema, convertToCronExpression } from '../../common/helpers'; // Adjust the path as necessary
-import * as yup from 'yup';
-import { Rule, RuleStatus } from '../../common/models'; // Adjust the path as necessary
 import { v4 as uuidv4 } from 'uuid';
+import * as yup from 'yup';
+import { getApiResponse, milestoneSchema, convertToCronExpression } from '../../common/helpers'; // Adjust the path as necessary
+import { Rule, RuleStatus } from '../../common/models'; // Adjust the path as necessary
 
 const dynamoDb = new DynamoDB.DocumentClient();
 const eventBridge = new EventBridge();
@@ -80,11 +80,11 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
     // Sort milestones by deadline and update counters
     rule.milestones.sort((a, b) => new Date(a.milestoneDeadline).getTime() - new Date(b.milestoneDeadline).getTime());
     rule.milestones.forEach((m, index) => {
-        if (!m.milestoneId) {
-          m.milestoneId = uuidv4();
-        }
-        m.milestoneCounter = index + 1;
-      });
+      if (!m.milestoneId) {
+        m.milestoneId = uuidv4();
+      }
+      m.milestoneCounter = index + 1;
+    });
 
     // Recalculate the total amount for the rule
     rule.totalAmount = rule.milestones.reduce((total, m) => total + m.monetaryValue, 0);

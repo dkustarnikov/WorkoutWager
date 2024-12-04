@@ -21,7 +21,9 @@ const project = new awscdk.AwsCdkTypeScriptApp({
     '@aws-cdk/aws-events',
     '@aws-cdk/aws-events-targets',
     '@aws-cdk/aws-lambda',
-    '@alpacahq/typescript-sdk'
+    '@alpacahq/typescript-sdk',
+    'jwk-to-pem',
+    'jwks-rsa',
   ], // Runtime dependencies of this module.
   devDeps: [
     'aws-cdk-lib',
@@ -35,8 +37,6 @@ const project = new awscdk.AwsCdkTypeScriptApp({
     'copyfiles',
     'ts-dotenv',
     'ts-node',
-    'jwks-rsa',
-    'jwk-to-pem'
   ], // Build dependencies for this module.
   tsconfig: {
     compilerOptions: {
@@ -56,7 +56,7 @@ const project = new awscdk.AwsCdkTypeScriptApp({
 project.addScripts({
   projen: 'ts-node --project tsconfig.dev.json .projenrc.ts',
   build: 'tsc',
-  checkBranch: 'node check-branch.ts'
+  checkBranch: 'node check-branch.ts',
 });
 
 // Enables unit tests on windows

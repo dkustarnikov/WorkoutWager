@@ -79,14 +79,6 @@
       "type": "build"
     },
     {
-      "name": "jwk-to-pem",
-      "type": "build"
-    },
-    {
-      "name": "jwks-rsa",
-      "type": "build"
-    },
-    {
       "name": "projen",
       "type": "build"
     },
@@ -158,6 +150,14 @@
     },
     {
       "name": "jsonwebtoken",
+      "type": "runtime"
+    },
+    {
+      "name": "jwk-to-pem",
+      "type": "runtime"
+    },
+    {
+      "name": "jwks-rsa",
       "type": "runtime"
     },
     {

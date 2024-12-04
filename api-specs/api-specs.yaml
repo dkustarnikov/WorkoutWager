@@ -1,0 +1,278 @@
+
+openapi: 3.0.0
+info:
+  title: Workout Wager API (Archived Version)
+  version: 1.0.0
+  description: This is the archived version of the Workout Wager API, showcasing the earlier implementation of user and workout management features.
+servers:
+  - url: https://your-api-gateway-url.{domain}.com/api
+paths:
+  /users/signup:
+    post:
+      summary: Sign up a new user
+      description: Register a new user account using AWS Cognito.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSignupRequest'
+      responses:
+        '201':
+          description: User created successfully.
+        '400':
+          description: Invalid input data.
+        '500':
+          description: Server error.
+  /users/login:
+    post:
+      summary: Log in a user
+      description: Authenticate a user and return a JWT token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+      responses:
+        '200':
+          description: Successful login with JWT token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials.
+        '500':
+          description: Server error.
+  /workouts:
+    get:
+      summary: Get workouts
+      description: Retrieve a list of workouts for the authenticated user.
+      responses:
+        '200':
+          description: List of workouts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workout'
+        '401':
+          description: Unauthorized access.
+        '500':
+          description: Server error.
+    post:
+      summary: Create a workout
+      description: Create a new workout for the authenticated user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkoutRequest'
+      responses:
+        '201':
+          description: Workout created successfully.
+        '400':
+          description: Invalid input data.
+        '401':
+          description: Unauthorized access.
+        '500':
+          description: Server error.
+  /workouts/{workoutId}:
+    put:
+      summary: Update a workout
+      description: Update details of an existing workout.
+      parameters:
+        - name: workoutId
+          in: path
+          required: true
+          description: ID of the workout to update.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkoutRequest'
+      responses:
+        '200':
+          description: Workout updated successfully.
+        '400':
+          description: Invalid input data.
+        '401':
+          description: Unauthorized access.
+        '404':
+          description: Workout not found.
+        '500':
+          description: Server error.
+    delete:
+      summary: Delete a workout
+      description: Remove an existing workout.
+      parameters:
+        - name: workoutId
+          in: path
+          required: true
+          description: ID of the workout to delete.
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Workout deleted successfully.
+        '401':
+          description: Unauthorized access.
+        '404':
+          description: Workout not found.
+        '500':
+          description: Server error.
+components:
+  schemas:
+    UserSignupRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          example: user@example.com
+        password:
+          type: string
+          example: Password123!
+    UserLoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          example: user@example.com
+        password:
+          type: string
+          example: Password123!
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    Milestone:
+      type: object
+      properties:
+        milestoneName:
+          type: string
+          example: First Milestone
+        milestoneId:
+          type: string
+          example: milestone123
+        type:
+          type: string
+          example: fitness
+        completion:
+          type: boolean
+          example: false
+        milestoneCounter:
+          type: integer
+          example: 1
+        milestoneDeadline:
+          type: string
+          format: date-time
+          example: 2024-01-01T12:00:00Z
+        monetaryValue:
+          type: number
+          format: float
+          example: 100.0
+    Rule:
+      type: object
+      properties:
+        ruleId:
+          type: string
+          example: rule123
+        userId:
+          type: string
+          example: user123
+        ruleType:
+          type: string
+          example: fitness_goal
+        ruleName:
+          type: string
+          example: Weight Loss Plan
+        generalObjective:
+          type: string
+          example: Lose 10 pounds in 3 months
+        totalAmount:
+          type: number
+          format: float
+          example: 500.0
+        deadline:
+          type: string
+          format: date-time
+          example: 2024-04-01T12:00:00Z
+        milestones:
+          type: array
+          items:
+            $ref: '#/components/schemas/Milestone'
+        createdAt:
+          type: string
+          format: date-time
+          example: 2023-12-01T12:00:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2024-01-01T12:00:00Z
+        status:
+          type: string
+          enum:
+            - created
+            - inProgress
+            - completed
+          example: inProgress
+    User:
+      type: object
+      properties:
+        userId:
+          type: string
+          example: user123
+        username:
+          type: string
+          example: johndoe
+        email:
+          type: string
+          example: johndoe@example.com
+        ruleIds:
+          type: array
+          items:
+            type: string
+            example: rule123
+        alpacaCreated:
+          type: boolean
+          example: true
+        paperTrading:
+          type: boolean
+          example: false
+    Workout:
+      type: object
+      properties:
+        id:
+          type: string
+          example: workout123
+        name:
+          type: string
+          example: Push-ups
+        description:
+          type: string
+          example: A workout focusing on push-ups.
+        date:
+          type: string
+          format: date-time
+          example: 2024-01-01T12:00:00Z
+    WorkoutRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Push-ups
+        description:
+          type: string
+          example: A workout focusing on push-ups.
+        date:
+          type: string
+          format: date-time
+          example: 2024-01-01T12:00:00Z

@@ -3,8 +3,43 @@
 exports[`Snapshot 1`] = `
 {
   "Outputs": {
-    "TestBucket": {
-      "Value": "",
+    "CognitoDomain": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "UserPoolDomain5479B217",
+            },
+            ".auth.",
+            {
+              "Ref": "AWS::Region",
+            },
+            ".amazoncognito.com",
+          ],
+        ],
+      },
+    },
+    "ResourceServerIdentifier": {
+      "Value": {
+        "Ref": "ResourceServerF27E5189",
+      },
+    },
+    "RulesTableName": {
+      "Value": {
+        "Ref": "Rules379FE035",
+      },
+    },
+    "UserPoolClientIdForClientCreds": {
+      "Value": {
+        "Ref": "WorkoutWagerUserPoolClientForClientCredsE5C87350",
+      },
+    },
+    "UserPoolId": {
+      "Value": {
+        "Ref": "WorkoutWagerUserPool0F200A97",
+      },
     },
     "WorkoutWagerAPIEndpoint13D5E05A": {
       "Value": {
@@ -102,6 +137,105 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::ApiGateway::Authorizer",
     },
+    "ResourceServerF27E5189": {
+      "Properties": {
+        "Identifier": "workout-wager",
+        "Name": "workout-wager",
+        "Scopes": [
+          {
+            "ScopeDescription": "Custom Scope Description",
+            "ScopeName": "customScope",
+          },
+        ],
+        "UserPoolId": {
+          "Ref": "WorkoutWagerUserPool0F200A97",
+        },
+      },
+      "Type": "AWS::Cognito::UserPoolResourceServer",
+    },
+    "Rules379FE035": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "ruleId",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "ruleName",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "userId",
+            "AttributeType": "S",
+          },
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName": "ruleNameIndex",
+            "KeySchema": [
+              {
+                "AttributeName": "ruleName",
+                "KeyType": "HASH",
+              },
+            ],
+            "Projection": {
+              "ProjectionType": "ALL",
+            },
+          },
+          {
+            "IndexName": "userIdIndex",
+            "KeySchema": [
+              {
+                "AttributeName": "userId",
+                "KeyType": "HASH",
+              },
+            ],
+            "Projection": {
+              "ProjectionType": "ALL",
+            },
+          },
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "ruleId",
+            "KeyType": "HASH",
+          },
+        ],
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "UserInfo4540AD3C": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "userId",
+            "AttributeType": "S",
+          },
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "KeySchema": [
+          {
+            "AttributeName": "userId",
+            "KeyType": "HASH",
+          },
+        ],
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "UserPoolDomain5479B217": {
+      "Properties": {
+        "Domain": "workout-wager",
+        "UserPoolId": {
+          "Ref": "WorkoutWagerUserPool0F200A97",
+        },
+      },
+      "Type": "AWS::Cognito::UserPoolDomain",
+    },
     "WorkoutWagerAPI12237448": {
       "Properties": {
         "Name": "WorkoutWagerAPI",
@@ -157,10 +291,34 @@ exports[`Snapshot 1`] = `
       "Type": "AWS::IAM::Role",
       "UpdateReplacePolicy": "Retain",
     },
-    "WorkoutWagerAPIDeployment002354E69eae9be9bca3c1560298fb0ded91cb6a": {
+    "WorkoutWagerAPIDeployment002354E62b33ab510df11ec5cd18825a263a0b58": {
       "DependsOn": [
+        "WorkoutWagerAPIaddmilestoneruleIdPOSTC967F9E5",
+        "WorkoutWagerAPIaddmilestoneruleId0D57B556",
+        "WorkoutWagerAPIaddmilestone2F102623",
+        "WorkoutWagerAPIconfigureuserPOST68AD31B9",
+        "WorkoutWagerAPIconfigureuserFBCC2D3F",
+        "WorkoutWagerAPIcreaterulePOST59B45102",
+        "WorkoutWagerAPIcreaterule32EBED75",
+        "WorkoutWagerAPIgetallrulesGET88FF55BA",
+        "WorkoutWagerAPIgetallrulesA9F4948B",
+        "WorkoutWagerAPIgetuserinfoPOST69215185",
+        "WorkoutWagerAPIgetuserinfo6D83C90B",
         "WorkoutWagerAPIhealthGET1CB2A007",
         "WorkoutWagerAPIhealth2AFE654B",
+        "WorkoutWagerAPIrulebynamePOST031EB4A2",
+        "WorkoutWagerAPIrulebyname218F9E80",
+        "WorkoutWagerAPIruleruleIdDELETE97591BA0",
+        "WorkoutWagerAPIruleruleIdGET112C5732",
+        "WorkoutWagerAPIruleruleIdPUTF0E3DD63",
+        "WorkoutWagerAPIruleruleId562BF2AB",
+        "WorkoutWagerAPIrule7BCA9CFE",
+        "WorkoutWagerAPItestmilestonehandlerPOST88AFE9C7",
+        "WorkoutWagerAPItestmilestonehandler37E1FEE5",
+        "WorkoutWagerAPIupdatemilestoneruleIdmilestoneIdPUT0A7BBB05",
+        "WorkoutWagerAPIupdatemilestoneruleIdmilestoneId4685CFA1",
+        "WorkoutWagerAPIupdatemilestoneruleId506B2F2D",
+        "WorkoutWagerAPIupdatemilestone210246BA",
       ],
       "Properties": {
         "Description": "Automatically created by the RestApi construct",
@@ -176,7 +334,7 @@ exports[`Snapshot 1`] = `
       ],
       "Properties": {
         "DeploymentId": {
-          "Ref": "WorkoutWagerAPIDeployment002354E69eae9be9bca3c1560298fb0ded91cb6a",
+          "Ref": "WorkoutWagerAPIDeployment002354E62b33ab510df11ec5cd18825a263a0b58",
         },
         "RestApiId": {
           "Ref": "WorkoutWagerAPI12237448",
@@ -184,6 +342,698 @@ exports[`Snapshot 1`] = `
         "StageName": "prod",
       },
       "Type": "AWS::ApiGateway::Stage",
+    },
+    "WorkoutWagerAPIaddmilestone2F102623": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "WorkoutWagerAPI12237448",
+            "RootResourceId",
+          ],
+        },
+        "PathPart": "add-milestone",
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIaddmilestoneruleId0D57B556": {
+      "Properties": {
+        "ParentId": {
+          "Ref": "WorkoutWagerAPIaddmilestone2F102623",
+        },
+        "PathPart": "{ruleId}",
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIaddmilestoneruleIdPOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTaddmilestoneruleIdAA8620A5": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "addmilestoneEE3C71D3",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/test-invoke-stage/POST/add-milestone/*",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIaddmilestoneruleIdPOSTApiPermissiontestWorkoutWagerAPIB6B50B50POSTaddmilestoneruleId20EE6951": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "addmilestoneEE3C71D3",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/",
+              {
+                "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
+              },
+              "/POST/add-milestone/*",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIaddmilestoneruleIdPOSTC967F9E5": {
+      "Properties": {
+        "AuthorizationType": "CUSTOM",
+        "AuthorizerId": {
+          "Ref": "MyAuthorizer6575980E",
+        },
+        "HttpMethod": "POST",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "addmilestoneEE3C71D3",
+                    "Arn",
+                  ],
+                },
+                "/invocations",
+              ],
+            ],
+          },
+        },
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIaddmilestoneruleId0D57B556",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "WorkoutWagerAPIconfigureuserFBCC2D3F": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "WorkoutWagerAPI12237448",
+            "RootResourceId",
+          ],
+        },
+        "PathPart": "configure-user",
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIconfigureuserPOST68AD31B9": {
+      "Properties": {
+        "AuthorizationType": "CUSTOM",
+        "AuthorizerId": {
+          "Ref": "MyAuthorizer6575980E",
+        },
+        "HttpMethod": "POST",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "configureuser09ACB650",
+                    "Arn",
+                  ],
+                },
+                "/invocations",
+              ],
+            ],
+          },
+        },
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIconfigureuserFBCC2D3F",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "WorkoutWagerAPIconfigureuserPOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTconfigureuser8EFFA12D": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "configureuser09ACB650",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/test-invoke-stage/POST/configure-user",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIconfigureuserPOSTApiPermissiontestWorkoutWagerAPIB6B50B50POSTconfigureuser95B30D05": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "configureuser09ACB650",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/",
+              {
+                "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
+              },
+              "/POST/configure-user",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIcreaterule32EBED75": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "WorkoutWagerAPI12237448",
+            "RootResourceId",
+          ],
+        },
+        "PathPart": "create-rule",
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIcreaterulePOST59B45102": {
+      "Properties": {
+        "AuthorizationType": "CUSTOM",
+        "AuthorizerId": {
+          "Ref": "MyAuthorizer6575980E",
+        },
+        "HttpMethod": "POST",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "createruleD882FC26",
+                    "Arn",
+                  ],
+                },
+                "/invocations",
+              ],
+            ],
+          },
+        },
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIcreaterule32EBED75",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "WorkoutWagerAPIcreaterulePOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTcreaterule6FA77922": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "createruleD882FC26",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/test-invoke-stage/POST/create-rule",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIcreaterulePOSTApiPermissiontestWorkoutWagerAPIB6B50B50POSTcreaterule62E01E20": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "createruleD882FC26",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/",
+              {
+                "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
+              },
+              "/POST/create-rule",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIgetallrulesA9F4948B": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "WorkoutWagerAPI12237448",
+            "RootResourceId",
+          ],
+        },
+        "PathPart": "get-all-rules",
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIgetallrulesGET88FF55BA": {
+      "Properties": {
+        "AuthorizationType": "CUSTOM",
+        "AuthorizerId": {
+          "Ref": "MyAuthorizer6575980E",
+        },
+        "HttpMethod": "GET",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "getallrules904576EA",
+                    "Arn",
+                  ],
+                },
+                "/invocations",
+              ],
+            ],
+          },
+        },
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIgetallrulesA9F4948B",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "WorkoutWagerAPIgetallrulesGETApiPermissionTesttestWorkoutWagerAPIB6B50B50GETgetallrules5DE1EA3A": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "getallrules904576EA",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/test-invoke-stage/GET/get-all-rules",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIgetallrulesGETApiPermissiontestWorkoutWagerAPIB6B50B50GETgetallrulesB7BBC078": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "getallrules904576EA",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/",
+              {
+                "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
+              },
+              "/GET/get-all-rules",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIgetuserinfo6D83C90B": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "WorkoutWagerAPI12237448",
+            "RootResourceId",
+          ],
+        },
+        "PathPart": "get-user-info",
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIgetuserinfoPOST69215185": {
+      "Properties": {
+        "AuthorizationType": "CUSTOM",
+        "AuthorizerId": {
+          "Ref": "MyAuthorizer6575980E",
+        },
+        "HttpMethod": "POST",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "getuserinfoF2CB8B88",
+                    "Arn",
+                  ],
+                },
+                "/invocations",
+              ],
+            ],
+          },
+        },
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIgetuserinfo6D83C90B",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "WorkoutWagerAPIgetuserinfoPOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTgetuserinfo1197B3A4": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "getuserinfoF2CB8B88",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/test-invoke-stage/POST/get-user-info",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIgetuserinfoPOSTApiPermissiontestWorkoutWagerAPIB6B50B50POSTgetuserinfo82648A3D": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "getuserinfoF2CB8B88",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/",
+              {
+                "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
+              },
+              "/POST/get-user-info",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
     },
     "WorkoutWagerAPIhealth2AFE654B": {
       "Properties": {
@@ -321,6 +1171,1048 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
+    "WorkoutWagerAPIrule7BCA9CFE": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "WorkoutWagerAPI12237448",
+            "RootResourceId",
+          ],
+        },
+        "PathPart": "rule",
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIrulebyname218F9E80": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "WorkoutWagerAPI12237448",
+            "RootResourceId",
+          ],
+        },
+        "PathPart": "rule-by-name",
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIrulebynamePOST031EB4A2": {
+      "Properties": {
+        "AuthorizationType": "CUSTOM",
+        "AuthorizerId": {
+          "Ref": "MyAuthorizer6575980E",
+        },
+        "HttpMethod": "POST",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "getrulebyname10550BE0",
+                    "Arn",
+                  ],
+                },
+                "/invocations",
+              ],
+            ],
+          },
+        },
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIrulebyname218F9E80",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "WorkoutWagerAPIrulebynamePOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTrulebynameA336A413": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "getrulebyname10550BE0",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/test-invoke-stage/POST/rule-by-name",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIrulebynamePOSTApiPermissiontestWorkoutWagerAPIB6B50B50POSTrulebynameFF802384": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "getrulebyname10550BE0",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/",
+              {
+                "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
+              },
+              "/POST/rule-by-name",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIruleruleId562BF2AB": {
+      "Properties": {
+        "ParentId": {
+          "Ref": "WorkoutWagerAPIrule7BCA9CFE",
+        },
+        "PathPart": "{ruleId}",
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIruleruleIdDELETE97591BA0": {
+      "Properties": {
+        "AuthorizationType": "CUSTOM",
+        "AuthorizerId": {
+          "Ref": "MyAuthorizer6575980E",
+        },
+        "HttpMethod": "DELETE",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "deleterule982B9303",
+                    "Arn",
+                  ],
+                },
+                "/invocations",
+              ],
+            ],
+          },
+        },
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIruleruleId562BF2AB",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "WorkoutWagerAPIruleruleIdDELETEApiPermissionTesttestWorkoutWagerAPIB6B50B50DELETEruleruleId47B55A43": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "deleterule982B9303",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/test-invoke-stage/DELETE/rule/*",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIruleruleIdDELETEApiPermissiontestWorkoutWagerAPIB6B50B50DELETEruleruleId69B5884B": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "deleterule982B9303",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/",
+              {
+                "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
+              },
+              "/DELETE/rule/*",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIruleruleIdGET112C5732": {
+      "Properties": {
+        "AuthorizationType": "CUSTOM",
+        "AuthorizerId": {
+          "Ref": "MyAuthorizer6575980E",
+        },
+        "HttpMethod": "GET",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "getrulebyid7BC7CC83",
+                    "Arn",
+                  ],
+                },
+                "/invocations",
+              ],
+            ],
+          },
+        },
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIruleruleId562BF2AB",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "WorkoutWagerAPIruleruleIdGETApiPermissionTesttestWorkoutWagerAPIB6B50B50GETruleruleId86CE96DC": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "getrulebyid7BC7CC83",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/test-invoke-stage/GET/rule/*",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIruleruleIdGETApiPermissiontestWorkoutWagerAPIB6B50B50GETruleruleId3905C426": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "getrulebyid7BC7CC83",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/",
+              {
+                "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
+              },
+              "/GET/rule/*",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIruleruleIdPUTApiPermissionTesttestWorkoutWagerAPIB6B50B50PUTruleruleIdA05CDBB5": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "updaterule9896CB6E",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/test-invoke-stage/PUT/rule/*",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIruleruleIdPUTApiPermissiontestWorkoutWagerAPIB6B50B50PUTruleruleIdC32FBDCA": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "updaterule9896CB6E",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/",
+              {
+                "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
+              },
+              "/PUT/rule/*",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIruleruleIdPUTF0E3DD63": {
+      "Properties": {
+        "AuthorizationType": "CUSTOM",
+        "AuthorizerId": {
+          "Ref": "MyAuthorizer6575980E",
+        },
+        "HttpMethod": "PUT",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "updaterule9896CB6E",
+                    "Arn",
+                  ],
+                },
+                "/invocations",
+              ],
+            ],
+          },
+        },
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIruleruleId562BF2AB",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "WorkoutWagerAPItestmilestonehandler37E1FEE5": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "WorkoutWagerAPI12237448",
+            "RootResourceId",
+          ],
+        },
+        "PathPart": "test-milestone-handler",
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPItestmilestonehandlerPOST88AFE9C7": {
+      "Properties": {
+        "AuthorizationType": "CUSTOM",
+        "AuthorizerId": {
+          "Ref": "MyAuthorizer6575980E",
+        },
+        "HttpMethod": "POST",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "milestonehandler1E186260",
+                    "Arn",
+                  ],
+                },
+                "/invocations",
+              ],
+            ],
+          },
+        },
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPItestmilestonehandler37E1FEE5",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "WorkoutWagerAPItestmilestonehandlerPOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTtestmilestonehandler214E70A9": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "milestonehandler1E186260",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/test-invoke-stage/POST/test-milestone-handler",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPItestmilestonehandlerPOSTApiPermissiontestWorkoutWagerAPIB6B50B50POSTtestmilestonehandlerCCE75072": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "milestonehandler1E186260",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/",
+              {
+                "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
+              },
+              "/POST/test-milestone-handler",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIupdatemilestone210246BA": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "WorkoutWagerAPI12237448",
+            "RootResourceId",
+          ],
+        },
+        "PathPart": "update-milestone",
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIupdatemilestoneruleId506B2F2D": {
+      "Properties": {
+        "ParentId": {
+          "Ref": "WorkoutWagerAPIupdatemilestone210246BA",
+        },
+        "PathPart": "{ruleId}",
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIupdatemilestoneruleIdmilestoneId4685CFA1": {
+      "Properties": {
+        "ParentId": {
+          "Ref": "WorkoutWagerAPIupdatemilestoneruleId506B2F2D",
+        },
+        "PathPart": "{milestoneId}",
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIupdatemilestoneruleIdmilestoneIdPUT0A7BBB05": {
+      "Properties": {
+        "AuthorizationType": "CUSTOM",
+        "AuthorizerId": {
+          "Ref": "MyAuthorizer6575980E",
+        },
+        "HttpMethod": "PUT",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "updatemilestone6D1A5941",
+                    "Arn",
+                  ],
+                },
+                "/invocations",
+              ],
+            ],
+          },
+        },
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIupdatemilestoneruleIdmilestoneId4685CFA1",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "WorkoutWagerAPIupdatemilestoneruleIdmilestoneIdPUTApiPermissionTesttestWorkoutWagerAPIB6B50B50PUTupdatemilestoneruleIdmilestoneId1FED1C88": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "updatemilestone6D1A5941",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/test-invoke-stage/PUT/update-milestone/*/*",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIupdatemilestoneruleIdmilestoneIdPUTApiPermissiontestWorkoutWagerAPIB6B50B50PUTupdatemilestoneruleIdmilestoneId569A5F5C": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "updatemilestone6D1A5941",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/",
+              {
+                "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
+              },
+              "/PUT/update-milestone/*/*",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerUserPool0F200A97": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "AccountRecoverySetting": {
+          "RecoveryMechanisms": [
+            {
+              "Name": "verified_phone_number",
+              "Priority": 1,
+            },
+            {
+              "Name": "verified_email",
+              "Priority": 2,
+            },
+          ],
+        },
+        "AdminCreateUserConfig": {
+          "AllowAdminCreateUserOnly": false,
+        },
+        "AutoVerifiedAttributes": [
+          "email",
+        ],
+        "EmailVerificationMessage": "The verification code to your new account is {####}",
+        "EmailVerificationSubject": "Verify your new account",
+        "Policies": {
+          "PasswordPolicy": {
+            "MinimumLength": 8,
+            "RequireLowercase": true,
+            "RequireNumbers": true,
+            "RequireSymbols": true,
+            "RequireUppercase": true,
+          },
+        },
+        "Schema": [
+          {
+            "Mutable": true,
+            "Name": "email",
+            "Required": true,
+          },
+        ],
+        "SmsVerificationMessage": "The verification code to your new account is {####}",
+        "UsernameAttributes": [
+          "email",
+        ],
+        "UsernameConfiguration": {
+          "CaseSensitive": false,
+        },
+        "VerificationMessageTemplate": {
+          "DefaultEmailOption": "CONFIRM_WITH_CODE",
+          "EmailMessage": "The verification code to your new account is {####}",
+          "EmailSubject": "Verify your new account",
+          "SmsMessage": "The verification code to your new account is {####}",
+        },
+      },
+      "Type": "AWS::Cognito::UserPool",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "WorkoutWagerUserPoolClientForClientCredsE5C87350": {
+      "Properties": {
+        "AllowedOAuthFlows": [
+          "client_credentials",
+        ],
+        "AllowedOAuthFlowsUserPoolClient": true,
+        "AllowedOAuthScopes": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Ref": "ResourceServerF27E5189",
+                },
+                "/customScope",
+              ],
+            ],
+          },
+        ],
+        "GenerateSecret": true,
+        "SupportedIdentityProviders": [
+          "COGNITO",
+        ],
+        "UserPoolId": {
+          "Ref": "WorkoutWagerUserPool0F200A97",
+        },
+      },
+      "Type": "AWS::Cognito::UserPoolClient",
+    },
+    "addmilestoneEE3C71D3": {
+      "DependsOn": [
+        "addmilestoneServiceRoleDefaultPolicy5C77D95C",
+        "addmilestoneServiceRole469213EB",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+          },
+          "S3Key": "f6ce20155ea3406aefa3d2c5f5c81760d7a664e3a742c3b6b8e40fb38cab07ad.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "LAMBDA_FUNCTION_ARN": {
+              "Fn::GetAtt": [
+                "milestonehandler1E186260",
+                "Arn",
+              ],
+            },
+            "RULES_TABLE": {
+              "Ref": "Rules379FE035",
+            },
+          },
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "addmilestoneServiceRole469213EB",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "addmilestoneServiceRole469213EB": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "addmilestoneServiceRoleDefaultPolicy5C77D95C": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Rules379FE035",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Rules379FE035",
+                          "Arn",
+                        ],
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "events:PutRule",
+                "events:PutTargets",
+                "events:RemoveTargets",
+                "events:DeleteRule",
+                "events:DescribeRule",
+                "events:ListRules",
+                "events:ListTargetsByRule",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "addmilestoneServiceRoleDefaultPolicy5C77D95C",
+        "Roles": [
+          {
+            "Ref": "addmilestoneServiceRole469213EB",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
     "authorizerD23CB5CD": {
       "DependsOn": [
         "authorizerServiceRoleC3069BB4",
@@ -330,11 +2222,16 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "d37cc1dd09cec647247fd6092721797e9ffd7e9ba0b08a680b9f895b7d55bcd4.zip",
+          "S3Key": "195e3d3ed34420d7cc5b961341fe406e75817dea95e8994cc6875ff85884c709.zip",
         },
         "Environment": {
           "Variables": {
-            "JWT_SECRET": "Some secret",
+            "USER_POOL_CONGNITO_URI": {
+              "Fn::GetAtt": [
+                "WorkoutWagerUserPool0F200A97",
+                "ProviderURL",
+              ],
+            },
           },
         },
         "Handler": "index.handler",
@@ -419,6 +2316,969 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
+    "configureuser09ACB650": {
+      "DependsOn": [
+        "configureuserServiceRoleDefaultPolicyED581E71",
+        "configureuserServiceRoleE9915DAE",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+          },
+          "S3Key": "b41ff88c854e1cc04b37045482627eeec9feaa68fc50566c316e8a9692566eb1.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "COGNITO_USER_POOL_ID": {
+              "Ref": "WorkoutWagerUserPool0F200A97",
+            },
+            "RULES_TABLE": {
+              "Ref": "Rules379FE035",
+            },
+            "USER_INFO_TABLE": {
+              "Ref": "UserInfo4540AD3C",
+            },
+          },
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "configureuserServiceRoleE9915DAE",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "configureuserServiceRoleDefaultPolicyED581E71": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "cognito-idp:AdminGetUser",
+                "cognito-idp:ListUsers",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:cognito-idp:",
+                    {
+                      "Ref": "AWS::Region",
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId",
+                    },
+                    ":userpool/",
+                    {
+                      "Ref": "WorkoutWagerUserPool0F200A97",
+                    },
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Rules379FE035",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Rules379FE035",
+                          "Arn",
+                        ],
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UserInfo4540AD3C",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Ref": "AWS::NoValue",
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "configureuserServiceRoleDefaultPolicyED581E71",
+        "Roles": [
+          {
+            "Ref": "configureuserServiceRoleE9915DAE",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "configureuserServiceRoleE9915DAE": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "createruleD882FC26": {
+      "DependsOn": [
+        "createruleServiceRoleDefaultPolicy7938E557",
+        "createruleServiceRole90E81667",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+          },
+          "S3Key": "4093eaecfc1d47faa031c04313d199d057903873b5059faa8d23ebea99bd1c4e.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "LAMBDA_FUNCTION_ARN": {
+              "Fn::GetAtt": [
+                "milestonehandler1E186260",
+                "Arn",
+              ],
+            },
+            "RULES_TABLE": {
+              "Ref": "Rules379FE035",
+            },
+          },
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "createruleServiceRole90E81667",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "createruleServiceRole90E81667": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "createruleServiceRoleDefaultPolicy7938E557": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Rules379FE035",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Rules379FE035",
+                          "Arn",
+                        ],
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "events:PutRule",
+                "events:PutTargets",
+                "events:RemoveTargets",
+                "events:DeleteRule",
+                "events:DescribeRule",
+                "events:ListRules",
+                "events:ListTargetsByRule",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "createruleServiceRoleDefaultPolicy7938E557",
+        "Roles": [
+          {
+            "Ref": "createruleServiceRole90E81667",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "deleterule982B9303": {
+      "DependsOn": [
+        "deleteruleServiceRoleDefaultPolicyC87A7922",
+        "deleteruleServiceRoleC0BABE2A",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+          },
+          "S3Key": "a099a9b8375ed329cc5005c8fe6dd67cc2010e11503e6de0f140393b5f44639f.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "RULES_TABLE": {
+              "Ref": "Rules379FE035",
+            },
+          },
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "deleteruleServiceRoleC0BABE2A",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "deleteruleServiceRoleC0BABE2A": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "deleteruleServiceRoleDefaultPolicyC87A7922": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Rules379FE035",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Rules379FE035",
+                          "Arn",
+                        ],
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "deleteruleServiceRoleDefaultPolicyC87A7922",
+        "Roles": [
+          {
+            "Ref": "deleteruleServiceRoleC0BABE2A",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "getallrules904576EA": {
+      "DependsOn": [
+        "getallrulesServiceRoleDefaultPolicy67F0B0BB",
+        "getallrulesServiceRoleECDBD3FD",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+          },
+          "S3Key": "bfd63b4707cbbf1b92541da94f3c4a811c54e636b845d554a75593e9d51ce6b1.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "RULES_TABLE": {
+              "Ref": "Rules379FE035",
+            },
+          },
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "getallrulesServiceRoleECDBD3FD",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "getallrulesServiceRoleDefaultPolicy67F0B0BB": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Rules379FE035",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Rules379FE035",
+                          "Arn",
+                        ],
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "getallrulesServiceRoleDefaultPolicy67F0B0BB",
+        "Roles": [
+          {
+            "Ref": "getallrulesServiceRoleECDBD3FD",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "getallrulesServiceRoleECDBD3FD": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "getrulebyid7BC7CC83": {
+      "DependsOn": [
+        "getrulebyidServiceRoleDefaultPolicy3FB1D72D",
+        "getrulebyidServiceRole0410D257",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+          },
+          "S3Key": "dd4c73e67aee0d6ad27d1c1ccb5dda71d1f6d884595391474f59baeaaa93e767.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "RULES_TABLE": {
+              "Ref": "Rules379FE035",
+            },
+          },
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "getrulebyidServiceRole0410D257",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "getrulebyidServiceRole0410D257": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "getrulebyidServiceRoleDefaultPolicy3FB1D72D": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Rules379FE035",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Rules379FE035",
+                          "Arn",
+                        ],
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "getrulebyidServiceRoleDefaultPolicy3FB1D72D",
+        "Roles": [
+          {
+            "Ref": "getrulebyidServiceRole0410D257",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "getrulebyname10550BE0": {
+      "DependsOn": [
+        "getrulebynameServiceRoleDefaultPolicyF693C9DF",
+        "getrulebynameServiceRole57C5CF3E",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+          },
+          "S3Key": "64cf4dd625c8c2e8ac5a1495ba983335700b34fe7ddcde88e6f42a51de01f602.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "RULES_TABLE": {
+              "Ref": "Rules379FE035",
+            },
+          },
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "getrulebynameServiceRole57C5CF3E",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "getrulebynameServiceRole57C5CF3E": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "getrulebynameServiceRoleDefaultPolicyF693C9DF": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Rules379FE035",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Rules379FE035",
+                          "Arn",
+                        ],
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "getrulebynameServiceRoleDefaultPolicyF693C9DF",
+        "Roles": [
+          {
+            "Ref": "getrulebynameServiceRole57C5CF3E",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "getuserinfoF2CB8B88": {
+      "DependsOn": [
+        "getuserinfoServiceRoleDefaultPolicy5977E718",
+        "getuserinfoServiceRole51DD7D85",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+          },
+          "S3Key": "bef835d1831233e071172016a1008dfeff0991f158e86bd23762258ea2251c33.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "COGNITO_USER_POOL_ID": {
+              "Ref": "WorkoutWagerUserPool0F200A97",
+            },
+            "RULES_TABLE": {
+              "Ref": "Rules379FE035",
+            },
+            "USER_INFO_TABLE": {
+              "Ref": "UserInfo4540AD3C",
+            },
+          },
+        },
+        "Handler": "index.handler",
+        "MemorySize": 256,
+        "Role": {
+          "Fn::GetAtt": [
+            "getuserinfoServiceRole51DD7D85",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+        "Timeout": 10,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "getuserinfoServiceRole51DD7D85": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "getuserinfoServiceRoleDefaultPolicy5977E718": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "cognito-idp:AdminGetUser",
+                "cognito-idp:ListUsers",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:cognito-idp:",
+                    {
+                      "Ref": "AWS::Region",
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId",
+                    },
+                    ":userpool/",
+                    {
+                      "Ref": "WorkoutWagerUserPool0F200A97",
+                    },
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Rules379FE035",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Rules379FE035",
+                          "Arn",
+                        ],
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UserInfo4540AD3C",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Ref": "AWS::NoValue",
+                },
+              ],
+            },
+            {
+              "Action": [
+                "secretsmanager:CreateSecret",
+                "secretsmanager:PutSecretValue",
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:UpdateSecret",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:secretsmanager:",
+                    {
+                      "Ref": "AWS::Region",
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId",
+                    },
+                    ":secret:alpaca/*",
+                  ],
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "getuserinfoServiceRoleDefaultPolicy5977E718",
+        "Roles": [
+          {
+            "Ref": "getuserinfoServiceRole51DD7D85",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
     "healthC878E2FF": {
       "DependsOn": [
         "healthServiceRole962E3AA5",
@@ -428,7 +3288,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "1cf9d03cd355ad978d5764725defd4ce5f1d604136d54568ec2a3addfe2ab6bd.zip",
+          "S3Key": "86055fa2056f3732ab6d8c3ef211edd7ac0f1633bd6bd309419375d4047f583e.zip",
         },
         "Environment": {
           "Variables": {
@@ -476,6 +3336,459 @@ exports[`Snapshot 1`] = `
         ],
       },
       "Type": "AWS::IAM::Role",
+    },
+    "milestonehandler1E186260": {
+      "DependsOn": [
+        "milestonehandlerServiceRoleDefaultPolicy8126BF81",
+        "milestonehandlerServiceRole4EB41AF5",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+          },
+          "S3Key": "d5d58e094894597e081f2391b4b6403f9f1672d0c50d4275459c1302c240f526.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "RULES_TABLE": {
+              "Ref": "Rules379FE035",
+            },
+            "USER_INFO_TABLE": {
+              "Ref": "UserInfo4540AD3C",
+            },
+          },
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "milestonehandlerServiceRole4EB41AF5",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+        "Timeout": 120,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "milestonehandlerInvokeByEventBridge93ABA62E": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "milestonehandler1E186260",
+            "Arn",
+          ],
+        },
+        "Principal": "events.amazonaws.com",
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "milestonehandlerServiceRole4EB41AF5": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "milestonehandlerServiceRoleDefaultPolicy8126BF81": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Rules379FE035",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Rules379FE035",
+                          "Arn",
+                        ],
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UserInfo4540AD3C",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Ref": "AWS::NoValue",
+                },
+              ],
+            },
+            {
+              "Action": [
+                "secretsmanager:CreateSecret",
+                "secretsmanager:PutSecretValue",
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:UpdateSecret",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:secretsmanager:",
+                    {
+                      "Ref": "AWS::Region",
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId",
+                    },
+                    ":secret:alpaca/*",
+                  ],
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "milestonehandlerServiceRoleDefaultPolicy8126BF81",
+        "Roles": [
+          {
+            "Ref": "milestonehandlerServiceRole4EB41AF5",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "updatemilestone6D1A5941": {
+      "DependsOn": [
+        "updatemilestoneServiceRoleDefaultPolicyB395BE0D",
+        "updatemilestoneServiceRoleB9D4F292",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+          },
+          "S3Key": "73a9703093b7319fcc5147ebf8c061c07a7f831477134f0a36dae4e3cc4a40c7.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "LAMBDA_FUNCTION_ARN": {
+              "Fn::GetAtt": [
+                "milestonehandler1E186260",
+                "Arn",
+              ],
+            },
+            "RULES_TABLE": {
+              "Ref": "Rules379FE035",
+            },
+          },
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "updatemilestoneServiceRoleB9D4F292",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "updatemilestoneServiceRoleB9D4F292": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "updatemilestoneServiceRoleDefaultPolicyB395BE0D": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Rules379FE035",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Rules379FE035",
+                          "Arn",
+                        ],
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "events:PutRule",
+                "events:PutTargets",
+                "events:RemoveTargets",
+                "events:DeleteRule",
+                "events:DescribeRule",
+                "events:ListRules",
+                "events:ListTargetsByRule",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "updatemilestoneServiceRoleDefaultPolicyB395BE0D",
+        "Roles": [
+          {
+            "Ref": "updatemilestoneServiceRoleB9D4F292",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "updaterule9896CB6E": {
+      "DependsOn": [
+        "updateruleServiceRoleDefaultPolicyF90B562E",
+        "updateruleServiceRole4F490B66",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+          },
+          "S3Key": "9a88976a373fb82d3cc7b8b3bd40f92191cdbfc18b5e1263b7ee937f51048ba4.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "LAMBDA_FUNCTION_ARN": {
+              "Fn::GetAtt": [
+                "milestonehandler1E186260",
+                "Arn",
+              ],
+            },
+            "RULES_TABLE": {
+              "Ref": "Rules379FE035",
+            },
+          },
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "updateruleServiceRole4F490B66",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "updateruleServiceRole4F490B66": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "updateruleServiceRoleDefaultPolicyF90B562E": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Rules379FE035",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Rules379FE035",
+                          "Arn",
+                        ],
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "events:PutRule",
+                "events:PutTargets",
+                "events:RemoveTargets",
+                "events:DeleteRule",
+                "events:DescribeRule",
+                "events:ListRules",
+                "events:ListTargetsByRule",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "updateruleServiceRoleDefaultPolicyF90B562E",
+        "Roles": [
+          {
+            "Ref": "updateruleServiceRole4F490B66",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
     },
   },
   "Rules": {

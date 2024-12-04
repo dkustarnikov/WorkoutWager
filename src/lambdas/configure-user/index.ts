@@ -1,9 +1,9 @@
+import { createClient } from '@alpacahq/typescript-sdk';
 import * as awsLambda from 'aws-lambda';
 import { DynamoDB } from 'aws-sdk';
+import * as yup from 'yup';
 import { getApiResponse } from '../../common/helpers';
 import { User } from '../../common/models';
-import * as yup from 'yup';
-import { createClient } from '@alpacahq/typescript-sdk';
 
 const dynamoDb = new DynamoDB.DocumentClient();
 const TABLE_NAME_USER_INFO = process.env.USER_INFO_TABLE || 'UserInfo';
@@ -31,7 +31,7 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
       }
       // Re-throw the error if it's not a ValidationError
       throw error;
-    }    
+    }
 
     let actions: string[] = [];
 

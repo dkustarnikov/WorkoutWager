@@ -33,11 +33,11 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
 
       await eventBridge.removeTargets({
         Rule: milestoneRuleName,
-        Ids: [milestoneRuleName]
+        Ids: [milestoneRuleName],
       }).promise();
 
       await eventBridge.deleteRule({
-        Name: milestoneRuleName
+        Name: milestoneRuleName,
       }).promise();
     }
 

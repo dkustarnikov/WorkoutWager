@@ -1,8 +1,8 @@
 import * as awsLambda from 'aws-lambda';
 import { DynamoDB, EventBridge } from 'aws-sdk';
-import { getApiResponse, ruleSchema, convertToCronExpression } from '../../common/helpers'; // Adjust the path as necessary
-import * as yup from 'yup';
 import { v4 as uuidv4 } from 'uuid';
+import * as yup from 'yup';
+import { getApiResponse, ruleSchema, convertToCronExpression } from '../../common/helpers'; // Adjust the path as necessary
 import { Rule } from '../../common/models';
 
 const dynamoDb = new DynamoDB.DocumentClient();
@@ -58,7 +58,7 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
         completion: false,
         milestoneCounter: 1,
         milestoneDeadline: deadline,
-        monetaryValue: 0
+        monetaryValue: 0,
       }];
     }
 
@@ -108,13 +108,13 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
       }).promise();
 
       await eventBridge.putTargets({
-      Rule: milestoneRuleName,
-      Targets: [{
-        Id: milestoneRuleName,
-        Arn: LAMBDA_FUNCTION_ARN,
-        Input: JSON.stringify({ userId: rule.userId, milestone: milestone }),
-      }],
-    }).promise();
+        Rule: milestoneRuleName,
+        Targets: [{
+          Id: milestoneRuleName,
+          Arn: LAMBDA_FUNCTION_ARN,
+          Input: JSON.stringify({ userId: rule.userId, milestone: milestone }),
+        }],
+      }).promise();
     }
 
     return getApiResponse(200, JSON.stringify(updatedRule));

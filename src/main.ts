@@ -1,10 +1,10 @@
 import * as path from 'path';
 import { App, CfnOutput, Stack, StackProps, aws_lambda as lambda, aws_apigateway as apigateway, Duration, Aws } from 'aws-cdk-lib';
+import * as cognito from 'aws-cdk-lib/aws-cognito';
+import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
-import * as cognito from 'aws-cdk-lib/aws-cognito';
-import * as iam from 'aws-cdk-lib/aws-iam';
-import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
 
 export class MyStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps = {}) {
@@ -33,7 +33,7 @@ export class MyStack extends Stack {
     });
 
     // Cognito User Pool definitions (unchanged)
-    const userPool = new cognito.UserPool(this, `WorkoutWagerUserPool`, {
+    const userPool = new cognito.UserPool(this, 'WorkoutWagerUserPool', {
       selfSignUpEnabled: true,
       signInAliases: { email: true },
       autoVerify: { email: true },
@@ -53,7 +53,7 @@ export class MyStack extends Stack {
       },
     });
 
-    const userPoolDomain = new cognito.UserPoolDomain(this, `UserPoolDomain`, {
+    const userPoolDomain = new cognito.UserPoolDomain(this, 'UserPoolDomain', {
       userPool,
       cognitoDomain: {
         domainPrefix: 'workout-wager',
@@ -65,13 +65,13 @@ export class MyStack extends Stack {
       scopeDescription: 'Custom Scope Description',
     });
 
-    const resourceServer = new cognito.UserPoolResourceServer(this, `ResourceServer`, {
+    const resourceServer = new cognito.UserPoolResourceServer(this, 'ResourceServer', {
       userPool,
       identifier: 'workout-wager',
       scopes: [resourceServerScope],
     });
 
-    const userPoolClientForClientCreds = new cognito.UserPoolClient(this, `WorkoutWagerUserPoolClientForClientCreds`, {
+    const userPoolClientForClientCreds = new cognito.UserPoolClient(this, 'WorkoutWagerUserPoolClientForClientCreds', {
       userPool,
       generateSecret: true,
       oAuth: {
@@ -85,7 +85,7 @@ export class MyStack extends Stack {
     });
 
     // Lambda function definitions (unchanged)
-    const healthFunction = new NodejsFunction(this, `health`, {
+    const healthFunction = new NodejsFunction(this, 'health', {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/health/index.ts'),
       handler: 'handler',
@@ -97,7 +97,7 @@ export class MyStack extends Stack {
       },
     });
 
-    const authorizerFunction = new NodejsFunction(this, `authorizer`, {
+    const authorizerFunction = new NodejsFunction(this, 'authorizer', {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/authorizer/index.ts'),
       handler: 'handler',
@@ -109,18 +109,18 @@ export class MyStack extends Stack {
       },
     });
 
-    const milestoneHandlerFunction = new NodejsFunction(this, `milestone-handler`, {
+    const milestoneHandlerFunction = new NodejsFunction(this, 'milestone-handler', {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/milestone-handler/index.ts'),
       handler: 'handler',
       timeout: Duration.minutes(2),
       environment: {
         RULES_TABLE: rulesTable.tableName,
-        USER_INFO_TABLE: userInfoTable.tableName
+        USER_INFO_TABLE: userInfoTable.tableName,
       },
     });
 
-    const createRuleFunction = new NodejsFunction(this, `create-rule`, {
+    const createRuleFunction = new NodejsFunction(this, 'create-rule', {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/create-rule/index.ts'),
       handler: 'handler',
@@ -130,7 +130,7 @@ export class MyStack extends Stack {
       },
     });
 
-    const deleteRuleFunction = new NodejsFunction(this, `delete-rule`, {
+    const deleteRuleFunction = new NodejsFunction(this, 'delete-rule', {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/delete-rule/index.ts'),
       handler: 'handler',
@@ -139,7 +139,7 @@ export class MyStack extends Stack {
       },
     });
 
-    const updateRuleFunction = new NodejsFunction(this, `update-rule`, {
+    const updateRuleFunction = new NodejsFunction(this, 'update-rule', {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/update-rule/index.ts'),
       handler: 'handler',
@@ -149,7 +149,7 @@ export class MyStack extends Stack {
       },
     });
 
-    const getRuleByIdFunction = new NodejsFunction(this, `get-rule-by-id`, {
+    const getRuleByIdFunction = new NodejsFunction(this, 'get-rule-by-id', {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/get-rule-by-id/index.ts'),
       handler: 'handler',
@@ -158,7 +158,7 @@ export class MyStack extends Stack {
       },
     });
 
-    const getRuleByNameFunction = new NodejsFunction(this, `get-rule-by-name`, {
+    const getRuleByNameFunction = new NodejsFunction(this, 'get-rule-by-name', {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/get-rule-by-name/index.ts'),
       handler: 'handler',
@@ -167,7 +167,7 @@ export class MyStack extends Stack {
       },
     });
 
-    const getAllRulesFunction = new NodejsFunction(this, `get-all-rules`, {
+    const getAllRulesFunction = new NodejsFunction(this, 'get-all-rules', {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/get-all-rules/index.ts'),
       handler: 'handler',
@@ -176,7 +176,7 @@ export class MyStack extends Stack {
       },
     });
 
-    const getUserInfoFunction = new NodejsFunction(this, `get-user-info`, {
+    const getUserInfoFunction = new NodejsFunction(this, 'get-user-info', {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/get-user-info-get/index.ts'),
       handler: 'handler',
@@ -192,7 +192,7 @@ export class MyStack extends Stack {
       },
     });
 
-    const configureUserFunction = new NodejsFunction(this, `configure-user`, {
+    const configureUserFunction = new NodejsFunction(this, 'configure-user', {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/configure-user/index.ts'),
       handler: 'handler',
@@ -206,7 +206,7 @@ export class MyStack extends Stack {
       },
     });
 
-    const addMilestoneFunction = new NodejsFunction(this, `add-milestone`, {
+    const addMilestoneFunction = new NodejsFunction(this, 'add-milestone', {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/add-milestone/index.ts'),
       handler: 'handler',
@@ -216,7 +216,7 @@ export class MyStack extends Stack {
       },
     });
 
-    const updateMilestoneFunction = new NodejsFunction(this, `update-milestone`, {
+    const updateMilestoneFunction = new NodejsFunction(this, 'update-milestone', {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/update-milestone/index.ts'),
       handler: 'handler',
@@ -227,12 +227,12 @@ export class MyStack extends Stack {
     });
 
     // Create the custom authorizer
-    const authorizer = new apigateway.TokenAuthorizer(this, `MyAuthorizer`, {
+    const authorizer = new apigateway.TokenAuthorizer(this, 'MyAuthorizer', {
       handler: authorizerFunction,
     });
 
     // Define the API Gateway resource
-    const api = new apigateway.LambdaRestApi(this, `WorkoutWagerAPI`, {
+    const api = new apigateway.LambdaRestApi(this, 'WorkoutWagerAPI', {
       handler: healthFunction,
       proxy: false,
     });
@@ -369,10 +369,10 @@ export class MyStack extends Stack {
         'secretsmanager:PutSecretValue',
         'secretsmanager:GetSecretValue',
         'secretsmanager:UpdateSecret',
-        "secretsmanager:DescribeSecret"
+        'secretsmanager:DescribeSecret',
       ],
       resources: [
-        `arn:aws:secretsmanager:${Aws.REGION}:${Aws.ACCOUNT_ID}:secret:alpaca/*`
+        `arn:aws:secretsmanager:${Aws.REGION}:${Aws.ACCOUNT_ID}:secret:alpaca/*`,
       ],
     });
 

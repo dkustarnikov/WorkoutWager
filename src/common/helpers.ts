@@ -1,6 +1,7 @@
 import axios from 'axios';
-import jwkToPem from 'jwk-to-pem';
 import * as jwt from 'jsonwebtoken';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import jwkToPem from 'jwk-to-pem';
 import * as yup from 'yup';
 
 export function getApiResponse(statusCode: number, body: string) {
@@ -60,7 +61,7 @@ export const milestoneSchema = yup.object().shape({
   completion: yup.boolean().required('Milestone completion status is required'),
   milestoneDeadline: yup.string().required('Milestone deadline is required').matches(
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/,
-    'Milestone deadline must be a valid ISO 8601 date string'
+    'Milestone deadline must be a valid ISO 8601 date string',
   ),
   monetaryValue: yup.number().required('Milestone monetary value is required').positive('Monetary value must be positive'),
 });
@@ -73,7 +74,7 @@ export const ruleSchema = yup.object().shape({
   totalAmount: yup.number().required('Total amount is required').positive('Total amount must be positive'),
   deadline: yup.string().required('Deadline is required').matches(
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/,
-    'Deadline must be a valid ISO 8601 date string'
+    'Deadline must be a valid ISO 8601 date string',
   ),
   milestones: yup.array().of(milestoneSchema).required('Milestones are required'),
 });
@@ -85,7 +86,7 @@ export function convertToCronExpression(isoString: string): string {
   const dayOfMonth = date.getUTCDate();
   const month = date.getUTCMonth() + 1; // getUTCMonth returns 0-11, so we add 1
   const year = date.getUTCFullYear();
-  
+
   // Ensure all values are within valid ranges
   if (minutes < 0 || minutes > 59 || hours < 0 || hours > 23 || dayOfMonth < 1 || dayOfMonth > 31 || month < 1 || month > 12) {
     throw new Error('Invalid date for cron expression');
