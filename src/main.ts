@@ -84,7 +84,6 @@ export class MyStack extends Stack {
       },
     });
 
-    // Lambda function definitions (unchanged)
     const healthFunction = new NodejsFunction(this, 'health', {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/health/index.ts'),
@@ -94,6 +93,15 @@ export class MyStack extends Stack {
       },
       environment: {
         SOME_KEY: 'some_key variable',
+      },
+    });
+
+    const completeMilestoneFunction = new NodejsFunction(this, 'complete-milestone', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      entry: path.join(__dirname, 'lambdas/complete-milestone/index.ts'),
+      handler: 'handler',
+      environment: {
+        RULES_TABLE: rulesTable.tableName,
       },
     });
 
@@ -300,6 +308,16 @@ export class MyStack extends Stack {
       authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
+    api.root
+      .addResource('complete-milestone')
+      .addResource('{ruleId}')
+      .addResource('{milestoneId}')
+      .addMethod('POST', new apigateway.LambdaIntegration(completeMilestoneFunction), {
+        authorizer: authorizer,
+        authorizationType: apigateway.AuthorizationType.CUSTOM,
+      });
+
+
     // Grant the Lambda function permission to access Cognito
     getUserInfoFunction.addToRolePolicy(new iam.PolicyStatement({
       actions: [
@@ -323,61 +341,70 @@ export class MyStack extends Stack {
       principal: new iam.ServicePrincipal('events.amazonaws.com'),
     });
 
-    //Give table permissions for the functions
+    // Grant DynamoDB permissions to Lambda functions
+    rulesTable.grantReadWriteData(addMilestoneFunction);
+    rulesTable.grantReadWriteData(completeMilestoneFunction);
+    rulesTable.grantReadWriteData(configureUserFunction);
     rulesTable.grantReadWriteData(createRuleFunction);
     rulesTable.grantReadWriteData(deleteRuleFunction);
-    rulesTable.grantReadWriteData(updateRuleFunction);
+    rulesTable.grantReadWriteData(milestoneHandlerFunction);
+    rulesTable.grantReadData(getAllRulesFunction);
     rulesTable.grantReadData(getRuleByIdFunction);
     rulesTable.grantReadData(getRuleByNameFunction);
-    rulesTable.grantReadData(getAllRulesFunction);
-    rulesTable.grantReadWriteData(addMilestoneFunction);
-    rulesTable.grantReadWriteData(updateMilestoneFunction);
     rulesTable.grantReadData(getUserInfoFunction);
-    rulesTable.grantReadWriteData(milestoneHandlerFunction);
-    rulesTable.grantReadWriteData(configureUserFunction);
+    rulesTable.grantReadWriteData(updateMilestoneFunction);
+    rulesTable.grantReadWriteData(updateRuleFunction);
 
-    userInfoTable.grantReadWriteData(getUserInfoFunction);
-    userInfoTable.grantReadWriteData(configureUserFunction);
     userInfoTable.grantReadData(milestoneHandlerFunction);
+    userInfoTable.grantReadWriteData(configureUserFunction);
+    userInfoTable.grantReadWriteData(getUserInfoFunction);
 
-    // Grant EventBridge permissions to the Lambda functions
+    // Grant EventBridge permissions to Lambda functions
     const eventBridgePolicy = new iam.PolicyStatement({
       actions: [
-        'events:PutRule',
-        'events:PutTargets',
-        'events:RemoveTargets',
         'events:DeleteRule',
         'events:DescribeRule',
         'events:ListRules',
         'events:ListTargetsByRule',
+        'events:PutRule',
+        'events:PutTargets',
+        'events:RemoveTargets',
       ],
       resources: ['*'],
     });
-    createRuleFunction.addToRolePolicy(eventBridgePolicy);
-    updateRuleFunction.addToRolePolicy(eventBridgePolicy);
-
-    //Give eventBridge permissions to the functions
-    createRuleFunction.addToRolePolicy(eventBridgePolicy);
-    updateRuleFunction.addToRolePolicy(eventBridgePolicy);
     addMilestoneFunction.addToRolePolicy(eventBridgePolicy);
+    completeMilestoneFunction.addToRolePolicy(eventBridgePolicy);
+    createRuleFunction.addToRolePolicy(eventBridgePolicy);
     updateMilestoneFunction.addToRolePolicy(eventBridgePolicy);
+    updateRuleFunction.addToRolePolicy(eventBridgePolicy);
 
-    // Define the policy statement for Secrets Manager
+    // Grant Cognito access to Lambda functions
+    const cognitoPolicy = new iam.PolicyStatement({
+      actions: [
+        'cognito-idp:AdminGetUser',
+        'cognito-idp:ListUsers',
+      ],
+      resources: [`arn:aws:cognito-idp:${this.region}:${this.account}:userpool/${userPool.userPoolId}`],
+    });
+    configureUserFunction.addToRolePolicy(cognitoPolicy);
+    getUserInfoFunction.addToRolePolicy(cognitoPolicy);
+
+    // Grant Secrets Manager access
     const secretsManagerPolicy = new iam.PolicyStatement({
       actions: [
         'secretsmanager:CreateSecret',
-        'secretsmanager:PutSecretValue',
-        'secretsmanager:GetSecretValue',
-        'secretsmanager:UpdateSecret',
         'secretsmanager:DescribeSecret',
+        'secretsmanager:GetSecretValue',
+        'secretsmanager:PutSecretValue',
+        'secretsmanager:UpdateSecret',
       ],
       resources: [
         `arn:aws:secretsmanager:${Aws.REGION}:${Aws.ACCOUNT_ID}:secret:alpaca/*`,
       ],
     });
-
-    milestoneHandlerFunction.addToRolePolicy(secretsManagerPolicy);
     getUserInfoFunction.addToRolePolicy(secretsManagerPolicy);
+    milestoneHandlerFunction.addToRolePolicy(secretsManagerPolicy);
+
 
     // Output User Pool ID
     new CfnOutput(this, 'UserPoolId', {

@@ -1,6 +1,11 @@
 {
   "dependencies": [
     {
+      "name": "@stylistic/eslint-plugin",
+      "version": "^2",
+      "type": "build"
+    },
+    {
       "name": "@types/aws-lambda",
       "type": "build"
     },
@@ -18,7 +23,6 @@
     },
     {
       "name": "@types/node",
-      "version": "^18",
       "type": "build"
     },
     {
@@ -27,12 +31,12 @@
     },
     {
       "name": "@typescript-eslint/eslint-plugin",
-      "version": "^7",
+      "version": "^8",
       "type": "build"
     },
     {
       "name": "@typescript-eslint/parser",
-      "version": "^7",
+      "version": "^8",
       "type": "build"
     },
     {
@@ -41,7 +45,7 @@
     },
     {
       "name": "aws-cdk",
-      "version": "^2.1.0",
+      "version": "^2",
       "type": "build"
     },
     {
@@ -66,7 +70,7 @@
     },
     {
       "name": "eslint",
-      "version": "^8",
+      "version": "^9",
       "type": "build"
     },
     {
@@ -75,7 +79,7 @@
     },
     {
       "name": "jest-junit",
-      "version": "^15",
+      "version": "^16",
       "type": "build"
     },
     {

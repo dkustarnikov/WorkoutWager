@@ -291,11 +291,15 @@ exports[`Snapshot 1`] = `
       "Type": "AWS::IAM::Role",
       "UpdateReplacePolicy": "Retain",
     },
-    "WorkoutWagerAPIDeployment002354E62b33ab510df11ec5cd18825a263a0b58": {
+    "WorkoutWagerAPIDeployment002354E64fab81fb98d45e9ca42cb96193c06a4b": {
       "DependsOn": [
         "WorkoutWagerAPIaddmilestoneruleIdPOSTC967F9E5",
         "WorkoutWagerAPIaddmilestoneruleId0D57B556",
         "WorkoutWagerAPIaddmilestone2F102623",
+        "WorkoutWagerAPIcompletemilestoneruleIdmilestoneIdPOST244BB9E1",
+        "WorkoutWagerAPIcompletemilestoneruleIdmilestoneId5E76EB48",
+        "WorkoutWagerAPIcompletemilestoneruleId48B83738",
+        "WorkoutWagerAPIcompletemilestone7A16B4A6",
         "WorkoutWagerAPIconfigureuserPOST68AD31B9",
         "WorkoutWagerAPIconfigureuserFBCC2D3F",
         "WorkoutWagerAPIcreaterulePOST59B45102",
@@ -334,7 +338,7 @@ exports[`Snapshot 1`] = `
       ],
       "Properties": {
         "DeploymentId": {
-          "Ref": "WorkoutWagerAPIDeployment002354E62b33ab510df11ec5cd18825a263a0b58",
+          "Ref": "WorkoutWagerAPIDeployment002354E64fab81fb98d45e9ca42cb96193c06a4b",
         },
         "RestApiId": {
           "Ref": "WorkoutWagerAPI12237448",
@@ -490,6 +494,166 @@ exports[`Snapshot 1`] = `
         },
       },
       "Type": "AWS::ApiGateway::Method",
+    },
+    "WorkoutWagerAPIcompletemilestone7A16B4A6": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "WorkoutWagerAPI12237448",
+            "RootResourceId",
+          ],
+        },
+        "PathPart": "complete-milestone",
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIcompletemilestoneruleId48B83738": {
+      "Properties": {
+        "ParentId": {
+          "Ref": "WorkoutWagerAPIcompletemilestone7A16B4A6",
+        },
+        "PathPart": "{ruleId}",
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIcompletemilestoneruleIdmilestoneId5E76EB48": {
+      "Properties": {
+        "ParentId": {
+          "Ref": "WorkoutWagerAPIcompletemilestoneruleId48B83738",
+        },
+        "PathPart": "{milestoneId}",
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIcompletemilestoneruleIdmilestoneIdPOST244BB9E1": {
+      "Properties": {
+        "AuthorizationType": "CUSTOM",
+        "AuthorizerId": {
+          "Ref": "MyAuthorizer6575980E",
+        },
+        "HttpMethod": "POST",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "completemilestoneD0CAC833",
+                    "Arn",
+                  ],
+                },
+                "/invocations",
+              ],
+            ],
+          },
+        },
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIcompletemilestoneruleIdmilestoneId5E76EB48",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "WorkoutWagerAPIcompletemilestoneruleIdmilestoneIdPOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTcompletemilestoneruleIdmilestoneId09B01373": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "completemilestoneD0CAC833",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/test-invoke-stage/POST/complete-milestone/*/*",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIcompletemilestoneruleIdmilestoneIdPOSTApiPermissiontestWorkoutWagerAPIB6B50B50POSTcompletemilestoneruleIdmilestoneId97C0CF8F": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "completemilestoneD0CAC833",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/",
+              {
+                "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
+              },
+              "/POST/complete-milestone/*/*",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
     },
     "WorkoutWagerAPIconfigureuserFBCC2D3F": {
       "Properties": {
@@ -2088,7 +2252,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "f6ce20155ea3406aefa3d2c5f5c81760d7a664e3a742c3b6b8e40fb38cab07ad.zip",
+          "S3Key": "f71f88b9f51903384650a8591bd828222d3d21357f29f140a661b70de43a7878.zip",
         },
         "Environment": {
           "Variables": {
@@ -2190,13 +2354,13 @@ exports[`Snapshot 1`] = `
             },
             {
               "Action": [
-                "events:PutRule",
-                "events:PutTargets",
-                "events:RemoveTargets",
                 "events:DeleteRule",
                 "events:DescribeRule",
                 "events:ListRules",
                 "events:ListTargetsByRule",
+                "events:PutRule",
+                "events:PutTargets",
+                "events:RemoveTargets",
               ],
               "Effect": "Allow",
               "Resource": "*",
@@ -2222,7 +2386,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "195e3d3ed34420d7cc5b961341fe406e75817dea95e8994cc6875ff85884c709.zip",
+          "S3Key": "dedfdb0906be39441ebdb19a407deebf9370c30616e1b624bb1f541d631b0ecd.zip",
         },
         "Environment": {
           "Variables": {
@@ -2316,6 +2480,135 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
+    "completemilestoneD0CAC833": {
+      "DependsOn": [
+        "completemilestoneServiceRoleDefaultPolicy149FA1A4",
+        "completemilestoneServiceRole64C167F7",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+          },
+          "S3Key": "434aba35ee2a91b301e00576b93499d4fad3064c468b81e28af5bb7efeac2e50.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "RULES_TABLE": {
+              "Ref": "Rules379FE035",
+            },
+          },
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "completemilestoneServiceRole64C167F7",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "completemilestoneServiceRole64C167F7": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "completemilestoneServiceRoleDefaultPolicy149FA1A4": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Rules379FE035",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Rules379FE035",
+                          "Arn",
+                        ],
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "events:DeleteRule",
+                "events:DescribeRule",
+                "events:ListRules",
+                "events:ListTargetsByRule",
+                "events:PutRule",
+                "events:PutTargets",
+                "events:RemoveTargets",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "completemilestoneServiceRoleDefaultPolicy149FA1A4",
+        "Roles": [
+          {
+            "Ref": "completemilestoneServiceRole64C167F7",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
     "configureuser09ACB650": {
       "DependsOn": [
         "configureuserServiceRoleDefaultPolicyED581E71",
@@ -2326,7 +2619,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "b41ff88c854e1cc04b37045482627eeec9feaa68fc50566c316e8a9692566eb1.zip",
+          "S3Key": "996e45cfa6c4fc6354c1bcecd6cf641eab0ef00e0e8bebe00c354f3a5f45c6f8.zip",
         },
         "Environment": {
           "Variables": {
@@ -2502,7 +2795,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "4093eaecfc1d47faa031c04313d199d057903873b5059faa8d23ebea99bd1c4e.zip",
+          "S3Key": "4823460ed5c2f763d0b596be393524b44480348ed7b291db38aa7818bf5c5186.zip",
         },
         "Environment": {
           "Variables": {
@@ -2604,13 +2897,13 @@ exports[`Snapshot 1`] = `
             },
             {
               "Action": [
-                "events:PutRule",
-                "events:PutTargets",
-                "events:RemoveTargets",
                 "events:DeleteRule",
                 "events:DescribeRule",
                 "events:ListRules",
                 "events:ListTargetsByRule",
+                "events:PutRule",
+                "events:PutTargets",
+                "events:RemoveTargets",
               ],
               "Effect": "Allow",
               "Resource": "*",
@@ -2637,7 +2930,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "a099a9b8375ed329cc5005c8fe6dd67cc2010e11503e6de0f140393b5f44639f.zip",
+          "S3Key": "36c4404cbf0da65eb50b73d0d1d4d3a7ac66ce89fcdb59692b40c1d268bc58a2.zip",
         },
         "Environment": {
           "Variables": {
@@ -2753,7 +3046,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "bfd63b4707cbbf1b92541da94f3c4a811c54e636b845d554a75593e9d51ce6b1.zip",
+          "S3Key": "51cfca76363b420d248a1a4db7374dca58f2f6a99ea7ab477bf618eb1ff77d6f.zip",
         },
         "Environment": {
           "Variables": {
@@ -2865,7 +3158,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "dd4c73e67aee0d6ad27d1c1ccb5dda71d1f6d884595391474f59baeaaa93e767.zip",
+          "S3Key": "ac6222daa2220bc8a1ddb483de25c08c4385232b9b5ba97299e69acc2bd39929.zip",
         },
         "Environment": {
           "Variables": {
@@ -2977,7 +3270,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "64cf4dd625c8c2e8ac5a1495ba983335700b34fe7ddcde88e6f42a51de01f602.zip",
+          "S3Key": "3738f4d2f101ebaa54af21ee86aa4d203a51ac0800709f35bca08467ca6113cd.zip",
         },
         "Environment": {
           "Variables": {
@@ -3089,7 +3382,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "bef835d1831233e071172016a1008dfeff0991f158e86bd23762258ea2251c33.zip",
+          "S3Key": "dc5f661212fabf3c78568404fa57470af03a6d8e9d40fd34913d2b7c9428c2ac.zip",
         },
         "Environment": {
           "Variables": {
@@ -3244,10 +3537,10 @@ exports[`Snapshot 1`] = `
             {
               "Action": [
                 "secretsmanager:CreateSecret",
-                "secretsmanager:PutSecretValue",
-                "secretsmanager:GetSecretValue",
-                "secretsmanager:UpdateSecret",
                 "secretsmanager:DescribeSecret",
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:PutSecretValue",
+                "secretsmanager:UpdateSecret",
               ],
               "Effect": "Allow",
               "Resource": {
@@ -3288,7 +3581,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "86055fa2056f3732ab6d8c3ef211edd7ac0f1633bd6bd309419375d4047f583e.zip",
+          "S3Key": "e3471cc026a5f1b9cd221ec169f04786a5ad4777664fa4050b8a1f20e409fffa.zip",
         },
         "Environment": {
           "Variables": {
@@ -3347,7 +3640,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "d5d58e094894597e081f2391b4b6403f9f1672d0c50d4275459c1302c240f526.zip",
+          "S3Key": "37eb90801f526bb8f9deec473f8f379449dc7704fcb17237024f1cfe75a321a0.zip",
         },
         "Environment": {
           "Variables": {
@@ -3485,10 +3778,10 @@ exports[`Snapshot 1`] = `
             {
               "Action": [
                 "secretsmanager:CreateSecret",
-                "secretsmanager:PutSecretValue",
-                "secretsmanager:GetSecretValue",
-                "secretsmanager:UpdateSecret",
                 "secretsmanager:DescribeSecret",
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:PutSecretValue",
+                "secretsmanager:UpdateSecret",
               ],
               "Effect": "Allow",
               "Resource": {
@@ -3530,7 +3823,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "73a9703093b7319fcc5147ebf8c061c07a7f831477134f0a36dae4e3cc4a40c7.zip",
+          "S3Key": "e991377c9866c5bbdbe47d0f87e10d568ba3bdc2aef54097c95de5f773353221.zip",
         },
         "Environment": {
           "Variables": {
@@ -3632,13 +3925,13 @@ exports[`Snapshot 1`] = `
             },
             {
               "Action": [
-                "events:PutRule",
-                "events:PutTargets",
-                "events:RemoveTargets",
                 "events:DeleteRule",
                 "events:DescribeRule",
                 "events:ListRules",
                 "events:ListTargetsByRule",
+                "events:PutRule",
+                "events:PutTargets",
+                "events:RemoveTargets",
               ],
               "Effect": "Allow",
               "Resource": "*",
@@ -3665,7 +3958,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "9a88976a373fb82d3cc7b8b3bd40f92191cdbfc18b5e1263b7ee937f51048ba4.zip",
+          "S3Key": "939ac96a3f3a550fcbf3bc22e0d59e2a28c0e0951a19d33135172567fe97a1ba.zip",
         },
         "Environment": {
           "Variables": {
@@ -3767,13 +4060,13 @@ exports[`Snapshot 1`] = `
             },
             {
               "Action": [
-                "events:PutRule",
-                "events:PutTargets",
-                "events:RemoveTargets",
                 "events:DeleteRule",
                 "events:DescribeRule",
                 "events:ListRules",
                 "events:ListTargetsByRule",
+                "events:PutRule",
+                "events:PutTargets",
+                "events:RemoveTargets",
               ],
               "Effect": "Allow",
               "Resource": "*",

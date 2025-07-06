@@ -1,4 +1,3 @@
-import { createClient } from '@alpacahq/typescript-sdk';
 import * as awsLambda from 'aws-lambda';
 import * as AWS from 'aws-sdk';
 import { getApiResponse } from '../../common/helpers';
@@ -6,150 +5,56 @@ import { User } from '../../common/models';
 
 const cognito = new AWS.CognitoIdentityServiceProvider();
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
-const secretsManager = new AWS.SecretsManager(); // Initialize Secrets Manager
+
 const TABLE_NAME_RULES = process.env.RULES_TABLE || 'Rules';
 const TABLE_NAME_USER_INFO = process.env.USER_INFO_TABLE || 'UserInfo';
 
 export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProxyEvent) => {
-  console.log('Event received:', event);
-
   try {
     const userPoolId = process.env.COGNITO_USER_POOL_ID!;
-    const { userId, email, alpacaApiKey, alpacaApiSecret, paperTrading } = JSON.parse(event.body || '{}');
+    const { userId, email } = JSON.parse(event.body || '{}');
 
     if (!userId && !email) {
-      console.log('Validation failed: userId or email must be provided');
       return getApiResponse(400, JSON.stringify({ message: 'userId or email must be provided' }));
     }
 
-    let cognitoParams: AWS.CognitoIdentityServiceProvider.AdminGetUserRequest | undefined;
-    let alpacaAccountInfo = null;
-    let alpacaCreated = false;
+    let cognitoUserId: string;
 
     if (userId) {
-      console.log('Searching for user by userId:', userId);
-      cognitoParams = {
-        UserPoolId: userPoolId,
-        Username: userId,
-      };
-    } else if (email) {
-      console.log('Searching for user by email:', email);
-      const listUsersParams = {
+      cognitoUserId = userId;
+    } else {
+      const users = await cognito.listUsers({
         UserPoolId: userPoolId,
         Filter: `email = \"${email}\"`,
         Limit: 1,
-      };
-      const users = await cognito.listUsers(listUsersParams).promise();
+      }).promise();
+
       if (!users.Users || users.Users.length === 0) {
-        console.log('User not found with email:', email);
-        return getApiResponse(404, JSON.stringify({ message: 'User not found' }));
+        return getApiResponse(404, JSON.stringify({ message: 'User not found with provided email' }));
       }
-      cognitoParams = {
-        UserPoolId: userPoolId,
-        Username: users.Users[0].Username!,
-      };
+
+      cognitoUserId = users.Users[0].Username!;
     }
 
-    if (!cognitoParams) {
-      console.log('Invalid request parameters');
-      return getApiResponse(400, JSON.stringify({ message: 'Invalid request parameters' }));
-    }
-
-    console.log('Checking if user record exists in UserInfo table');
-    const userInfoParams = {
+    // Fetch user record from Dynamo
+    const userInfoResult = await dynamoDb.get({
       TableName: TABLE_NAME_USER_INFO,
-      Key: { userId: cognitoParams.Username },
-    };
-    const userInfoResult = await dynamoDb.get(userInfoParams).promise();
-    console.log('UserInfo table result:', userInfoResult);
+      Key: { userId: cognitoUserId },
+    }).promise();
 
-    if (alpacaApiKey && alpacaApiSecret) {
-      try {
-        console.log('Saving Alpaca API credentials to Secrets Manager');
-        const secretName = `alpaca/creds/${cognitoParams.Username}`;
-        await secretsManager.createSecret({
-          Name: secretName,
-          SecretString: JSON.stringify({ alpacaApiKey, alpacaApiSecret }),
-        }).promise();
-
-        console.log('Fetching Alpaca account information');
-        const alpacaClient = createClient({
-          key: alpacaApiKey,
-          secret: alpacaApiSecret,
-        });
-
-        alpacaAccountInfo = await alpacaClient.getAccount();
-        console.log('Alpaca account information retrieved successfully');
-        alpacaCreated = true;
-
-      } catch (error) {
-        console.error('Failed to retrieve Alpaca account info or save credentials:', error);
-      }
+    if (!userInfoResult.Item) {
+      return getApiResponse(404, JSON.stringify({ message: 'User not found in UserInfo table' }));
     }
 
-    let userInfo: User;
+    const userInfo = userInfoResult.Item as User;
 
-    if (userInfoResult.Item) {
-      console.log('User info exists in UserInfo table, updating with Alpaca info');
-      userInfo = {
-        userId: userInfoResult.Item.userId,
-        username: userInfoResult.Item.username,
-        email: userInfoResult.Item.email,
-        ruleIds: userInfoResult.Item.ruleIds,
-        alpacaCreated, // Update based on Alpaca retrieval
-        paperTrading: paperTrading !== undefined ? paperTrading : userInfoResult.Item.paperTrading,
-      };
-    } else {
-      console.log('User not found in UserInfo table, fetching from Cognito');
-      const user = await cognito.adminGetUser(cognitoParams).promise();
-      console.log('Cognito user data:', user);
-
-      if (!user.UserAttributes) {
-        console.log('User attributes not found in Cognito');
-        return getApiResponse(404, JSON.stringify({ message: 'User attributes not found' }));
-      }
-
-      const emailAttribute = user.UserAttributes.find((attr) => attr.Name === 'email');
-      const userEmail = emailAttribute ? emailAttribute.Value! : 'Email not found';
-
-      console.log('Querying Rules table for associated ruleIds');
-      const rulesParams = {
-        TableName: TABLE_NAME_RULES,
-        IndexName: 'userIdIndex',
-        KeyConditionExpression: 'userId = :userId',
-        ExpressionAttributeValues: {
-          ':userId': user.Username,
-        },
-      };
-
-      const rulesData = await dynamoDb.query(rulesParams).promise();
-      const ruleIds = rulesData.Items ? rulesData.Items.map(item => item.ruleId) : [];
-      console.log('Rules table data:', rulesData);
-
-      userInfo = {
-        userId: user.Username,
-        username: user.Username,
-        email: userEmail,
-        alpacaCreated,
-        ruleIds: ruleIds,
-        paperTrading,
-      };
-    }
-
-    console.log('Saving updated user info to UserInfo table');
-    const putParams = {
-      TableName: TABLE_NAME_USER_INFO,
-      Item: userInfo,
-    };
-    await dynamoDb.put(putParams).promise();
-
-    console.log('Returning response with user info and Alpaca account info');
-    return getApiResponse(200, JSON.stringify({
-      ...userInfo,
-      alpacaAccountInfo,
-    }));
-  } catch (error) {
-    console.error('Error occurred during Lambda execution:', error);
+    return getApiResponse(200, JSON.stringify(userInfo));
+  } catch (err) {
+    console.error('Error fetching user info:', err);
     return getApiResponse(500, JSON.stringify({ message: 'Internal Server Error' }));
   }
 };
+// This code is an AWS Lambda function that retrieves user information from a DynamoDB table.
+// It checks if a user ID or email is provided in the request body, queries the Cognito User Pool for the user ID if only an email is provided,
+// and then retrieves the user's information from the DynamoDB UserInfo table.
+// If successful, it returns the user information; if not found, it returns a 404 response; and if an error occurs, it logs the error and returns a 500 response.

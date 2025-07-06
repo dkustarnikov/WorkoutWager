@@ -1,9 +1,8 @@
 import * as awsLambda from 'aws-lambda';
 import { DynamoDB, EventBridge } from 'aws-sdk';
-import { v4 as uuidv4 } from 'uuid';
 import * as yup from 'yup';
-import { getApiResponse, milestoneSchema, convertToCronExpression } from '../../common/helpers'; // Adjust the path as necessary
-import { Rule, RuleStatus } from '../../common/models'; // Adjust the path as necessary
+import { getApiResponse, milestoneSchema, convertToCronExpression } from '../../common/helpers';
+import { Rule, RuleStatus, Milestone } from '../../common/models';
 
 const dynamoDb = new DynamoDB.DocumentClient();
 const eventBridge = new EventBridge();
@@ -20,15 +19,14 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
     }
 
     const requestBody = JSON.parse(event.body || '{}');
-    const updatedMilestone = requestBody.milestone;
+    const updatedMilestoneData: Partial<Milestone> = requestBody.milestone;
 
-    if (!updatedMilestone) {
+    if (!updatedMilestoneData) {
       return getApiResponse(400, JSON.stringify({ message: 'Milestone data is required' }));
     }
 
-    // Validate the updated milestone
     try {
-      await milestoneSchema.validate(updatedMilestone, { abortEarly: false });
+      await milestoneSchema.validate(updatedMilestoneData, { abortEarly: false });
     } catch (validationError) {
       if (validationError instanceof yup.ValidationError) {
         return getApiResponse(400, JSON.stringify({ message: 'Milestone validation failed', errors: validationError.errors }));
@@ -36,90 +34,80 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
       throw validationError;
     }
 
-    // Fetch the existing rule from DynamoDB
-    const params = {
-      TableName: TABLE_NAME,
-      Key: { ruleId },
-    };
-    const existingRule = await dynamoDb.get(params).promise();
-
-    if (!existingRule.Item) {
+    const ruleResult = await dynamoDb.get({ TableName: TABLE_NAME, Key: { ruleId } }).promise();
+    if (!ruleResult.Item) {
       return getApiResponse(404, JSON.stringify({ message: 'Rule not found' }));
     }
 
-    const rule = existingRule.Item as Rule;
+    const rule = ruleResult.Item as Rule;
 
-    // Ensure the rule is not completed
     if (rule.status === RuleStatus.completed) {
       return getApiResponse(400, JSON.stringify({ message: 'Cannot update milestone in a completed rule' }));
     }
 
-    // Find the milestone to update
-    const milestoneIndex = rule.milestones.findIndex(m => m.milestoneId === milestoneId);
-
-    if (milestoneIndex === -1) {
+    const index = rule.milestones.findIndex(m => m.milestoneId === milestoneId);
+    if (index === -1) {
       return getApiResponse(404, JSON.stringify({ message: 'Milestone not found' }));
     }
 
-    // Update the milestone with new data
-    const originalMilestone = rule.milestones[milestoneIndex];
-    const newMilestone = { ...originalMilestone, ...updatedMilestone, milestoneId }; // Preserve milestoneId
+    const original = rule.milestones[index];
+    const updatedMilestone: Milestone = {
+      ...original,
+      ...updatedMilestoneData,
+      milestoneId,
+      milestoneCounter: original.milestoneCounter,
+      completion: original.completion,
+    };
 
-    // Ensure the milestone's deadline is within the rule's deadline
-    if (new Date(newMilestone.milestoneDeadline) > new Date(rule.deadline)) {
+    if (new Date(updatedMilestone.milestoneDeadline) > new Date(rule.deadline)) {
       return getApiResponse(400, JSON.stringify({ message: 'Milestone deadline cannot be past the rule deadline' }));
     }
 
-    // Ensure the milestone's deadline is unique
-    if (rule.milestones.some(m => m.milestoneDeadline === newMilestone.milestoneDeadline && m.milestoneId !== milestoneId)) {
+    if (rule.milestones.some(m => m.milestoneDeadline === updatedMilestone.milestoneDeadline && m.milestoneId !== milestoneId)) {
       return getApiResponse(400, JSON.stringify({ message: 'Milestone deadline must be unique' }));
     }
 
-    rule.milestones[milestoneIndex] = newMilestone;
+    const deadlineChanged = updatedMilestone.milestoneDeadline !== original.milestoneDeadline;
 
-    // Sort milestones by deadline and update counters
+    rule.milestones[index] = updatedMilestone;
     rule.milestones.sort((a, b) => new Date(a.milestoneDeadline).getTime() - new Date(b.milestoneDeadline).getTime());
-    rule.milestones.forEach((m, index) => {
-      if (!m.milestoneId) {
-        m.milestoneId = uuidv4();
-      }
-      m.milestoneCounter = index + 1;
-    });
+    rule.milestones.forEach((m, i) => { m.milestoneCounter = i + 1; });
 
-    // Recalculate the total amount for the rule
-    rule.totalAmount = rule.milestones.reduce((total, m) => total + m.monetaryValue, 0);
+    rule.totalAmount = rule.milestones.reduce((sum, m) => sum + m.monetaryValue, 0);
     rule.updatedAt = new Date().toISOString();
 
-    const updateParams = {
-      TableName: TABLE_NAME,
-      Item: rule,
-    };
+    await dynamoDb.put({ TableName: TABLE_NAME, Item: rule }).promise();
 
-    // Save the updated rule to DynamoDB
-    await dynamoDb.put(updateParams).promise();
+    if (deadlineChanged) {
+      const milestoneRuleName = `MilestoneRule_${milestoneId}`;
+      const cronExpression = convertToCronExpression(updatedMilestone.milestoneDeadline);
 
-    // Create EventBridge rule for the updated milestone
-    const milestoneRuleName = `MilestoneRule_${milestoneId}`;
-    const scheduleExpression = `cron(${convertToCronExpression(newMilestone.milestoneDeadline)})`;
+      await eventBridge.removeTargets({ Rule: milestoneRuleName, Ids: [milestoneRuleName] }).promise();
+      await eventBridge.deleteRule({ Name: milestoneRuleName }).promise();
 
-    await eventBridge.putRule({
-      Name: milestoneRuleName,
-      ScheduleExpression: scheduleExpression,
-      State: 'ENABLED',
-    }).promise();
+      await eventBridge.putRule({
+        Name: milestoneRuleName,
+        ScheduleExpression: `cron(${cronExpression})`,
+        State: 'ENABLED',
+      }).promise();
 
-    await eventBridge.putTargets({
-      Rule: milestoneRuleName,
-      Targets: [{
-        Id: milestoneRuleName,
-        Arn: LAMBDA_FUNCTION_ARN,
-        Input: JSON.stringify({ userId: rule.userId, milestone: newMilestone }),
-      }],
-    }).promise();
+      await eventBridge.putTargets({
+        Rule: milestoneRuleName,
+        Targets: [{
+          Id: milestoneRuleName,
+          Arn: LAMBDA_FUNCTION_ARN,
+          Input: JSON.stringify({ userId: rule.userId, milestone: updatedMilestone }),
+        }],
+      }).promise();
+    }
 
     return getApiResponse(200, JSON.stringify(rule));
-  } catch (error) {
-    console.error('Error updating milestone:', error);
-    return getApiResponse(500, JSON.stringify({ message: `Internal Server Error: ${error}` }));
+  } catch (err) {
+    console.error('Error updating milestone:', err);
+    return getApiResponse(500, JSON.stringify({ message: 'Internal Server Error' }));
   }
 };
+
+// This code is an AWS Lambda function that updates a milestone in an existing rule in a DynamoDB table.
+// It validates the milestone using Yup, checks for uniqueness of deadlines, and updates the rule's total amount.
+// If successful, it schedules the milestone using EventBridge and returns the updated rule; otherwise, it returns an error response.

@@ -1,13 +1,16 @@
 import { APIGatewayTokenAuthorizerEvent, APIGatewayAuthorizerResult, Context } from 'aws-lambda';
 import jwt, { JwtHeader, SigningKeyCallback } from 'jsonwebtoken';
-// eslint-disable-next-line import/no-extraneous-dependencies
 import jwksClient, { JwksClient } from 'jwks-rsa';
 
-const jwksUri = `${process.env.USER_POOL_CONGNITO_URI}/.well-known/jwks.json` || '';
+const jwksUri = process.env.USER_POOL_CONGNITO_URI
+  ? `${process.env.USER_POOL_CONGNITO_URI}/.well-known/jwks.json`
+  : '';
 
-const client: JwksClient = jwksClient({
-  jwksUri: jwksUri,
-});
+if (!jwksUri) {
+  throw new Error('Missing USER_POOL_CONGNITO_URI environment variable');
+}
+
+const client: JwksClient = jwksClient({ jwksUri });
 
 function getKey(header: JwtHeader, callback: SigningKeyCallback): void {
   client.getSigningKey(header.kid, (err, key) => {
@@ -15,36 +18,33 @@ function getKey(header: JwtHeader, callback: SigningKeyCallback): void {
       callback(err || new Error('Signing key not found'));
       return;
     }
-    const signingKey = key.getPublicKey();
-    callback(null, signingKey);
+    callback(null, key.getPublicKey());
   });
 }
 
-export const handler = async (event: APIGatewayTokenAuthorizerEvent, context: Context): Promise<APIGatewayAuthorizerResult> => {
+export const handler = async (
+  event: APIGatewayTokenAuthorizerEvent,
+  context: Context,
+): Promise<APIGatewayAuthorizerResult> => {
   const token = event.authorizationToken;
-
-  console.log('event.authorizationToken', token);
-  console.log('context', context);
+  console.log('Authorization token:', token);
 
   try {
-    // Remove Bearer prefix if it exists
     const tokenWithoutBearer = token.startsWith('Bearer ') ? token.slice(7) : token;
 
-
-    // eslint-disable-next-line @typescript-eslint/return-await
     return await new Promise((resolve) => {
       jwt.verify(tokenWithoutBearer, getKey, { algorithms: ['RS256'] }, (err, decoded) => {
         if (err) {
           console.log('JWT verification failed:', err);
           resolve(generateDenyPolicy('user', event.methodArn));
-          return;
+        } else {
+          console.log('JWT verified:', decoded);
+          resolve(generateAllowPolicy((decoded as any).sub, event.methodArn));
         }
-        console.log('JWT verification succeeded:', decoded);
-        resolve(generateAllowPolicy((decoded as any).sub, event.methodArn));
       });
     });
   } catch (err) {
-    console.log('Error in authorization function:', err);
+    console.error('Error in authorizer:', err);
     return generateDenyPolicy('user', event.methodArn);
   }
 };
@@ -80,3 +80,7 @@ function generateDenyPolicy(principalId: string, resource: string): APIGatewayAu
     },
   };
 }
+// This code is an AWS Lambda function that acts as an authorizer for API Gateway.
+// It verifies JWT tokens issued by AWS Cognito using the JWKs endpoint.
+// If the token is valid, it generates an allow policy; otherwise, it generates a deny policy.
+// The function uses the `jsonwebtoken` and `jwks-rsa` libraries to handle JWT verification and key retrieval.
