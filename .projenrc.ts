@@ -43,7 +43,7 @@ const project = new awscdk.AwsCdkTypeScriptApp({
       outDir: './dist',
       rootDir: './src',
       target: 'ES2020',
-      module: 'commonjs',
+      module: 'NodeNext',
       strict: true,
       esModuleInterop: true,
     },
