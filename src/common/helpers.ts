@@ -66,10 +66,10 @@ export const milestoneSchema = yup.object().shape({
   monetaryValue: yup.number().required('Milestone monetary value is required').positive('Monetary value must be positive'),
 });
 
-export const ruleSchema = yup.object().shape({
+export const goalSchema = yup.object().shape({
   userId: yup.string().required('User ID is required'),
-  ruleType: yup.string().required('Rule type is required'),
-  ruleName: yup.string().required('Rule name is required'),
+  goalType: yup.string().required('Goal type is required'),
+  goalName: yup.string().required('Goal name is required'),
   generalObjective: yup.string().required('General objective is required'),
   totalAmount: yup.number().required('Total amount is required').positive('Total amount must be positive'),
   deadline: yup.string().required('Deadline is required').matches(
@@ -77,6 +77,10 @@ export const ruleSchema = yup.object().shape({
     'Deadline must be a valid ISO 8601 date string',
   ),
   milestones: yup.array().of(milestoneSchema).required('Milestones are required'),
+  allOrNothing: yup.boolean().default(false),
+  rewardDestination: yup.string().default('savings'),
+  penaltyDestination: yup.string().default('savings'),
+  penaltyInterestRate: yup.number().min(0).default(0),
 });
 
 export function convertToCronExpression(isoString: string): string {

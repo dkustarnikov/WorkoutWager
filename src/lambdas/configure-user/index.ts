@@ -6,7 +6,7 @@ import { User } from '../../common/models';
 
 const dynamoDb = new DynamoDB.DocumentClient();
 const TABLE_NAME_USER_INFO = process.env.USER_INFO_TABLE || 'UserInfo';
-const TABLE_NAME_RULES = process.env.RULES_TABLE || 'Rules';
+const TABLE_NAME_GOALS = process.env.GOALS_TABLE || 'Goals';
 
 export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProxyEvent) => {
   try {
@@ -44,39 +44,33 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
         userId,
         username: email,
         email,
-        alpacaCreated: false,
-        paperTrading: false,
-        ruleIds: [],
+        goalIds: [],
       };
 
       await dynamoDb.put({ TableName: TABLE_NAME_USER_INFO, Item: userInfo }).promise();
       actions.push('New user created');
     }
 
-    // Update ruleIds if needed
-    const rulesData = await dynamoDb.query({
-      TableName: TABLE_NAME_RULES,
+    // Sync goalIds from Goals table
+    const goalsData = await dynamoDb.query({
+      TableName: TABLE_NAME_GOALS,
       IndexName: 'userIdIndex',
       KeyConditionExpression: 'userId = :userId',
-      ExpressionAttributeValues: {
-        ':userId': userId,
-      },
+      ExpressionAttributeValues: { ':userId': userId },
     }).promise();
 
-    const ruleIds = rulesData.Items?.map(item => item.ruleId) ?? [];
+    const goalIds = goalsData.Items?.map(item => item.goalId) ?? [];
 
-    if (JSON.stringify(userInfo.ruleIds) !== JSON.stringify(ruleIds)) {
+    if (JSON.stringify(userInfo.goalIds) !== JSON.stringify(goalIds)) {
       await dynamoDb.update({
         TableName: TABLE_NAME_USER_INFO,
         Key: { userId },
-        UpdateExpression: 'set ruleIds = :ruleIds',
-        ExpressionAttributeValues: {
-          ':ruleIds': ruleIds,
-        },
+        UpdateExpression: 'set goalIds = :goalIds',
+        ExpressionAttributeValues: { ':goalIds': goalIds },
       }).promise();
-      actions.push('Updated ruleIds');
+      actions.push('Updated goalIds');
     } else {
-      actions.push('RuleIds already up to date');
+      actions.push('GoalIds already up to date');
     }
 
     return getApiResponse(200, JSON.stringify({ message: 'User configured successfully', actions }));

@@ -1,35 +1,36 @@
 import * as awsLambda from 'aws-lambda';
 import { DynamoDB } from 'aws-sdk';
 import { getApiResponse } from '../../common/helpers';
-import { Rule } from '../../common/models';
+import { Goal } from '../../common/models';
+import { computeCompletionPercentage } from '../../common/transactionUtils';
 
 const dynamoDb = new DynamoDB.DocumentClient();
-const TABLE_NAME = process.env.RULES_TABLE || 'Rules';
+const TABLE_NAME = process.env.GOALS_TABLE || 'Goals';
 
 export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProxyEvent) => {
   try {
-    const ruleId = event.pathParameters?.ruleId;
+    const goalId = event.pathParameters?.goalId;
 
-    if (!ruleId) {
-      return getApiResponse(400, JSON.stringify({ message: 'Missing rule ID' }));
+    if (!goalId) {
+      return getApiResponse(400, JSON.stringify({ message: 'Missing goal ID' }));
     }
 
     const result = await dynamoDb.get({
       TableName: TABLE_NAME,
-      Key: { ruleId },
+      Key: { goalId },
     }).promise();
 
     if (!result.Item) {
-      return getApiResponse(404, JSON.stringify({ message: 'Rule not found' }));
+      return getApiResponse(404, JSON.stringify({ message: 'Goal not found' }));
     }
 
-    return getApiResponse(200, JSON.stringify(result.Item as Rule));
+    const goal = result.Item as Goal;
+    return getApiResponse(200, JSON.stringify({
+      ...goal,
+      completionPercentage: computeCompletionPercentage(goal.milestones),
+    }));
   } catch (error) {
-    console.error('Error retrieving rule:', error);
+    console.error('Error retrieving goal:', error);
     return getApiResponse(500, JSON.stringify({ message: 'Internal Server Error' }));
   }
 };
-// This code is an AWS Lambda function that retrieves a specific rule by its ID from a DynamoDB table.
-// It checks if the rule ID is provided in the path parameters, retrieves the rule from the specified table,
-// and returns it in the response. If the rule is not found, it returns a 404 response; if an error occurs,
-// it logs the error and returns a 500 response.

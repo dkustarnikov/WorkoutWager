@@ -1,51 +1,43 @@
 import * as awsLambda from 'aws-lambda';
 import { DynamoDB, EventBridge } from 'aws-sdk';
 import { getApiResponse } from '../../common/helpers';
-import { Rule } from '../../common/models';
+import { Goal } from '../../common/models';
 
 const dynamoDb = new DynamoDB.DocumentClient();
 const eventBridge = new EventBridge();
-const TABLE_NAME = process.env.RULES_TABLE || 'Rules';
+const TABLE_NAME = process.env.GOALS_TABLE || 'Goals';
 
 export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProxyEvent) => {
   try {
-    const ruleId = event.pathParameters?.ruleId;
-    if (!ruleId) {
-      return getApiResponse(400, JSON.stringify({ message: 'Rule ID is required' }));
+    const goalId = event.pathParameters?.goalId;
+    if (!goalId) {
+      return getApiResponse(400, JSON.stringify({ message: 'Goal ID is required' }));
     }
 
-    const getParams = {
-      TableName: TABLE_NAME,
-      Key: { ruleId },
-    };
-
-    const existingRule = await dynamoDb.get(getParams).promise();
-    if (!existingRule.Item) {
-      return getApiResponse(404, JSON.stringify({ message: 'Rule not found' }));
+    const existingGoal = await dynamoDb.get({ TableName: TABLE_NAME, Key: { goalId } }).promise();
+    if (!existingGoal.Item) {
+      return getApiResponse(404, JSON.stringify({ message: 'Goal not found' }));
     }
 
-    const rule = existingRule.Item as Rule;
+    const goal = existingGoal.Item as Goal;
 
-    if (Array.isArray(rule.milestones)) {
-      for (const milestone of rule.milestones) {
+    if (Array.isArray(goal.milestones)) {
+      for (const milestone of goal.milestones) {
         const milestoneRuleName = `MilestoneRule_${milestone.milestoneId}`;
-
-        await eventBridge.removeTargets({
-          Rule: milestoneRuleName,
-          Ids: [milestoneRuleName],
-        }).promise();
-
-        await eventBridge.deleteRule({
-          Name: milestoneRuleName,
-        }).promise();
+        try {
+          await eventBridge.removeTargets({ Rule: milestoneRuleName, Ids: [milestoneRuleName] }).promise();
+          await eventBridge.deleteRule({ Name: milestoneRuleName }).promise();
+        } catch {
+          // rule may not exist if milestone was already resolved
+        }
       }
     }
 
-    await dynamoDb.delete({ TableName: TABLE_NAME, Key: { ruleId } }).promise();
+    await dynamoDb.delete({ TableName: TABLE_NAME, Key: { goalId } }).promise();
 
-    return getApiResponse(200, JSON.stringify({ message: `Rule with ID ${ruleId} deleted successfully` }));
+    return getApiResponse(200, JSON.stringify({ message: `Goal ${goalId} deleted successfully` }));
   } catch (error) {
-    console.error('Error deleting rule:', error);
+    console.error('Error deleting goal:', error);
     return getApiResponse(500, JSON.stringify({ message: `Internal Server Error: ${error}` }));
   }
 };

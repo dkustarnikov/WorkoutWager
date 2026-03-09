@@ -1,24 +1,39 @@
 import * as awsLambda from 'aws-lambda';
 import { DynamoDB } from 'aws-sdk';
 import { getApiResponse } from '../../common/helpers';
+import { computeCompletionPercentage } from '../../common/transactionUtils';
 
 const dynamoDb = new DynamoDB.DocumentClient();
-const TABLE_NAME = process.env.RULES_TABLE || 'Rules';
+const TABLE_NAME = process.env.GOALS_TABLE || 'Goals';
 
-export const handler: awsLambda.Handler = async () => {
+export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProxyEvent) => {
   try {
-    const result = await dynamoDb.scan({ TableName: TABLE_NAME }).promise();
+    // userId is injected by the authorizer into requestContext
+    const userId = event.requestContext?.authorizer?.userId as string;
 
-    if (!result.Items || result.Items.length === 0) {
-      return getApiResponse(404, JSON.stringify({ message: 'No rules found' }));
+    if (!userId) {
+      return getApiResponse(400, JSON.stringify({ message: 'Unable to determine userId from token' }));
     }
 
-    return getApiResponse(200, JSON.stringify(result.Items));
+    const result = await dynamoDb.query({
+      TableName: TABLE_NAME,
+      IndexName: 'userIdIndex',
+      KeyConditionExpression: 'userId = :userId',
+      ExpressionAttributeValues: { ':userId': userId },
+    }).promise();
+
+    if (!result.Items || result.Items.length === 0) {
+      return getApiResponse(200, JSON.stringify([]));
+    }
+
+    const goals = result.Items.map(item => ({
+      ...item,
+      completionPercentage: computeCompletionPercentage(item.milestones || []),
+    }));
+
+    return getApiResponse(200, JSON.stringify(goals));
   } catch (error) {
-    console.error('Error retrieving rules:', error);
+    console.error('Error retrieving goals:', error);
     return getApiResponse(500, JSON.stringify({ message: 'Internal Server Error' }));
   }
 };
-// This code is an AWS Lambda function that retrieves all rules from a DynamoDB table.
-// It scans the table specified by the environment variable `RULES_TABLE` (defaulting to 'Rules') and returns the items found.
-// If no rules are found, it returns a 404 response; if an error occurs, it logs the error and returns a 500 response.

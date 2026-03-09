@@ -2,25 +2,26 @@ import * as awsLambda from 'aws-lambda';
 import { DynamoDB, EventBridge } from 'aws-sdk';
 import { v4 as uuidv4 } from 'uuid';
 import * as yup from 'yup';
-import { getApiResponse, ruleSchema, convertToCronExpression } from '../../common/helpers';
-import { Rule } from '../../common/models';
+import { getApiResponse, goalSchema, convertToCronExpression } from '../../common/helpers';
+import { Goal, GoalStatus } from '../../common/models';
+import { computeCompletionPercentage } from '../../common/transactionUtils';
 
 const dynamoDb = new DynamoDB.DocumentClient();
 const eventBridge = new EventBridge();
-const TABLE_NAME = process.env.RULES_TABLE || 'Rules';
-const LAMBDA_FUNCTION_ARN = process.env.LAMBDA_FUNCTION_ARN || '';
+const TABLE_NAME = process.env.GOALS_TABLE || 'Goals';
+const SQS_QUEUE_ARN = process.env.SQS_QUEUE_ARN || '';
 
 export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProxyEvent) => {
   try {
-    const ruleId = event.pathParameters?.ruleId;
-    if (!ruleId) {
-      return getApiResponse(400, JSON.stringify({ message: 'Missing ruleId in path parameters' }));
+    const goalId = event.pathParameters?.goalId;
+    if (!goalId) {
+      return getApiResponse(400, JSON.stringify({ message: 'Missing goalId in path parameters' }));
     }
 
     const requestBody = JSON.parse(event.body || '{}');
 
     try {
-      await ruleSchema.validate(requestBody, { abortEarly: false });
+      await goalSchema.validate(requestBody, { abortEarly: false });
     } catch (validationError) {
       if (validationError instanceof yup.ValidationError) {
         return getApiResponse(400, JSON.stringify({ message: 'Validation failed', errors: validationError.errors }));
@@ -28,52 +29,66 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
       throw validationError;
     }
 
-    const { userId, ruleType, ruleName, generalObjective, totalAmount, deadline, milestones, status } = requestBody;
+    const {
+      userId, goalType, goalName, generalObjective, totalAmount, deadline, milestones,
+      allOrNothing = false,
+      rewardDestination = 'savings',
+      penaltyDestination = 'savings',
+      penaltyInterestRate = 0,
+    } = requestBody;
 
     if (new Date(deadline) <= new Date()) {
-      return getApiResponse(400, JSON.stringify({ message: 'Rule deadline must be in the future' }));
+      return getApiResponse(400, JSON.stringify({ message: 'Goal deadline must be in the future' }));
     }
 
     let calculatedTotal = 0;
-    const updatedMilestones = milestones.map((m: { monetaryValue: number; milestoneId: any }, index: number) => {
+    const updatedMilestones = milestones.map((m: any, index: number) => {
       calculatedTotal += m.monetaryValue;
       return {
         ...m,
         milestoneId: m.milestoneId || uuidv4(),
         milestoneCounter: index + 1,
+        completion: m.completion,
       };
     });
 
     if (calculatedTotal !== totalAmount) {
-      return getApiResponse(400, JSON.stringify({ message: 'Total monetary value of milestones does not match total amount of the rule' }));
+      return getApiResponse(400, JSON.stringify({ message: 'Total monetary value of milestones does not match total amount of the goal' }));
     }
 
     const lastMilestone = updatedMilestones[updatedMilestones.length - 1];
     if (lastMilestone.milestoneDeadline !== deadline) {
-      return getApiResponse(400, JSON.stringify({ message: 'Last milestone deadline must match the rule deadline' }));
+      return getApiResponse(400, JSON.stringify({ message: 'Last milestone deadline must match the goal deadline' }));
     }
 
-    const getResult = await dynamoDb.get({ TableName: TABLE_NAME, Key: { ruleId } }).promise();
+    const getResult = await dynamoDb.get({ TableName: TABLE_NAME, Key: { goalId } }).promise();
     if (!getResult.Item) {
-      return getApiResponse(404, JSON.stringify({ message: 'Rule not found' }));
+      return getApiResponse(404, JSON.stringify({ message: 'Goal not found' }));
     }
 
-    const existingRule = getResult.Item as Rule;
+    const existingGoal = getResult.Item as Goal;
 
-    const updatedRule: Rule = {
-      ...existingRule,
+    if (existingGoal.status === GoalStatus.completed || existingGoal.status === GoalStatus.failed) {
+      return getApiResponse(400, JSON.stringify({ message: 'Cannot update a resolved goal' }));
+    }
+
+    const updatedGoal: Goal = {
+      ...existingGoal,
       userId,
-      ruleType,
-      ruleName,
+      goalType,
+      goalName,
       generalObjective,
       totalAmount,
       deadline,
       milestones: updatedMilestones,
-      status,
+      allOrNothing,
+      rewardDestination,
+      penaltyDestination,
+      penaltyInterestRate,
       updatedAt: new Date().toISOString(),
     };
 
-    await dynamoDb.put({ TableName: TABLE_NAME, Item: updatedRule }).promise();
+    await dynamoDb.put({ TableName: TABLE_NAME, Item: updatedGoal }).promise();
 
     for (const milestone of updatedMilestones) {
       const milestoneRuleName = `MilestoneRule_${milestone.milestoneId}`;
@@ -89,18 +104,18 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
         Rule: milestoneRuleName,
         Targets: [{
           Id: milestoneRuleName,
-          Arn: LAMBDA_FUNCTION_ARN,
-          Input: JSON.stringify({ userId: updatedRule.userId, milestone }),
+          Arn: SQS_QUEUE_ARN,
+          Input: JSON.stringify({ goalId, milestoneId: milestone.milestoneId, userId: updatedGoal.userId }),
         }],
       }).promise();
     }
 
-    return getApiResponse(200, JSON.stringify(updatedRule));
+    return getApiResponse(200, JSON.stringify({
+      ...updatedGoal,
+      completionPercentage: computeCompletionPercentage(updatedMilestones),
+    }));
   } catch (error) {
-    console.error('Error updating rule:', error);
+    console.error('Error updating goal:', error);
     return getApiResponse(500, JSON.stringify({ message: 'Internal Server Error' }));
   }
 };
-// This code is an AWS Lambda function that updates an existing rule in a DynamoDB table.
-// It validates the input using Yup, checks for the uniqueness of milestones, and updates the rule's total amount.
-// If successful, it updates the EventBridge rules for each milestone and returns the updated rule; otherwise, it returns an error response.

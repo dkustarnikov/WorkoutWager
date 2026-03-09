@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx jest --testPathPattern=\"test/common|test/lambdas\" --passWithNoTests)",
+      "Bash(npx jest --testPathPattern=\"transactionUtils\" --passWithNoTests)",
+      "Bash(npx jest --listTests)",
+      "Bash(npx ts-jest config:show)",
+      "Bash(npx jest test/common/transactionUtils.test.ts --no-coverage)"
+    ]
+  }
+}
