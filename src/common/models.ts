@@ -1,38 +1,69 @@
 export interface Milestone {
-  milestoneName: string;
   milestoneId: string;
+  milestoneName: string;
   type: string;
-  completion: boolean;
-  milestoneCounter: number; // Counter to keep track of milestones
+  completion?: boolean; // true = completed, false = missed, undefined = pending
+  milestoneCounter: number; // order within goal
   milestoneDeadline: string; // ISO 8601 date string
   monetaryValue: number;
 }
 
-export interface Rule {
-  ruleId: string; // Primary Key
-  userId: string; // the user id who owns this plan
-  ruleType: string;
-  ruleName: string;
+export interface Goal {
+  goalId: string; // Primary Key
+  userId: string;
+  goalType: string;
+  goalName: string;
   generalObjective: string;
   totalAmount: number;
   deadline: string; // ISO 8601 date string
   milestones: Milestone[];
+  allOrNothing: boolean; // if true: any miss = full penalty on totalAmount
+  rewardDestination: string; // where money goes on success (default: "savings")
+  penaltyDestination: string; // where money goes on failure (default: "savings")
+  penaltyInterestRate: number; // extra % on top of penalty, e.g. 20 = 20%
   createdAt: string; // ISO 8601 date string
   updatedAt: string; // ISO 8601 date string
-  status: RuleStatus;
+  status: GoalStatus;
 }
 
-export enum RuleStatus {
+export enum GoalStatus {
   created = 'created',
-  in_progress = 'inProgress',
+  inProgress = 'inProgress',
   completed = 'completed',
+  failed = 'failed',
+  cancelled = 'cancelled',
+}
+
+export interface TransactionEntry {
+  type: 'reward' | 'penalty';
+  destination: string;
+  amount: number;
+  reason: string;
+}
+
+export interface Transaction {
+  transactionId: string;
+  goalId: string;
+  userId: string;
+  timestamp: string;
+  outcome: 'reward' | 'penalty' | 'mixed';
+  entries: TransactionEntry[];
+  milestonesSummary: {
+    total: number;
+    completed: number;
+    missed: number; // completion === false
+  };
+  goalSnapshot: {
+    goalName: string;
+    totalAmount: number;
+    allOrNothing: boolean;
+    penaltyInterestRate: number;
+  };
 }
 
 export interface User {
   userId: string;
   username: string;
   email: string;
-  ruleIds: string[];
-  alpacaCreated?: boolean;
-  paperTrading: boolean;
+  goalIds: string[];
 }

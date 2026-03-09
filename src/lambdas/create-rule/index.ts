@@ -1,20 +1,21 @@
 import * as awsLambda from 'aws-lambda';
 import { DynamoDB, EventBridge } from 'aws-sdk';
 import { v4 as uuidv4 } from 'uuid';
-import { convertToCronExpression, getApiResponse, ruleSchema } from '../../common/helpers';
-import { Rule, Milestone } from '../../common/models';
+import { convertToCronExpression, getApiResponse, goalSchema } from '../../common/helpers';
+import { Goal, GoalStatus, Milestone } from '../../common/models';
+import { computeCompletionPercentage } from '../../common/transactionUtils';
 
 const dynamoDb = new DynamoDB.DocumentClient();
 const eventBridge = new EventBridge();
-const TABLE_NAME = process.env.RULES_TABLE || 'Rules';
-const LAMBDA_FUNCTION_ARN = process.env.LAMBDA_FUNCTION_ARN || '';
+const TABLE_NAME = process.env.GOALS_TABLE || 'Goals';
+const SQS_QUEUE_ARN = process.env.SQS_QUEUE_ARN || '';
 
 export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProxyEvent) => {
   try {
     const requestBody = JSON.parse(event.body || '{}');
 
     try {
-      await ruleSchema.validate(requestBody, { abortEarly: false });
+      await goalSchema.validate(requestBody, { abortEarly: false });
     } catch (validationError) {
       if (validationError instanceof Error) {
         return getApiResponse(400, JSON.stringify({ message: 'Validation failed', errors: (validationError as any).errors }));
@@ -22,10 +23,17 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
       throw validationError;
     }
 
-    const { userId, ruleType, ruleName, generalObjective, totalAmount, deadline, milestones = [], status } = requestBody;
+    const {
+      userId, goalType, goalName, generalObjective, totalAmount, deadline,
+      milestones = [],
+      allOrNothing = false,
+      rewardDestination = 'savings',
+      penaltyDestination = 'savings',
+      penaltyInterestRate = 0,
+    } = requestBody;
 
     if (new Date(deadline) <= new Date()) {
-      return getApiResponse(400, JSON.stringify({ message: 'Rule deadline must be in the future' }));
+      return getApiResponse(400, JSON.stringify({ message: 'Goal deadline must be in the future' }));
     }
 
     let calculatedAmount = 0;
@@ -36,47 +44,49 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
           ...m,
           milestoneId: m.milestoneId || uuidv4(),
           milestoneCounter: index + 1,
-          completion: false,
         };
       })
       : [{
         milestoneId: uuidv4(),
         milestoneName: 'Week 1',
         type: 'common',
-        completion: false,
         milestoneCounter: 1,
         milestoneDeadline: deadline,
         monetaryValue: totalAmount ?? 0,
       }];
 
     if (milestones.length > 0 && calculatedAmount !== totalAmount) {
-      return getApiResponse(400, JSON.stringify({ message: 'Total monetary value of milestones does not match total amount of the rule' }));
+      return getApiResponse(400, JSON.stringify({ message: 'Total monetary value of milestones does not match total amount of the goal' }));
     }
 
     const lastDeadline = processedMilestones[processedMilestones.length - 1].milestoneDeadline;
     if (lastDeadline !== deadline) {
-      return getApiResponse(400, JSON.stringify({ message: 'Last milestone deadline must match the rule deadline' }));
+      return getApiResponse(400, JSON.stringify({ message: 'Last milestone deadline must match the goal deadline' }));
     }
 
     const now = new Date().toISOString();
-    const ruleId = uuidv4();
-    const newRule: Rule = {
-      ruleId,
+    const goalId = uuidv4();
+    const newGoal: Goal = {
+      goalId,
       userId,
-      ruleType,
-      ruleName,
+      goalType,
+      goalName,
       generalObjective,
       totalAmount,
       deadline,
       milestones: processedMilestones,
+      allOrNothing,
+      rewardDestination,
+      penaltyDestination,
+      penaltyInterestRate,
       createdAt: now,
       updatedAt: now,
-      status,
+      status: GoalStatus.created,
     };
 
-    await dynamoDb.put({ TableName: TABLE_NAME, Item: newRule }).promise();
+    await dynamoDb.put({ TableName: TABLE_NAME, Item: newGoal }).promise();
 
-    // Schedule each milestone with EventBridge
+    // Schedule each milestone: EventBridge → SQS → milestone-handler
     for (const milestone of processedMilestones) {
       const milestoneRuleName = `MilestoneRule_${milestone.milestoneId}`;
       const scheduleExpression = `cron(${convertToCronExpression(milestone.milestoneDeadline)})`;
@@ -91,18 +101,18 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
         Rule: milestoneRuleName,
         Targets: [{
           Id: milestoneRuleName,
-          Arn: LAMBDA_FUNCTION_ARN,
-          Input: JSON.stringify({ userId, milestone }),
+          Arn: SQS_QUEUE_ARN,
+          Input: JSON.stringify({ goalId, milestoneId: milestone.milestoneId, userId }),
         }],
       }).promise();
     }
 
-    return getApiResponse(201, JSON.stringify(newRule));
+    return getApiResponse(201, JSON.stringify({
+      ...newGoal,
+      completionPercentage: computeCompletionPercentage(processedMilestones),
+    }));
   } catch (error) {
-    console.error('Error creating rule:', error);
+    console.error('Error creating goal:', error);
     return getApiResponse(500, JSON.stringify({ message: `Internal Server Error: ${error}` }));
   }
 };
-// This code is an AWS Lambda function that creates a new rule in a DynamoDB table.
-// It validates the rule data using Yup, checks for deadlines, and processes milestones.
-// If successful, it schedules the milestones using EventBridge and returns the created rule; otherwise, it returns an error response.

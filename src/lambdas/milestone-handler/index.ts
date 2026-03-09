@@ -1,57 +1,106 @@
-import * as awsLambda from 'aws-lambda';
+import { SQSEvent } from 'aws-lambda';
 import * as AWS from 'aws-sdk';
-import { getApiResponse } from '../../common/helpers';
+import { Goal, GoalStatus } from '../../common/models';
+import {
+  allMilestonesResolved,
+  buildTransactionEntries,
+  updateGoalStatus,
+  writeTransaction,
+} from '../../common/transactionUtils';
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
-const ses = new AWS.SES();
-const TABLE_NAME_USER_INFO = process.env.USER_INFO_TABLE || 'UserInfo';
+const eventBridge = new AWS.EventBridge();
+const GOALS_TABLE = process.env.GOALS_TABLE || 'Goals';
+const TRANSACTIONS_TABLE = process.env.TRANSACTIONS_TABLE || 'Transactions';
 
-export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProxyEvent) => {
-  console.log('MILESTONE HANDLER INVOKED', event);
+// Triggered by SQS (EventBridge → SQS → this Lambda) at milestone deadline.
+// Marks the milestone as missed if not already completed, then resolves the goal if applicable.
+export const handler = async (event: SQSEvent): Promise<void> => {
+  for (const record of event.Records) {
+    try {
+      const { goalId, milestoneId } = JSON.parse(record.body);
 
-  try {
-    const { milestone, userId } = JSON.parse(event.body || '{}');
+      if (!goalId || !milestoneId) {
+        console.error('Missing goalId or milestoneId in SQS message', record.body);
+        continue;
+      }
 
-    if (!milestone || !userId) {
-      return getApiResponse(400, 'Milestone and userId are required');
+      const goalResult = await dynamoDb.get({ TableName: GOALS_TABLE, Key: { goalId } }).promise();
+      if (!goalResult.Item) {
+        console.warn(`Goal ${goalId} not found — skipping`);
+        continue;
+      }
+
+      const goal = goalResult.Item as Goal;
+
+      // Skip if goal already resolved
+      if (goal.status === GoalStatus.completed || goal.status === GoalStatus.failed) {
+        console.log(`Goal ${goalId} already resolved — skipping`);
+        continue;
+      }
+
+      const milestoneIndex = goal.milestones.findIndex(m => m.milestoneId === milestoneId);
+      if (milestoneIndex === -1) {
+        console.warn(`Milestone ${milestoneId} not found in goal ${goalId}`);
+        continue;
+      }
+
+      const milestone = goal.milestones[milestoneIndex];
+
+      // Already completed — no action needed
+      if (milestone.completion === true) {
+        console.log(`Milestone ${milestoneId} already completed — skipping`);
+        continue;
+      }
+
+      // Mark milestone as missed
+      goal.milestones[milestoneIndex] = { ...milestone, completion: false };
+      goal.updatedAt = new Date().toISOString();
+
+      // allOrNothing: any miss = immediate full failure
+      if (goal.allOrNothing) {
+        // Cancel all remaining EventBridge rules for this goal
+        for (const m of goal.milestones) {
+          if (m.completion === undefined) {
+            const ruleName = `MilestoneRule_${m.milestoneId}`;
+            try {
+              await eventBridge.removeTargets({ Rule: ruleName, Ids: [ruleName] }).promise();
+              await eventBridge.deleteRule({ Name: ruleName }).promise();
+            } catch {
+              // ok if already gone
+            }
+          }
+        }
+
+        // Mark all remaining milestones as missed
+        goal.milestones = goal.milestones.map(m =>
+          m.completion !== undefined ? m : { ...m, completion: false },
+        );
+
+        const { entries, outcome } = buildTransactionEntries(goal);
+        await writeTransaction(dynamoDb, TRANSACTIONS_TABLE, goal, entries, outcome);
+
+        goal.status = GoalStatus.failed;
+        await dynamoDb.put({ TableName: GOALS_TABLE, Item: goal }).promise();
+
+        console.log(`Goal ${goalId} failed (all-or-nothing): penalty applied`);
+        continue;
+      }
+
+      // Non-allOrNothing: save the missed milestone, check if all resolved
+      await dynamoDb.put({ TableName: GOALS_TABLE, Item: goal }).promise();
+
+      if (allMilestonesResolved(goal.milestones)) {
+        const { entries, outcome } = buildTransactionEntries(goal);
+        await writeTransaction(dynamoDb, TRANSACTIONS_TABLE, goal, entries, outcome);
+
+        const finalStatus = GoalStatus.completed;
+        await updateGoalStatus(dynamoDb, GOALS_TABLE, goalId, finalStatus);
+        console.log(`Goal ${goalId} fully resolved. Outcome: ${outcome}`);
+      }
+    } catch (err) {
+      console.error('Error processing SQS record', err);
+      throw err; // rethrow so SQS retries
     }
-
-    if (milestone.completion) {
-      return getApiResponse(200, 'Milestone already completed');
-    }
-
-    const user = await dynamoDb.get({
-      TableName: TABLE_NAME_USER_INFO,
-      Key: { userId },
-    }).promise();
-
-    if (!user.Item?.email) {
-      return getApiResponse(404, 'User email not found');
-    }
-
-    const emailParams = {
-      Source: 'dmitry.kustarnikov@gmail.com', // Must be verified in SES
-      Destination: { ToAddresses: [user.Item.email] },
-      Message: {
-        Subject: { Data: 'Workout Missed - Wager Triggered' },
-        Body: {
-          Text: {
-            Data: `You missed your workout: ${milestone.name || 'Unnamed Milestone'}.\n$${milestone.monetaryValue} has been donated to charity (simulated).`,
-          },
-        },
-      },
-    };
-
-    await ses.sendEmail(emailParams).promise();
-    return getApiResponse(200, 'User notified via email');
-  } catch (err) {
-    console.error('Milestone processing failed', err);
-    return getApiResponse(500, 'Internal Server Error');
   }
 };
-
-// This code is an AWS Lambda function that handles milestones by notifying users via email when a milestone is missed.
-// It retrieves the user's email from a DynamoDB table and sends an email using AWS SES.
-// If the milestone is already completed, it returns a 200 response without sending an email.
-// If the user is not found or their email is not available, it returns a 404 response.
-// In case of any errors, it logs the error and returns a 500 response.

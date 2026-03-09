@@ -1,74 +1,99 @@
 import * as awsLambda from 'aws-lambda';
 import { DynamoDB, EventBridge } from 'aws-sdk';
 import { getApiResponse } from '../../common/helpers';
-import { Rule, RuleStatus, Milestone } from '../../common/models';
+import { Goal, GoalStatus } from '../../common/models';
+import {
+  allMilestonesResolved,
+  buildTransactionEntries,
+  computeCompletionPercentage,
+  updateGoalStatus,
+  writeTransaction,
+} from '../../common/transactionUtils';
 
 const dynamoDb = new DynamoDB.DocumentClient();
 const eventBridge = new EventBridge();
-const TABLE_NAME = process.env.RULES_TABLE || 'Rules';
+const GOALS_TABLE = process.env.GOALS_TABLE || 'Goals';
+const TRANSACTIONS_TABLE = process.env.TRANSACTIONS_TABLE || 'Transactions';
 
 export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProxyEvent) => {
   try {
-    const ruleId = event.pathParameters?.ruleId;
+    const goalId = event.pathParameters?.goalId;
     const milestoneId = event.pathParameters?.milestoneId;
 
-    if (!ruleId || !milestoneId) {
-      return getApiResponse(400, JSON.stringify({ message: 'Missing ruleId or milestoneId' }));
+    if (!goalId || !milestoneId) {
+      return getApiResponse(400, JSON.stringify({ message: 'Missing goalId or milestoneId' }));
     }
 
-    const ruleResult = await dynamoDb.get({ TableName: TABLE_NAME, Key: { ruleId } }).promise();
-    if (!ruleResult.Item) {
-      return getApiResponse(404, JSON.stringify({ message: 'Rule not found' }));
+    const goalResult = await dynamoDb.get({ TableName: GOALS_TABLE, Key: { goalId } }).promise();
+    if (!goalResult.Item) {
+      return getApiResponse(404, JSON.stringify({ message: 'Goal not found' }));
     }
 
-    const rule = ruleResult.Item as Rule;
+    const goal = goalResult.Item as Goal;
 
-    if (rule.status === RuleStatus.completed) {
-      return getApiResponse(400, JSON.stringify({ message: 'Rule already completed' }));
+    if (goal.status === GoalStatus.completed || goal.status === GoalStatus.failed) {
+      return getApiResponse(400, JSON.stringify({ message: 'Goal already resolved' }));
     }
 
-    const index = rule.milestones.findIndex(m => m.milestoneId === milestoneId);
+    const index = goal.milestones.findIndex(m => m.milestoneId === milestoneId);
     if (index === -1) {
       return getApiResponse(404, JSON.stringify({ message: 'Milestone not found' }));
     }
 
-    const milestone = rule.milestones[index];
+    const milestone = goal.milestones[index];
 
-    if (milestone.completion) {
+    if (milestone.completion === true) {
       return getApiResponse(200, JSON.stringify({ message: 'Milestone already completed' }));
     }
 
-    // 1. Mark milestone as completed
-    milestone.completion = true;
-    rule.milestones[index] = milestone;
-
-    // 2. Check if all milestones are now completed
-    const allCompleted = rule.milestones.every(m => m.completion);
-    if (allCompleted) {
-      rule.status = RuleStatus.completed;
+    if (milestone.completion === false) {
+      return getApiResponse(400, JSON.stringify({ message: 'Cannot complete a missed milestone' }));
     }
 
-    rule.updatedAt = new Date().toISOString();
+    // Mark milestone as completed
+    milestone.completion = true;
+    goal.milestones[index] = milestone;
+    goal.updatedAt = new Date().toISOString();
 
-    // 3. Save updated rule
-    await dynamoDb.put({ TableName: TABLE_NAME, Item: rule }).promise();
-
-    // 4. Cancel EventBridge rule if exists
+    // Cancel EventBridge rule for this milestone
     const milestoneRuleName = `MilestoneRule_${milestoneId}`;
     try {
       await eventBridge.removeTargets({ Rule: milestoneRuleName, Ids: [milestoneRuleName] }).promise();
       await eventBridge.deleteRule({ Name: milestoneRuleName }).promise();
-    } catch (e: any) {
-      console.warn(`EventBridge cleanup skipped or failed for ${milestoneRuleName}:`, JSON.stringify(e));
+    } catch {
+      // ok if rule doesn't exist
     }
 
-    return getApiResponse(200, JSON.stringify({ message: 'Milestone marked as completed', rule }));
+    // Check if all milestones are now resolved
+    if (allMilestonesResolved(goal.milestones)) {
+      // Write transaction record
+      const { entries, outcome } = buildTransactionEntries(goal);
+      await writeTransaction(dynamoDb, TRANSACTIONS_TABLE, goal, entries, outcome);
+
+      // Update goal status
+      const finalStatus = outcome === 'penalty' ? GoalStatus.failed : GoalStatus.completed;
+      goal.status = finalStatus;
+      await dynamoDb.put({ TableName: GOALS_TABLE, Item: goal }).promise();
+      await updateGoalStatus(dynamoDb, GOALS_TABLE, goalId, finalStatus);
+
+      return getApiResponse(200, JSON.stringify({
+        message: 'Milestone completed — goal resolved',
+        outcome,
+        completionPercentage: computeCompletionPercentage(goal.milestones),
+        goal,
+      }));
+    }
+
+    // Not all resolved yet — save and return
+    await dynamoDb.put({ TableName: GOALS_TABLE, Item: goal }).promise();
+
+    return getApiResponse(200, JSON.stringify({
+      message: 'Milestone marked as completed',
+      completionPercentage: computeCompletionPercentage(goal.milestones),
+      goal,
+    }));
   } catch (err) {
     console.error('Error in complete-milestone:', err);
     return getApiResponse(500, JSON.stringify({ message: 'Internal Server Error' }));
   }
 };
-// This code is an AWS Lambda function that marks a milestone as completed in a rule.
-// It retrieves the rule and milestone from DynamoDB, checks if the milestone exists and is not already completed,
-// updates the milestone's completion status, checks if all milestones are completed, and updates the rule status accordingly.
-// It also cleans up any associated EventBridge rules and returns an appropriate API response.

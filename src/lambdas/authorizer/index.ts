@@ -39,7 +39,8 @@ export const handler = async (
           resolve(generateDenyPolicy('user', event.methodArn));
         } else {
           console.log('JWT verified:', decoded);
-          resolve(generateAllowPolicy((decoded as any).sub, event.methodArn));
+          const userId = (decoded as any).sub as string;
+          resolve(generateAllowPolicy(userId, event.methodArn));
         }
       });
     });
@@ -61,6 +62,9 @@ function generateAllowPolicy(principalId: string, resource: string): APIGatewayA
           Resource: resource,
         },
       ],
+    },
+    context: {
+      userId: principalId,
     },
   };
 }

@@ -6,7 +6,6 @@ import { User } from '../../common/models';
 const cognito = new AWS.CognitoIdentityServiceProvider();
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
-const TABLE_NAME_RULES = process.env.RULES_TABLE || 'Rules';
 const TABLE_NAME_USER_INFO = process.env.USER_INFO_TABLE || 'UserInfo';
 
 export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProxyEvent) => {

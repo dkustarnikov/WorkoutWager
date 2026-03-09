@@ -3,18 +3,18 @@ import { DynamoDB, EventBridge } from 'aws-sdk';
 import { v4 as uuidv4 } from 'uuid';
 import * as yup from 'yup';
 import { getApiResponse, milestoneSchema, convertToCronExpression } from '../../common/helpers';
-import { Rule, RuleStatus } from '../../common/models';
+import { Goal, GoalStatus } from '../../common/models';
 
 const dynamoDb = new DynamoDB.DocumentClient();
 const eventBridge = new EventBridge();
-const TABLE_NAME = process.env.RULES_TABLE || 'Rules';
-const LAMBDA_FUNCTION_ARN = process.env.LAMBDA_FUNCTION_ARN || '';
+const TABLE_NAME = process.env.GOALS_TABLE || 'Goals';
+const SQS_QUEUE_ARN = process.env.SQS_QUEUE_ARN || '';
 
 export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProxyEvent) => {
   try {
-    const ruleId = event.pathParameters?.ruleId;
-    if (!ruleId) {
-      return getApiResponse(400, JSON.stringify({ message: 'Missing ruleId in path parameters' }));
+    const goalId = event.pathParameters?.goalId;
+    if (!goalId) {
+      return getApiResponse(400, JSON.stringify({ message: 'Missing goalId in path parameters' }));
     }
 
     const requestBody = JSON.parse(event.body || '{}');
@@ -32,43 +32,45 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
       throw validationError;
     }
 
-    const ruleResult = await dynamoDb.get({ TableName: TABLE_NAME, Key: { ruleId } }).promise();
-    if (!ruleResult.Item) {
-      return getApiResponse(404, JSON.stringify({ message: 'Rule not found' }));
+    const goalResult = await dynamoDb.get({ TableName: TABLE_NAME, Key: { goalId } }).promise();
+    if (!goalResult.Item) {
+      return getApiResponse(404, JSON.stringify({ message: 'Goal not found' }));
     }
 
-    const rule = ruleResult.Item as Rule;
-    rule.milestones = rule.milestones || [];
+    const goal = goalResult.Item as Goal;
+    goal.milestones = goal.milestones || [];
 
-    if (rule.status === RuleStatus.completed) {
-      return getApiResponse(400, JSON.stringify({ message: 'Cannot add milestone to a completed rule' }));
+    if (goal.status === GoalStatus.completed || goal.status === GoalStatus.failed) {
+      return getApiResponse(400, JSON.stringify({ message: 'Cannot add milestone to a resolved goal' }));
     }
 
-    if (new Date(newMilestone.milestoneDeadline) > new Date(rule.deadline)) {
-      return getApiResponse(400, JSON.stringify({ message: 'Milestone deadline cannot be past the rule deadline' }));
+    if (new Date(newMilestone.milestoneDeadline) > new Date(goal.deadline)) {
+      return getApiResponse(400, JSON.stringify({ message: 'Milestone deadline cannot be past the goal deadline' }));
     }
 
-    if (rule.milestones.some(m => m.milestoneDeadline === newMilestone.milestoneDeadline)) {
+    if (goal.milestones.some(m => m.milestoneDeadline === newMilestone.milestoneDeadline)) {
       return getApiResponse(400, JSON.stringify({ message: 'Milestone deadline must be unique' }));
     }
 
-    if (rule.milestones.some(m => m.milestoneName === newMilestone.milestoneName)) {
+    if (goal.milestones.some(m => m.milestoneName === newMilestone.milestoneName)) {
       return getApiResponse(400, JSON.stringify({ message: 'Milestone name must be unique' }));
     }
 
     newMilestone.milestoneId = newMilestone.milestoneId || uuidv4();
-    rule.milestones.push(newMilestone);
-    rule.milestones.sort((a, b) => new Date(a.milestoneDeadline).getTime() - new Date(b.milestoneDeadline).getTime());
+    delete newMilestone.completion;
 
-    rule.milestones.forEach((m, index) => {
+    goal.milestones.push(newMilestone);
+    goal.milestones.sort((a, b) => new Date(a.milestoneDeadline).getTime() - new Date(b.milestoneDeadline).getTime());
+
+    goal.milestones.forEach((m, index) => {
       m.milestoneCounter = index + 1;
       m.milestoneId ||= uuidv4();
     });
 
-    rule.totalAmount = rule.milestones.reduce((sum, m) => sum + m.monetaryValue, 0);
-    rule.updatedAt = new Date().toISOString();
+    goal.totalAmount = goal.milestones.reduce((sum, m) => sum + m.monetaryValue, 0);
+    goal.updatedAt = new Date().toISOString();
 
-    await dynamoDb.put({ TableName: TABLE_NAME, Item: rule }).promise();
+    await dynamoDb.put({ TableName: TABLE_NAME, Item: goal }).promise();
 
     const milestoneRuleName = `MilestoneRule_${newMilestone.milestoneId}`;
     const scheduleExpression = `cron(${convertToCronExpression(newMilestone.milestoneDeadline)})`;
@@ -83,18 +85,14 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
       Rule: milestoneRuleName,
       Targets: [{
         Id: milestoneRuleName,
-        Arn: LAMBDA_FUNCTION_ARN,
-        Input: JSON.stringify({ userId: rule.userId, milestone: newMilestone }),
+        Arn: SQS_QUEUE_ARN,
+        Input: JSON.stringify({ goalId, milestoneId: newMilestone.milestoneId, userId: goal.userId }),
       }],
     }).promise();
 
-    return getApiResponse(200, JSON.stringify(rule));
+    return getApiResponse(200, JSON.stringify(goal));
   } catch (err) {
     console.error('Error in add-milestone:', err);
     return getApiResponse(500, JSON.stringify({ message: 'Internal Server Error' }));
   }
 };
-
-// This code is an AWS Lambda function that adds a milestone to an existing rule in a DynamoDB table.
-// It validates the milestone using Yup, checks for uniqueness of deadlines and names, and updates the rule's total amount.
-// If successful, it schedules the milestone using EventBridge and returns the updated rule; otherwise, it returns an error response.

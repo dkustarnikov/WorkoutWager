@@ -2,7 +2,7 @@ import { awscdk } from 'projen';
 import { NodePackageManager } from 'projen/lib/javascript';
 
 const project = new awscdk.AwsCdkTypeScriptApp({
-  cdkVersion: '2.1.0',
+  cdkVersion: '2.240.0',
   defaultReleaseBranch: 'main',
   name: 'workout-wager',
   projenrcTs: true,
