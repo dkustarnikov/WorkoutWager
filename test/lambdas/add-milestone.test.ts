@@ -1,19 +1,14 @@
 import context from 'aws-lambda-mock-context';
 import * as yup from 'yup';
-// @ts-ignore
-import { handler } from '../../src/lambdas/add-milestone';
-import { getMockEvent } from '../testHelper';
 
-// ---------------------------------------------------------------------------
-// Mocks
-// ---------------------------------------------------------------------------
-
+// 1. DEFINE MOCK FUNCTIONS FIRST
 const mockDynamoGet = jest.fn();
 const mockDynamoPut = jest.fn();
 const mockEventBridgePutRule = jest.fn();
 const mockEventBridgePutTargets = jest.fn();
 const mockMilestoneSchemaValidate = jest.fn();
 
+// 2. DEFINE MOCKS
 jest.mock('aws-sdk', () => ({
   DynamoDB: {
     DocumentClient: jest.fn(() => ({
@@ -29,9 +24,13 @@ jest.mock('aws-sdk', () => ({
 
 jest.mock('../../src/common/helpers', () => ({
   getApiResponse: jest.fn((statusCode: number, body: string) => ({ statusCode, body })),
-  milestoneSchema: { validate: mockMilestoneSchemaValidate },
+  milestoneSchema: { validate: (args: any) => mockMilestoneSchemaValidate(args) }, 
   convertToCronExpression: jest.fn().mockReturnValue('0 0 31 12 *'),
 }));
+
+// @ts-ignore
+import { handler } from '../../src/lambdas/add-milestone';
+import { getMockEvent } from '../testHelper';
 
 
 // ---------------------------------------------------------------------------
