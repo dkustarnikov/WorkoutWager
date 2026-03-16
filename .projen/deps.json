@@ -103,10 +103,6 @@
       "type": "build"
     },
     {
-      "name": "@alpacahq/typescript-sdk",
-      "type": "runtime"
-    },
-    {
       "name": "@aws-cdk/aws-dynamodb",
       "type": "runtime"
     },

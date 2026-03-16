@@ -21,7 +21,6 @@ const project = new awscdk.AwsCdkTypeScriptApp({
     '@aws-cdk/aws-events',
     '@aws-cdk/aws-events-targets',
     '@aws-cdk/aws-lambda',
-    '@alpacahq/typescript-sdk',
     'jwk-to-pem',
     'jwks-rsa',
   ], // Runtime dependencies of this module.

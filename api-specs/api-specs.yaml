@@ -241,9 +241,6 @@ components:
           items:
             type: string
             example: rule123
-        alpacaCreated:
-          type: boolean
-          example: true
         paperTrading:
           type: boolean
           example: false
