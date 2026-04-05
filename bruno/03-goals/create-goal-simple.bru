@@ -1,0 +1,38 @@
+meta {
+  name: Create Goal (Simple - no explicit milestones)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/goal
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "userId": "{{userId}}",
+    "goalType": "fitness",
+    "goalName": "Run a 5K",
+    "generalObjective": "Complete a 5K run by the deadline",
+    "totalAmount": 100,
+    "deadline": "2027-01-01T00:00:00.000Z",
+    "milestones": [],
+    "allOrNothing": false,
+    "rewardDestination": "savings",
+    "penaltyDestination": "savings",
+    "penaltyInterestRate": 0
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar("goalId", res.body.goalId);
+    bru.setVar("milestoneId", res.body.milestones[0].milestoneId);
+  }
+}

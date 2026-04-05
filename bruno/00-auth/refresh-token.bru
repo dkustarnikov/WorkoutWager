@@ -1,0 +1,32 @@
+meta {
+  name: Refresh Token
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{cognitoUrl}}
+  body: json
+  auth: none
+}
+
+headers {
+  X-Amz-Target: AWSCognitoIdentityProviderService.InitiateAuth
+  Content-Type: application/x-amz-json-1.1
+}
+
+body:json {
+  {
+    "ClientId": "{{cognitoClientId}}",
+    "AuthFlow": "REFRESH_TOKEN_AUTH",
+    "AuthParameters": {
+      "REFRESH_TOKEN": "{{refreshToken}}"
+    }
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setVar("authToken", res.body.AuthenticationResult.IdToken);
+  }
+}

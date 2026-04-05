@@ -1,0 +1,60 @@
+meta {
+  name: Create Goal (With Milestones)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/goal
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "userId": "{{userId}}",
+    "goalType": "fitness",
+    "goalName": "Marathon Training",
+    "generalObjective": "Complete a full marathon after 3 months of training",
+    "totalAmount": 300,
+    "deadline": "2027-04-01T00:00:00.000Z",
+    "milestones": [
+      {
+        "milestoneName": "Week 4 - 10K Run",
+        "type": "fitness",
+        "completion": false,
+        "milestoneDeadline": "2027-02-01T00:00:00.000Z",
+        "monetaryValue": 100
+      },
+      {
+        "milestoneName": "Week 8 - Half Marathon",
+        "type": "fitness",
+        "completion": false,
+        "milestoneDeadline": "2027-03-01T00:00:00.000Z",
+        "monetaryValue": 100
+      },
+      {
+        "milestoneName": "Week 12 - Full Marathon",
+        "type": "fitness",
+        "completion": false,
+        "milestoneDeadline": "2027-04-01T00:00:00.000Z",
+        "monetaryValue": 100
+      }
+    ],
+    "allOrNothing": false,
+    "rewardDestination": "savings",
+    "penaltyDestination": "charity",
+    "penaltyInterestRate": 20
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar("goalId", res.body.goalId);
+    bru.setVar("milestoneId", res.body.milestones[0].milestoneId);
+  }
+}

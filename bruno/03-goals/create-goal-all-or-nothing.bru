@@ -1,0 +1,53 @@
+meta {
+  name: Create Goal (All-or-Nothing + Penalty Interest)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/goal
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "userId": "{{userId}}",
+    "goalType": "weight_loss",
+    "goalName": "Lose 10 lbs - All Or Nothing",
+    "generalObjective": "Lose 10 pounds over 2 months. Miss any weigh-in and the full penalty applies.",
+    "totalAmount": 200,
+    "deadline": "2027-06-01T00:00:00.000Z",
+    "milestones": [
+      {
+        "milestoneName": "Month 1 Weigh-In",
+        "type": "weight",
+        "completion": false,
+        "milestoneDeadline": "2027-05-01T00:00:00.000Z",
+        "monetaryValue": 100
+      },
+      {
+        "milestoneName": "Month 2 Final Weigh-In",
+        "type": "weight",
+        "completion": false,
+        "milestoneDeadline": "2027-06-01T00:00:00.000Z",
+        "monetaryValue": 100
+      }
+    ],
+    "allOrNothing": true,
+    "rewardDestination": "savings",
+    "penaltyDestination": "charity",
+    "penaltyInterestRate": 50
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar("goalId", res.body.goalId);
+    bru.setVar("milestoneId", res.body.milestones[0].milestoneId);
+  }
+}

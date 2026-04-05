@@ -1,0 +1,22 @@
+meta {
+  name: Configure User
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/configure-user
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "userId": "{{userId}}",
+    "email": "testuser@example.com"
+  }
+}

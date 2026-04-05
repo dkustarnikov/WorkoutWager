@@ -1,0 +1,52 @@
+meta {
+  name: Update Goal
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{baseUrl}}/goal/{{goalId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "userId": "{{userId}}",
+    "goalType": "fitness",
+    "goalName": "Run a 5K - Updated",
+    "generalObjective": "Complete a 5K run — updated goal description",
+    "totalAmount": 150,
+    "deadline": "2027-07-01T00:00:00.000Z",
+    "milestones": [
+      {
+        "milestoneName": "Halfway Check-In",
+        "type": "fitness",
+        "completion": false,
+        "milestoneDeadline": "2027-04-01T00:00:00.000Z",
+        "monetaryValue": 75
+      },
+      {
+        "milestoneName": "Final Run",
+        "type": "fitness",
+        "completion": false,
+        "milestoneDeadline": "2027-07-01T00:00:00.000Z",
+        "monetaryValue": 75
+      }
+    ],
+    "allOrNothing": false,
+    "rewardDestination": "savings",
+    "penaltyDestination": "savings",
+    "penaltyInterestRate": 10
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setVar("milestoneId", res.body.milestones[0].milestoneId);
+  }
+}

@@ -1,0 +1,36 @@
+meta {
+  name: Sign Up
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{cognitoUrl}}
+  body: json
+  auth: none
+}
+
+headers {
+  X-Amz-Target: AWSCognitoIdentityProviderService.SignUp
+  Content-Type: application/x-amz-json-1.1
+}
+
+body:json {
+  {
+    "ClientId": "{{cognitoClientId}}",
+    "Username": "your-email@example.com",
+    "Password": "YourPassword123!",
+    "UserAttributes": [
+      {
+        "Name": "email",
+        "Value": "your-email@example.com"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setVar("userId", res.body.UserSub);
+  }
+}

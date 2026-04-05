@@ -1,0 +1,15 @@
+meta {
+  name: Delete Goal
+  type: http
+  seq: 8
+}
+
+delete {
+  url: {{baseUrl}}/goal/{{goalId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}

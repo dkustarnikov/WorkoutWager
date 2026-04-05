@@ -103,26 +103,6 @@
       "type": "build"
     },
     {
-      "name": "@alpacahq/typescript-sdk",
-      "type": "runtime"
-    },
-    {
-      "name": "@aws-cdk/aws-dynamodb",
-      "type": "runtime"
-    },
-    {
-      "name": "@aws-cdk/aws-events",
-      "type": "runtime"
-    },
-    {
-      "name": "@aws-cdk/aws-events-targets",
-      "type": "runtime"
-    },
-    {
-      "name": "@aws-cdk/aws-lambda",
-      "type": "runtime"
-    },
-    {
       "name": "@types/aws-lambda",
       "type": "runtime"
     },

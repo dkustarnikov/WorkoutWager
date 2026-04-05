@@ -1,0 +1,34 @@
+meta {
+  name: Add Milestone
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/goal/{{goalId}}/milestone
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "milestone": {
+      "milestoneName": "Bonus Checkpoint",
+      "type": "fitness",
+      "completion": false,
+      "milestoneDeadline": "2027-03-15T00:00:00.000Z",
+      "monetaryValue": 50
+    }
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    var added = res.body.milestones.find(function(m) { return m.milestoneName === "Bonus Checkpoint"; });
+    if (added) bru.setVar("milestoneId", added.milestoneId);
+  }
+}

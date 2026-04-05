@@ -7,7 +7,7 @@ const project = new awscdk.AwsCdkTypeScriptApp({
   name: 'workout-wager',
   projenrcTs: true,
   packageManager: NodePackageManager.NPM,
-  gitignore: ['.env'],
+  gitignore: ['.env', './.claude/'],
   deps: [
     '@types/aws-lambda',
     'jsonwebtoken',
@@ -17,11 +17,6 @@ const project = new awscdk.AwsCdkTypeScriptApp({
     'dotenv',
     'uuid',
     'yup',
-    '@aws-cdk/aws-dynamodb',
-    '@aws-cdk/aws-events',
-    '@aws-cdk/aws-events-targets',
-    '@aws-cdk/aws-lambda',
-    '@alpacahq/typescript-sdk',
     'jwk-to-pem',
     'jwks-rsa',
   ], // Runtime dependencies of this module.

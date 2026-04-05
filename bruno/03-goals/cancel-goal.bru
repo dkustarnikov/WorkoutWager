@@ -1,0 +1,15 @@
+meta {
+  name: Cancel Goal
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/goal/{{goalId}}/cancel
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}

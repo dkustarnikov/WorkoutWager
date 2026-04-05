@@ -1,0 +1,15 @@
+meta {
+  name: Get Transactions for Goal
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/goal/{{goalId}}/transactions
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}

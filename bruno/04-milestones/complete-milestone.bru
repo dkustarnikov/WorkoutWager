@@ -1,0 +1,15 @@
+meta {
+  name: Complete Milestone
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/goal/{{goalId}}/milestone/{{milestoneId}}/complete
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}

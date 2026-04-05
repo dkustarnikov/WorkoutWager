@@ -51,6 +51,9 @@ export const handler = async (
 };
 
 function generateAllowPolicy(principalId: string, resource: string): APIGatewayAuthorizerResult {
+  // Allow all methods/resources in this stage so the cached policy covers every endpoint
+  const parts = resource.split('/');
+  const wildcardResource = `${parts[0]}/${parts[1]}/*/*`;
   return {
     principalId,
     policyDocument: {
@@ -59,7 +62,7 @@ function generateAllowPolicy(principalId: string, resource: string): APIGatewayA
         {
           Action: 'execute-api:Invoke',
           Effect: 'Allow',
-          Resource: resource,
+          Resource: wildcardResource,
         },
       ],
     },

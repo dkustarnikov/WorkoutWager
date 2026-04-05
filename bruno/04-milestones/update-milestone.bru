@@ -1,0 +1,27 @@
+meta {
+  name: Update Milestone
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{baseUrl}}/goal/{{goalId}}/milestone/{{milestoneId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "milestone": {
+      "milestoneName": "Updated Milestone Name",
+      "type": "fitness",
+      "completion": false,
+      "milestoneDeadline": "2027-02-15T00:00:00.000Z",
+      "monetaryValue": 100
+    }
+  }
+}

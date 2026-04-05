@@ -1,0 +1,21 @@
+meta {
+  name: Get User Info
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/get-user-info
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "userId": "{{userId}}"
+  }
+}

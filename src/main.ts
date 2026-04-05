@@ -105,6 +105,16 @@ export class MyStack extends Stack {
       },
     });
 
+    // User-facing client for Bruno / manual testing (username + password auth)
+    const userPoolClientForUserAuth = new cognito.UserPoolClient(this, 'WorkoutWagerUserPoolClientForUserAuth', {
+      userPool,
+      generateSecret: false,
+      authFlows: {
+        userPassword: true,
+        userSrp: true,
+      },
+    });
+
     const healthFunction = new NodejsFunction(this, 'health', {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, 'lambdas/health/index.ts'),
@@ -356,6 +366,31 @@ export class MyStack extends Stack {
     new CfnOutput(this, 'UserPoolClientIdForClientCreds', { value: userPoolClientForClientCreds.userPoolClientId });
     new CfnOutput(this, 'GoalsTableName', { value: goalsTable.tableName });
     new CfnOutput(this, 'MilestoneQueueUrl', { value: milestoneQueue.queueUrl });
+
+    // --- Bruno collection outputs ---
+    new CfnOutput(this, 'BrunoBaseUrl', {
+      value: api.url,
+      description: 'Bruno env → baseUrl (API Gateway URL incl. stage)',
+    });
+    new CfnOutput(this, 'BrunoUserPoolClientId', {
+      value: userPoolClientForUserAuth.userPoolClientId,
+      description: 'Bruno env → clientId — use with Cognito InitiateAuth to get authToken',
+    });
+    new CfnOutput(this, 'BrunoTokenEndpoint', {
+      value: `https://${userPoolDomain.domainName}.auth.${this.region}.amazoncognito.com/oauth2/token`,
+      description: 'Bruno env → tokenEndpoint — POST here to exchange credentials for JWT',
+    });
+    new CfnOutput(this, 'BrunoGetTokenCommand', {
+      value: [
+        'aws cognito-idp initiate-auth',
+        `--client-id <BrunoUserPoolClientId>`,
+        '--auth-flow USER_PASSWORD_AUTH',
+        '--auth-parameters USERNAME=<your-email>,PASSWORD=<your-password>',
+        `--region ${this.region}`,
+        '| jq -r \'.AuthenticationResult.IdToken\'',
+      ].join(' '),
+      description: 'CLI command to get a JWT — paste output into Bruno authToken env var',
+    });
   }
 }
 

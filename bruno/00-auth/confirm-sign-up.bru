@@ -1,0 +1,24 @@
+meta {
+  name: Confirm Sign Up
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{cognitoUrl}}
+  body: json
+  auth: none
+}
+
+headers {
+  X-Amz-Target: AWSCognitoIdentityProviderService.ConfirmSignUp
+  Content-Type: application/x-amz-json-1.1
+}
+
+body:json {
+  {
+    "ClientId": "{{cognitoClientId}}",
+    "Username": "your-email@example.com",
+    "ConfirmationCode": "123456"
+  }
+}
