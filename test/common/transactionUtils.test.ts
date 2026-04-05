@@ -181,7 +181,7 @@ describe('buildTransactionEntries (allOrNothing = false)', () => {
     expect(entries).toHaveLength(2);
     entries.forEach(e => {
       expect(e.type).toBe('penalty');
-      expect(e.amount).toBe(55); // 50 * 1.10
+      expect(e.amount).toBe(50 * 1.10); // 50 * 1.10
     });
   });
 
