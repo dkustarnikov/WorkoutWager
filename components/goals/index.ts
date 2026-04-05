@@ -1,0 +1,8 @@
+export { GoalCard } from "./goal-card"
+export { GoalsList } from "./goals-list"
+export { StatsOverview } from "./stats-overview"
+export { UpcomingMilestones } from "./upcoming-milestones"
+export { GoalHeader } from "./goal-header"
+export { GoalActions } from "./goal-actions"
+export { GoalReview } from "./goal-review"
+export { FinancialSummary } from "./financial-summary"

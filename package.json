@@ -1,6 +1,10 @@
 {
   "name": "workout-wager",
   "scripts": {
+    "dev": "next dev --turbopack",
+    "build:next": "next build",
+    "start": "next start",
+    "lint:next": "next lint",
     "build": "tsc",
     "bundle": "npx projen bundle",
     "clobber": "npx projen clobber",
@@ -32,6 +36,8 @@
     "@types/jwk-to-pem": "^2.0.3",
     "@types/node": "^18",
     "@types/uuid": "^10.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
     "@typescript-eslint/eslint-plugin": "^8",
     "@typescript-eslint/parser": "^8",
     "aws-cdk": "^2",
@@ -62,7 +68,18 @@
     "jwk-to-pem": "^2.0.7",
     "jwks-rsa": "^3.2.2",
     "uuid": "^10.0.0",
-    "yup": "^1.7.1"
+    "yup": "^1.7.1",
+    "next": "^15.3.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "amazon-cognito-identity-js": "^6.3.12",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.3.0",
+    "class-variance-authority": "^0.7.1",
+    "lucide-react": "^0.510.0",
+    "swr": "^2.3.3",
+    "tailwindcss": "^4.1.4",
+    "tw-animate-css": "^1.2.9"
   },
   "license": "Apache-2.0",
   "publishConfig": {
