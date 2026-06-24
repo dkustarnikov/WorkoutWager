@@ -18,8 +18,8 @@ NC='\033[0m'
 PASS=0
 FAIL=0
 
-pass() { echo -e "${GREEN}  ✓ $1${NC}"; ((PASS++)); }
-fail() { echo -e "${RED}  ✗ $1${NC}"; ((FAIL++)); }
+pass() { echo -e "${GREEN}  ✓ $1${NC}"; PASS=$((PASS+1)); }
+fail() { echo -e "${RED}  ✗ $1${NC}"; FAIL=$((FAIL+1)); }
 section() { echo -e "\n${CYAN}── $1 ──${NC}"; }
 
 # ── read Bruno dev env as defaults ──────────────────────────────────────────
@@ -93,7 +93,7 @@ assert_status() {
 
 # ── 1. Health ─────────────────────────────────────────────────────────────────
 section "Health"
-status=$(curl -s -o /tmp/ww_resp.json -w "%{http_code}" "$BASE_URL/health")
+status=$(get "health")
 assert_status "GET /health" "200" "$status"
 
 # ── 2. User ───────────────────────────────────────────────────────────────────

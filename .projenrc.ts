@@ -1,15 +1,19 @@
 import { awscdk } from 'projen';
-import { NodePackageManager } from 'projen/lib/javascript';
+import { NpmConfig, NodePackageManager } from 'projen/lib/javascript';
 
 const project = new awscdk.AwsCdkTypeScriptApp({
-  cdkVersion: '2.240.0',
+  cdkVersion: '2.243.0',
   defaultReleaseBranch: 'main',
   name: 'workout-wager',
   projenrcTs: true,
   packageManager: NodePackageManager.NPM,
+  npmRegistryUrl: 'https://registry.npmjs.org',
   gitignore: ['.env', './.claude/'],
   deps: [
     '@types/aws-lambda',
+    '@types/aws-sdk',
+    '@types/jest',
+    '@types/node',
     'jsonwebtoken',
     'axios',
     'aws-sdk',
@@ -32,6 +36,7 @@ const project = new awscdk.AwsCdkTypeScriptApp({
     'copyfiles',
     'ts-dotenv',
     'ts-node',
+    'ts-jest@^29',
   ], // Build dependencies for this module.
   tsconfig: {
     compilerOptions: {
@@ -48,11 +53,10 @@ const project = new awscdk.AwsCdkTypeScriptApp({
 });
 
 // Add custom scripts
-project.addScripts({
-  projen: 'ts-node --project tsconfig.dev.json .projenrc.ts',
-  build: 'tsc',
-  checkBranch: 'node check-branch.ts',
-});
+
+project.package.setScript('projen', 'ts-node --project tsconfig.dev.json .projenrc.ts');
+project.package.setScript('build', 'tsc');
+project.package.setScript('checkBranch', 'node check-branch.ts');
 
 // Enables unit tests on windows
 project.jest?.addTestMatch('<rootDir>/test/**/*(*.)@(spec|test).ts?(x)');
@@ -69,6 +73,11 @@ project.eslint?.addOverride({
       project: ['./tsconfig.json', './tsconfig.test.json'],
     },
   },
+  rules: {}
 });
+
+// Add legacy-peer-deps so projen's bundled ts-jest@27 doesn't block installs
+const npmConfig = new NpmConfig(project);
+npmConfig.addConfig('legacy-peer-deps', 'true');
 
 project.synth();

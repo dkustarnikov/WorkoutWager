@@ -1,4 +1,4 @@
-import { DynamoDB } from 'aws-sdk';
+import * as AWS from 'aws-sdk';
 import { v4 as uuidv4 } from 'uuid';
 import { Goal, GoalStatus, Transaction, TransactionEntry } from './models';
 
@@ -66,7 +66,7 @@ export function buildTransactionEntries(goal: Goal): { entries: TransactionEntry
 }
 
 export async function writeTransaction(
-  dynamoDb: DynamoDB.DocumentClient,
+  dynamoDb: AWS.DynamoDB.DocumentClient,
   transactionsTable: string,
   goal: Goal,
   entries: TransactionEntry[],
@@ -96,7 +96,7 @@ export async function writeTransaction(
 }
 
 export async function updateGoalStatus(
-  dynamoDb: DynamoDB.DocumentClient,
+  dynamoDb: AWS.DynamoDB.DocumentClient,
   goalsTable: string,
   goalId: string,
   status: GoalStatus,

@@ -1,19 +1,86 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Snapshot 1`] = `
-{
-  "Outputs": {
-    "CognitoDomain": {
-      "Value": {
-        "Fn::Join": [
+Object {
+  "Outputs": Object {
+    "BrunoBaseUrl": Object {
+      "Description": "Bruno env → baseUrl (API Gateway URL incl. stage)",
+      "Value": Object {
+        "Fn::Join": Array [
           "",
-          [
+          Array [
             "https://",
-            {
+            Object {
+              "Ref": "WorkoutWagerAPI12237448",
+            },
+            ".execute-api.",
+            Object {
+              "Ref": "AWS::Region",
+            },
+            ".",
+            Object {
+              "Ref": "AWS::URLSuffix",
+            },
+            "/",
+            Object {
+              "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
+            },
+            "/",
+          ],
+        ],
+      },
+    },
+    "BrunoGetTokenCommand": Object {
+      "Description": "CLI command to get a JWT — paste output into Bruno authToken env var",
+      "Value": Object {
+        "Fn::Join": Array [
+          "",
+          Array [
+            "aws cognito-idp initiate-auth --client-id <BrunoUserPoolClientId> --auth-flow USER_PASSWORD_AUTH --auth-parameters USERNAME=<your-email>,PASSWORD=<your-password> --region ",
+            Object {
+              "Ref": "AWS::Region",
+            },
+            " | jq -r '.AuthenticationResult.IdToken'",
+          ],
+        ],
+      },
+    },
+    "BrunoTokenEndpoint": Object {
+      "Description": "Bruno env → tokenEndpoint — POST here to exchange credentials for JWT",
+      "Value": Object {
+        "Fn::Join": Array [
+          "",
+          Array [
+            "https://",
+            Object {
               "Ref": "UserPoolDomain5479B217",
             },
             ".auth.",
-            {
+            Object {
+              "Ref": "AWS::Region",
+            },
+            ".amazoncognito.com/oauth2/token",
+          ],
+        ],
+      },
+    },
+    "BrunoUserPoolClientId": Object {
+      "Description": "Bruno env → clientId — use with Cognito InitiateAuth to get authToken",
+      "Value": Object {
+        "Ref": "WorkoutWagerUserPoolClientForUserAuthA3F3B50A",
+      },
+    },
+    "CognitoDomain": Object {
+      "Value": Object {
+        "Fn::Join": Array [
+          "",
+          Array [
+            "https://",
+            Object {
+              "Ref": "UserPoolDomain5479B217",
+            },
+            ".auth.",
+            Object {
               "Ref": "AWS::Region",
             },
             ".amazoncognito.com",
@@ -21,50 +88,50 @@ exports[`Snapshot 1`] = `
         ],
       },
     },
-    "GoalsTableName": {
-      "Value": {
+    "GoalsTableName": Object {
+      "Value": Object {
         "Ref": "GoalsB6B7CD6B",
       },
     },
-    "MilestoneQueueUrl": {
-      "Value": {
+    "MilestoneQueueUrl": Object {
+      "Value": Object {
         "Ref": "MilestoneQueue1C66F757",
       },
     },
-    "ResourceServerIdentifier": {
-      "Value": {
+    "ResourceServerIdentifier": Object {
+      "Value": Object {
         "Ref": "ResourceServerF27E5189",
       },
     },
-    "UserPoolClientIdForClientCreds": {
-      "Value": {
+    "UserPoolClientIdForClientCreds": Object {
+      "Value": Object {
         "Ref": "WorkoutWagerUserPoolClientForClientCredsE5C87350",
       },
     },
-    "UserPoolId": {
-      "Value": {
+    "UserPoolId": Object {
+      "Value": Object {
         "Ref": "WorkoutWagerUserPool0F200A97",
       },
     },
-    "WorkoutWagerAPIEndpoint13D5E05A": {
-      "Value": {
-        "Fn::Join": [
+    "WorkoutWagerAPIEndpoint13D5E05A": Object {
+      "Value": Object {
+        "Fn::Join": Array [
           "",
-          [
+          Array [
             "https://",
-            {
+            Object {
               "Ref": "WorkoutWagerAPI12237448",
             },
             ".execute-api.",
-            {
+            Object {
               "Ref": "AWS::Region",
             },
             ".",
-            {
+            Object {
               "Ref": "AWS::URLSuffix",
             },
             "/",
-            {
+            Object {
               "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
             },
             "/",
@@ -73,44 +140,82 @@ exports[`Snapshot 1`] = `
       },
     },
   },
-  "Parameters": {
-    "BootstrapVersion": {
+  "Parameters": Object {
+    "BootstrapVersion": Object {
       "Default": "/cdk-bootstrap/hnb659fds/version",
       "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
       "Type": "AWS::SSM::Parameter::Value<String>",
     },
   },
-  "Resources": {
-    "GoalsB6B7CD6B": {
+  "Resources": Object {
+    "DailyNotificationRule86C58282": Object {
+      "Properties": Object {
+        "Description": "Fire daily push notifications to all users at noon EST",
+        "ScheduleExpression": "cron(0 17 * * ? *)",
+        "State": "ENABLED",
+        "Targets": Array [
+          Object {
+            "Arn": Object {
+              "Fn::GetAtt": Array [
+                "notifyusers020A503B",
+                "Arn",
+              ],
+            },
+            "Id": "Target0",
+          },
+        ],
+      },
+      "Type": "AWS::Events::Rule",
+    },
+    "DailyNotificationRuleAllowEventRuletestnotifyusers9946973CC98AE00F": Object {
+      "Properties": Object {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
+            "notifyusers020A503B",
+            "Arn",
+          ],
+        },
+        "Principal": "events.amazonaws.com",
+        "SourceArn": Object {
+          "Fn::GetAtt": Array [
+            "DailyNotificationRule86C58282",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "GoalsB6B7CD6B": Object {
       "DeletionPolicy": "Retain",
-      "Properties": {
-        "AttributeDefinitions": [
-          {
+      "Properties": Object {
+        "AttributeDefinitions": Array [
+          Object {
             "AttributeName": "goalId",
             "AttributeType": "S",
           },
-          {
+          Object {
             "AttributeName": "userId",
             "AttributeType": "S",
           },
         ],
         "BillingMode": "PAY_PER_REQUEST",
-        "GlobalSecondaryIndexes": [
-          {
+        "GlobalSecondaryIndexes": Array [
+          Object {
             "IndexName": "userIdIndex",
-            "KeySchema": [
-              {
+            "KeySchema": Array [
+              Object {
                 "AttributeName": "userId",
                 "KeyType": "HASH",
               },
             ],
-            "Projection": {
+            "Projection": Object {
               "ProjectionType": "ALL",
             },
           },
         ],
-        "KeySchema": [
-          {
+        "KeySchema": Array [
+          Object {
             "AttributeName": "goalId",
             "KeyType": "HASH",
           },
@@ -119,27 +224,27 @@ exports[`Snapshot 1`] = `
       "Type": "AWS::DynamoDB::Table",
       "UpdateReplacePolicy": "Retain",
     },
-    "MilestoneQueue1C66F757": {
+    "MilestoneQueue1C66F757": Object {
       "DeletionPolicy": "Delete",
-      "Properties": {
+      "Properties": Object {
         "MessageRetentionPeriod": 86400,
         "VisibilityTimeout": 300,
       },
       "Type": "AWS::SQS::Queue",
       "UpdateReplacePolicy": "Delete",
     },
-    "MilestoneQueuePolicyCC040B4B": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
+    "MilestoneQueuePolicyCC040B4B": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
               "Action": "sqs:SendMessage",
               "Effect": "Allow",
-              "Principal": {
+              "Principal": Object {
                 "Service": "events.amazonaws.com",
               },
-              "Resource": {
-                "Fn::GetAtt": [
+              "Resource": Object {
+                "Fn::GetAtt": Array [
                   "MilestoneQueue1C66F757",
                   "Arn",
                 ],
@@ -148,30 +253,30 @@ exports[`Snapshot 1`] = `
           ],
           "Version": "2012-10-17",
         },
-        "Queues": [
-          {
+        "Queues": Array [
+          Object {
             "Ref": "MilestoneQueue1C66F757",
           },
         ],
       },
       "Type": "AWS::SQS::QueuePolicy",
     },
-    "MyAuthorizer6575980E": {
-      "Properties": {
+    "MyAuthorizer6575980E": Object {
+      "Properties": Object {
         "AuthorizerResultTtlInSeconds": 300,
-        "AuthorizerUri": {
-          "Fn::Join": [
+        "AuthorizerUri": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
-                "Fn::Select": [
+              Object {
+                "Fn::Select": Array [
                   1,
-                  {
-                    "Fn::Split": [
+                  Object {
+                    "Fn::Split": Array [
                       ":",
-                      {
-                        "Fn::GetAtt": [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "authorizerD23CB5CD",
                           "Arn",
                         ],
@@ -181,14 +286,14 @@ exports[`Snapshot 1`] = `
                 ],
               },
               ":apigateway:",
-              {
-                "Fn::Select": [
+              Object {
+                "Fn::Select": Array [
                   3,
-                  {
-                    "Fn::Split": [
+                  Object {
+                    "Fn::Split": Array [
                       ":",
-                      {
-                        "Fn::GetAtt": [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "authorizerD23CB5CD",
                           "Arn",
                         ],
@@ -198,8 +303,8 @@ exports[`Snapshot 1`] = `
                 ],
               },
               ":lambda:path/2015-03-31/functions/",
-              {
-                "Fn::GetAtt": [
+              Object {
+                "Fn::GetAtt": Array [
                   "authorizerD23CB5CD",
                   "Arn",
                 ],
@@ -210,59 +315,59 @@ exports[`Snapshot 1`] = `
         },
         "IdentitySource": "method.request.header.Authorization",
         "Name": "testMyAuthorizer0303EEEA",
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
         "Type": "TOKEN",
       },
       "Type": "AWS::ApiGateway::Authorizer",
     },
-    "ResourceServerF27E5189": {
-      "Properties": {
+    "ResourceServerF27E5189": Object {
+      "Properties": Object {
         "Identifier": "workout-wager",
         "Name": "workout-wager",
-        "Scopes": [
-          {
+        "Scopes": Array [
+          Object {
             "ScopeDescription": "Custom Scope Description",
             "ScopeName": "customScope",
           },
         ],
-        "UserPoolId": {
+        "UserPoolId": Object {
           "Ref": "WorkoutWagerUserPool0F200A97",
         },
       },
       "Type": "AWS::Cognito::UserPoolResourceServer",
     },
-    "Transactions098C5767": {
+    "Transactions098C5767": Object {
       "DeletionPolicy": "Retain",
-      "Properties": {
-        "AttributeDefinitions": [
-          {
+      "Properties": Object {
+        "AttributeDefinitions": Array [
+          Object {
             "AttributeName": "transactionId",
             "AttributeType": "S",
           },
-          {
+          Object {
             "AttributeName": "goalId",
             "AttributeType": "S",
           },
         ],
         "BillingMode": "PAY_PER_REQUEST",
-        "GlobalSecondaryIndexes": [
-          {
+        "GlobalSecondaryIndexes": Array [
+          Object {
             "IndexName": "goalIdIndex",
-            "KeySchema": [
-              {
+            "KeySchema": Array [
+              Object {
                 "AttributeName": "goalId",
                 "KeyType": "HASH",
               },
             ],
-            "Projection": {
+            "Projection": Object {
               "ProjectionType": "ALL",
             },
           },
         ],
-        "KeySchema": [
-          {
+        "KeySchema": Array [
+          Object {
             "AttributeName": "transactionId",
             "KeyType": "HASH",
           },
@@ -271,18 +376,18 @@ exports[`Snapshot 1`] = `
       "Type": "AWS::DynamoDB::Table",
       "UpdateReplacePolicy": "Retain",
     },
-    "UserInfo4540AD3C": {
+    "UserInfo4540AD3C": Object {
       "DeletionPolicy": "Retain",
-      "Properties": {
-        "AttributeDefinitions": [
-          {
+      "Properties": Object {
+        "AttributeDefinitions": Array [
+          Object {
             "AttributeName": "userId",
             "AttributeType": "S",
           },
         ],
         "BillingMode": "PAY_PER_REQUEST",
-        "KeySchema": [
-          {
+        "KeySchema": Array [
+          Object {
             "AttributeName": "userId",
             "KeyType": "HASH",
           },
@@ -291,29 +396,29 @@ exports[`Snapshot 1`] = `
       "Type": "AWS::DynamoDB::Table",
       "UpdateReplacePolicy": "Retain",
     },
-    "UserPoolDomain5479B217": {
-      "Properties": {
+    "UserPoolDomain5479B217": Object {
+      "Properties": Object {
         "Domain": "workout-wager",
-        "UserPoolId": {
+        "UserPoolId": Object {
           "Ref": "WorkoutWagerUserPool0F200A97",
         },
       },
       "Type": "AWS::Cognito::UserPoolDomain",
     },
-    "WorkoutWagerAPI12237448": {
-      "Properties": {
+    "WorkoutWagerAPI12237448": Object {
+      "Properties": Object {
         "Name": "WorkoutWagerAPI",
       },
       "Type": "AWS::ApiGateway::RestApi",
     },
-    "WorkoutWagerAPIAccountD7373B48": {
+    "WorkoutWagerAPIAccountD7373B48": Object {
       "DeletionPolicy": "Retain",
-      "DependsOn": [
+      "DependsOn": Array [
         "WorkoutWagerAPI12237448",
       ],
-      "Properties": {
-        "CloudWatchRoleArn": {
-          "Fn::GetAtt": [
+      "Properties": Object {
+        "CloudWatchRoleArn": Object {
+          "Fn::GetAtt": Array [
             "WorkoutWagerAPICloudWatchRole57A7EC5A",
             "Arn",
           ],
@@ -322,28 +427,28 @@ exports[`Snapshot 1`] = `
       "Type": "AWS::ApiGateway::Account",
       "UpdateReplacePolicy": "Retain",
     },
-    "WorkoutWagerAPICloudWatchRole57A7EC5A": {
+    "WorkoutWagerAPICloudWatchRole57A7EC5A": Object {
       "DeletionPolicy": "Retain",
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
               "Action": "sts:AssumeRole",
               "Effect": "Allow",
-              "Principal": {
+              "Principal": Object {
                 "Service": "apigateway.amazonaws.com",
               },
             },
           ],
           "Version": "2012-10-17",
         },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs",
@@ -355,8 +460,8 @@ exports[`Snapshot 1`] = `
       "Type": "AWS::IAM::Role",
       "UpdateReplacePolicy": "Retain",
     },
-    "WorkoutWagerAPIDeployment002354E6ae1e33d12afcd4baad14cff56cf5246e": {
-      "DependsOn": [
+    "WorkoutWagerAPIDeployment002354E6ae1e33d12afcd4baad14cff56cf5246e": Object {
+      "DependsOn": Array [
         "WorkoutWagerAPIconfigureuserPOST68AD31B9",
         "WorkoutWagerAPIconfigureuserFBCC2D3F",
         "WorkoutWagerAPIgetuserinfoPOST69215185",
@@ -382,72 +487,72 @@ exports[`Snapshot 1`] = `
         "WorkoutWagerAPIhealthGET1CB2A007",
         "WorkoutWagerAPIhealth2AFE654B",
       ],
-      "Metadata": {
+      "Metadata": Object {
         "aws:cdk:do-not-refactor": true,
       },
-      "Properties": {
+      "Properties": Object {
         "Description": "Automatically created by the RestApi construct",
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Deployment",
     },
-    "WorkoutWagerAPIDeploymentStageprod8B944A1A": {
-      "DependsOn": [
+    "WorkoutWagerAPIDeploymentStageprod8B944A1A": Object {
+      "DependsOn": Array [
         "WorkoutWagerAPIAccountD7373B48",
       ],
-      "Properties": {
-        "DeploymentId": {
+      "Properties": Object {
+        "DeploymentId": Object {
           "Ref": "WorkoutWagerAPIDeployment002354E6ae1e33d12afcd4baad14cff56cf5246e",
         },
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
         "StageName": "prod",
       },
       "Type": "AWS::ApiGateway::Stage",
     },
-    "WorkoutWagerAPIconfigureuserFBCC2D3F": {
-      "Properties": {
-        "ParentId": {
-          "Fn::GetAtt": [
+    "WorkoutWagerAPIconfigureuserFBCC2D3F": Object {
+      "Properties": Object {
+        "ParentId": Object {
+          "Fn::GetAtt": Array [
             "WorkoutWagerAPI12237448",
             "RootResourceId",
           ],
         },
         "PathPart": "configure-user",
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Resource",
     },
-    "WorkoutWagerAPIconfigureuserPOST68AD31B9": {
-      "Properties": {
+    "WorkoutWagerAPIconfigureuserPOST68AD31B9": Object {
+      "Properties": Object {
         "AuthorizationType": "CUSTOM",
-        "AuthorizerId": {
+        "AuthorizerId": Object {
           "Ref": "MyAuthorizer6575980E",
         },
         "HttpMethod": "POST",
-        "Integration": {
+        "Integration": Object {
           "IntegrationHttpMethod": "POST",
           "Type": "AWS_PROXY",
-          "Uri": {
-            "Fn::Join": [
+          "Uri": Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":apigateway:",
-                {
+                Object {
                   "Ref": "AWS::Region",
                 },
                 ":lambda:path/2015-03-31/functions/",
-                {
-                  "Fn::GetAtt": [
+                Object {
+                  "Fn::GetAtt": Array [
                     "configureuser09ACB650",
                     "Arn",
                   ],
@@ -457,43 +562,43 @@ exports[`Snapshot 1`] = `
             ],
           },
         },
-        "ResourceId": {
+        "ResourceId": Object {
           "Ref": "WorkoutWagerAPIconfigureuserFBCC2D3F",
         },
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Method",
     },
-    "WorkoutWagerAPIconfigureuserPOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTconfigureuser8EFFA12D": {
-      "Properties": {
+    "WorkoutWagerAPIconfigureuserPOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTconfigureuser8EFFA12D": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "configureuser09ACB650",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/test-invoke-stage/POST/configure-user",
@@ -503,38 +608,38 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIconfigureuserPOSTApiPermissiontestWorkoutWagerAPIB6B50B50POSTconfigureuser95B30D05": {
-      "Properties": {
+    "WorkoutWagerAPIconfigureuserPOSTApiPermissiontestWorkoutWagerAPIB6B50B50POSTconfigureuser95B30D05": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "configureuser09ACB650",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
               },
               "/POST/configure-user",
@@ -544,46 +649,46 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgetuserinfo6D83C90B": {
-      "Properties": {
-        "ParentId": {
-          "Fn::GetAtt": [
+    "WorkoutWagerAPIgetuserinfo6D83C90B": Object {
+      "Properties": Object {
+        "ParentId": Object {
+          "Fn::GetAtt": Array [
             "WorkoutWagerAPI12237448",
             "RootResourceId",
           ],
         },
         "PathPart": "get-user-info",
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Resource",
     },
-    "WorkoutWagerAPIgetuserinfoPOST69215185": {
-      "Properties": {
+    "WorkoutWagerAPIgetuserinfoPOST69215185": Object {
+      "Properties": Object {
         "AuthorizationType": "CUSTOM",
-        "AuthorizerId": {
+        "AuthorizerId": Object {
           "Ref": "MyAuthorizer6575980E",
         },
         "HttpMethod": "POST",
-        "Integration": {
+        "Integration": Object {
           "IntegrationHttpMethod": "POST",
           "Type": "AWS_PROXY",
-          "Uri": {
-            "Fn::Join": [
+          "Uri": Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":apigateway:",
-                {
+                Object {
                   "Ref": "AWS::Region",
                 },
                 ":lambda:path/2015-03-31/functions/",
-                {
-                  "Fn::GetAtt": [
+                Object {
+                  "Fn::GetAtt": Array [
                     "getuserinfoF2CB8B88",
                     "Arn",
                   ],
@@ -593,43 +698,43 @@ exports[`Snapshot 1`] = `
             ],
           },
         },
-        "ResourceId": {
+        "ResourceId": Object {
           "Ref": "WorkoutWagerAPIgetuserinfo6D83C90B",
         },
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Method",
     },
-    "WorkoutWagerAPIgetuserinfoPOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTgetuserinfo1197B3A4": {
-      "Properties": {
+    "WorkoutWagerAPIgetuserinfoPOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTgetuserinfo1197B3A4": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "getuserinfoF2CB8B88",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/test-invoke-stage/POST/get-user-info",
@@ -639,38 +744,38 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgetuserinfoPOSTApiPermissiontestWorkoutWagerAPIB6B50B50POSTgetuserinfo82648A3D": {
-      "Properties": {
+    "WorkoutWagerAPIgetuserinfoPOSTApiPermissiontestWorkoutWagerAPIB6B50B50POSTgetuserinfo82648A3D": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "getuserinfoF2CB8B88",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
               },
               "/POST/get-user-info",
@@ -680,46 +785,46 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalEE293C81": {
-      "Properties": {
-        "ParentId": {
-          "Fn::GetAtt": [
+    "WorkoutWagerAPIgoalEE293C81": Object {
+      "Properties": Object {
+        "ParentId": Object {
+          "Fn::GetAtt": Array [
             "WorkoutWagerAPI12237448",
             "RootResourceId",
           ],
         },
         "PathPart": "goal",
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Resource",
     },
-    "WorkoutWagerAPIgoalPOST5365AFFB": {
-      "Properties": {
+    "WorkoutWagerAPIgoalPOST5365AFFB": Object {
+      "Properties": Object {
         "AuthorizationType": "CUSTOM",
-        "AuthorizerId": {
+        "AuthorizerId": Object {
           "Ref": "MyAuthorizer6575980E",
         },
         "HttpMethod": "POST",
-        "Integration": {
+        "Integration": Object {
           "IntegrationHttpMethod": "POST",
           "Type": "AWS_PROXY",
-          "Uri": {
-            "Fn::Join": [
+          "Uri": Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":apigateway:",
-                {
+                Object {
                   "Ref": "AWS::Region",
                 },
                 ":lambda:path/2015-03-31/functions/",
-                {
-                  "Fn::GetAtt": [
+                Object {
+                  "Fn::GetAtt": Array [
                     "creategoal89EC991B",
                     "Arn",
                   ],
@@ -729,43 +834,43 @@ exports[`Snapshot 1`] = `
             ],
           },
         },
-        "ResourceId": {
+        "ResourceId": Object {
           "Ref": "WorkoutWagerAPIgoalEE293C81",
         },
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Method",
     },
-    "WorkoutWagerAPIgoalPOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTgoal66C0661D": {
-      "Properties": {
+    "WorkoutWagerAPIgoalPOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTgoal66C0661D": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "creategoal89EC991B",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/test-invoke-stage/POST/goal",
@@ -775,38 +880,38 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalPOSTApiPermissiontestWorkoutWagerAPIB6B50B50POSTgoal41AEBA35": {
-      "Properties": {
+    "WorkoutWagerAPIgoalPOSTApiPermissiontestWorkoutWagerAPIB6B50B50POSTgoal41AEBA35": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "creategoal89EC991B",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
               },
               "/POST/goal",
@@ -816,46 +921,46 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalgoalId7347D9F1": {
-      "Properties": {
-        "ParentId": {
+    "WorkoutWagerAPIgoalgoalId7347D9F1": Object {
+      "Properties": Object {
+        "ParentId": Object {
           "Ref": "WorkoutWagerAPIgoalEE293C81",
         },
         "PathPart": "{goalId}",
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Resource",
     },
-    "WorkoutWagerAPIgoalgoalIdDELETEApiPermissionTesttestWorkoutWagerAPIB6B50B50DELETEgoalgoalIdEA21F211": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdDELETEApiPermissionTesttestWorkoutWagerAPIB6B50B50DELETEgoalgoalIdEA21F211": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "deletegoal752FB95B",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/test-invoke-stage/DELETE/goal/*",
@@ -865,38 +970,38 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalgoalIdDELETEApiPermissiontestWorkoutWagerAPIB6B50B50DELETEgoalgoalIdC714ADC6": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdDELETEApiPermissiontestWorkoutWagerAPIB6B50B50DELETEgoalgoalIdC714ADC6": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "deletegoal752FB95B",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
               },
               "/DELETE/goal/*",
@@ -906,31 +1011,31 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalgoalIdDELETEC54A896A": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdDELETEC54A896A": Object {
+      "Properties": Object {
         "AuthorizationType": "CUSTOM",
-        "AuthorizerId": {
+        "AuthorizerId": Object {
           "Ref": "MyAuthorizer6575980E",
         },
         "HttpMethod": "DELETE",
-        "Integration": {
+        "Integration": Object {
           "IntegrationHttpMethod": "POST",
           "Type": "AWS_PROXY",
-          "Uri": {
-            "Fn::Join": [
+          "Uri": Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":apigateway:",
-                {
+                Object {
                   "Ref": "AWS::Region",
                 },
                 ":lambda:path/2015-03-31/functions/",
-                {
-                  "Fn::GetAtt": [
+                Object {
+                  "Fn::GetAtt": Array [
                     "deletegoal752FB95B",
                     "Arn",
                   ],
@@ -940,40 +1045,40 @@ exports[`Snapshot 1`] = `
             ],
           },
         },
-        "ResourceId": {
+        "ResourceId": Object {
           "Ref": "WorkoutWagerAPIgoalgoalId7347D9F1",
         },
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Method",
     },
-    "WorkoutWagerAPIgoalgoalIdGET02D52315": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdGET02D52315": Object {
+      "Properties": Object {
         "AuthorizationType": "CUSTOM",
-        "AuthorizerId": {
+        "AuthorizerId": Object {
           "Ref": "MyAuthorizer6575980E",
         },
         "HttpMethod": "GET",
-        "Integration": {
+        "Integration": Object {
           "IntegrationHttpMethod": "POST",
           "Type": "AWS_PROXY",
-          "Uri": {
-            "Fn::Join": [
+          "Uri": Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":apigateway:",
-                {
+                Object {
                   "Ref": "AWS::Region",
                 },
                 ":lambda:path/2015-03-31/functions/",
-                {
-                  "Fn::GetAtt": [
+                Object {
+                  "Fn::GetAtt": Array [
                     "getgoalbyidE152392E",
                     "Arn",
                   ],
@@ -983,43 +1088,43 @@ exports[`Snapshot 1`] = `
             ],
           },
         },
-        "ResourceId": {
+        "ResourceId": Object {
           "Ref": "WorkoutWagerAPIgoalgoalId7347D9F1",
         },
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Method",
     },
-    "WorkoutWagerAPIgoalgoalIdGETApiPermissionTesttestWorkoutWagerAPIB6B50B50GETgoalgoalId54DD1856": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdGETApiPermissionTesttestWorkoutWagerAPIB6B50B50GETgoalgoalId54DD1856": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "getgoalbyidE152392E",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/test-invoke-stage/GET/goal/*",
@@ -1029,38 +1134,38 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalgoalIdGETApiPermissiontestWorkoutWagerAPIB6B50B50GETgoalgoalId4F29DEB7": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdGETApiPermissiontestWorkoutWagerAPIB6B50B50GETgoalgoalId4F29DEB7": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "getgoalbyidE152392E",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
               },
               "/GET/goal/*",
@@ -1070,31 +1175,31 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalgoalIdPUT6B6B5F7F": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdPUT6B6B5F7F": Object {
+      "Properties": Object {
         "AuthorizationType": "CUSTOM",
-        "AuthorizerId": {
+        "AuthorizerId": Object {
           "Ref": "MyAuthorizer6575980E",
         },
         "HttpMethod": "PUT",
-        "Integration": {
+        "Integration": Object {
           "IntegrationHttpMethod": "POST",
           "Type": "AWS_PROXY",
-          "Uri": {
-            "Fn::Join": [
+          "Uri": Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":apigateway:",
-                {
+                Object {
                   "Ref": "AWS::Region",
                 },
                 ":lambda:path/2015-03-31/functions/",
-                {
-                  "Fn::GetAtt": [
+                Object {
+                  "Fn::GetAtt": Array [
                     "updategoal806CC7DE",
                     "Arn",
                   ],
@@ -1104,43 +1209,43 @@ exports[`Snapshot 1`] = `
             ],
           },
         },
-        "ResourceId": {
+        "ResourceId": Object {
           "Ref": "WorkoutWagerAPIgoalgoalId7347D9F1",
         },
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Method",
     },
-    "WorkoutWagerAPIgoalgoalIdPUTApiPermissionTesttestWorkoutWagerAPIB6B50B50PUTgoalgoalId704101E8": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdPUTApiPermissionTesttestWorkoutWagerAPIB6B50B50PUTgoalgoalId704101E8": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "updategoal806CC7DE",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/test-invoke-stage/PUT/goal/*",
@@ -1150,38 +1255,38 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalgoalIdPUTApiPermissiontestWorkoutWagerAPIB6B50B50PUTgoalgoalIdDE1C4261": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdPUTApiPermissiontestWorkoutWagerAPIB6B50B50PUTgoalgoalIdDE1C4261": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "updategoal806CC7DE",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
               },
               "/PUT/goal/*",
@@ -1191,43 +1296,43 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalgoalIdcancel8D5E0B9A": {
-      "Properties": {
-        "ParentId": {
+    "WorkoutWagerAPIgoalgoalIdcancel8D5E0B9A": Object {
+      "Properties": Object {
+        "ParentId": Object {
           "Ref": "WorkoutWagerAPIgoalgoalId7347D9F1",
         },
         "PathPart": "cancel",
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Resource",
     },
-    "WorkoutWagerAPIgoalgoalIdcancelPOST130F1EFC": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdcancelPOST130F1EFC": Object {
+      "Properties": Object {
         "AuthorizationType": "CUSTOM",
-        "AuthorizerId": {
+        "AuthorizerId": Object {
           "Ref": "MyAuthorizer6575980E",
         },
         "HttpMethod": "POST",
-        "Integration": {
+        "Integration": Object {
           "IntegrationHttpMethod": "POST",
           "Type": "AWS_PROXY",
-          "Uri": {
-            "Fn::Join": [
+          "Uri": Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":apigateway:",
-                {
+                Object {
                   "Ref": "AWS::Region",
                 },
                 ":lambda:path/2015-03-31/functions/",
-                {
-                  "Fn::GetAtt": [
+                Object {
+                  "Fn::GetAtt": Array [
                     "cancelgoal02B098DA",
                     "Arn",
                   ],
@@ -1237,43 +1342,43 @@ exports[`Snapshot 1`] = `
             ],
           },
         },
-        "ResourceId": {
+        "ResourceId": Object {
           "Ref": "WorkoutWagerAPIgoalgoalIdcancel8D5E0B9A",
         },
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Method",
     },
-    "WorkoutWagerAPIgoalgoalIdcancelPOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTgoalgoalIdcancelA60A2529": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdcancelPOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTgoalgoalIdcancelA60A2529": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "cancelgoal02B098DA",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/test-invoke-stage/POST/goal/*/cancel",
@@ -1283,38 +1388,38 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalgoalIdcancelPOSTApiPermissiontestWorkoutWagerAPIB6B50B50POSTgoalgoalIdcancel6EEC0246": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdcancelPOSTApiPermissiontestWorkoutWagerAPIB6B50B50POSTgoalgoalIdcancel6EEC0246": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "cancelgoal02B098DA",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
               },
               "/POST/goal/*/cancel",
@@ -1324,43 +1429,43 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalgoalIdmilestone8E791221": {
-      "Properties": {
-        "ParentId": {
+    "WorkoutWagerAPIgoalgoalIdmilestone8E791221": Object {
+      "Properties": Object {
+        "ParentId": Object {
           "Ref": "WorkoutWagerAPIgoalgoalId7347D9F1",
         },
         "PathPart": "milestone",
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Resource",
     },
-    "WorkoutWagerAPIgoalgoalIdmilestonePOST00ABC3A6": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdmilestonePOST00ABC3A6": Object {
+      "Properties": Object {
         "AuthorizationType": "CUSTOM",
-        "AuthorizerId": {
+        "AuthorizerId": Object {
           "Ref": "MyAuthorizer6575980E",
         },
         "HttpMethod": "POST",
-        "Integration": {
+        "Integration": Object {
           "IntegrationHttpMethod": "POST",
           "Type": "AWS_PROXY",
-          "Uri": {
-            "Fn::Join": [
+          "Uri": Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":apigateway:",
-                {
+                Object {
                   "Ref": "AWS::Region",
                 },
                 ":lambda:path/2015-03-31/functions/",
-                {
-                  "Fn::GetAtt": [
+                Object {
+                  "Fn::GetAtt": Array [
                     "addmilestoneEE3C71D3",
                     "Arn",
                   ],
@@ -1370,43 +1475,43 @@ exports[`Snapshot 1`] = `
             ],
           },
         },
-        "ResourceId": {
+        "ResourceId": Object {
           "Ref": "WorkoutWagerAPIgoalgoalIdmilestone8E791221",
         },
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Method",
     },
-    "WorkoutWagerAPIgoalgoalIdmilestonePOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTgoalgoalIdmilestone70013283": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdmilestonePOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTgoalgoalIdmilestone70013283": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "addmilestoneEE3C71D3",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/test-invoke-stage/POST/goal/*/milestone",
@@ -1416,38 +1521,38 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalgoalIdmilestonePOSTApiPermissiontestWorkoutWagerAPIB6B50B50POSTgoalgoalIdmilestone2C2CB87B": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdmilestonePOSTApiPermissiontestWorkoutWagerAPIB6B50B50POSTgoalgoalIdmilestone2C2CB87B": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "addmilestoneEE3C71D3",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
               },
               "/POST/goal/*/milestone",
@@ -1457,43 +1562,43 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdB0D756A1": {
-      "Properties": {
-        "ParentId": {
+    "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdB0D756A1": Object {
+      "Properties": Object {
+        "ParentId": Object {
           "Ref": "WorkoutWagerAPIgoalgoalIdmilestone8E791221",
         },
         "PathPart": "{milestoneId}",
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Resource",
     },
-    "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdPUT2D259F05": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdPUT2D259F05": Object {
+      "Properties": Object {
         "AuthorizationType": "CUSTOM",
-        "AuthorizerId": {
+        "AuthorizerId": Object {
           "Ref": "MyAuthorizer6575980E",
         },
         "HttpMethod": "PUT",
-        "Integration": {
+        "Integration": Object {
           "IntegrationHttpMethod": "POST",
           "Type": "AWS_PROXY",
-          "Uri": {
-            "Fn::Join": [
+          "Uri": Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":apigateway:",
-                {
+                Object {
                   "Ref": "AWS::Region",
                 },
                 ":lambda:path/2015-03-31/functions/",
-                {
-                  "Fn::GetAtt": [
+                Object {
+                  "Fn::GetAtt": Array [
                     "updatemilestone6D1A5941",
                     "Arn",
                   ],
@@ -1503,43 +1608,43 @@ exports[`Snapshot 1`] = `
             ],
           },
         },
-        "ResourceId": {
+        "ResourceId": Object {
           "Ref": "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdB0D756A1",
         },
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Method",
     },
-    "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdPUTApiPermissionTesttestWorkoutWagerAPIB6B50B50PUTgoalgoalIdmilestonemilestoneIdE19B3A6C": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdPUTApiPermissionTesttestWorkoutWagerAPIB6B50B50PUTgoalgoalIdmilestonemilestoneIdE19B3A6C": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "updatemilestone6D1A5941",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/test-invoke-stage/PUT/goal/*/milestone/*",
@@ -1549,38 +1654,38 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdPUTApiPermissiontestWorkoutWagerAPIB6B50B50PUTgoalgoalIdmilestonemilestoneIdEF60AD49": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdPUTApiPermissiontestWorkoutWagerAPIB6B50B50PUTgoalgoalIdmilestonemilestoneIdEF60AD49": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "updatemilestone6D1A5941",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
               },
               "/PUT/goal/*/milestone/*",
@@ -1590,46 +1695,46 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdcompleteC57C88A7": {
-      "Properties": {
-        "ParentId": {
+    "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdcompleteC57C88A7": Object {
+      "Properties": Object {
+        "ParentId": Object {
           "Ref": "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdB0D756A1",
         },
         "PathPart": "complete",
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Resource",
     },
-    "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdcompletePOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTgoalgoalIdmilestonemilestoneIdcomplete430ED268": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdcompletePOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTgoalgoalIdmilestonemilestoneIdcomplete430ED268": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "completemilestoneD0CAC833",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/test-invoke-stage/POST/goal/*/milestone/*/complete",
@@ -1639,38 +1744,38 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdcompletePOSTApiPermissiontestWorkoutWagerAPIB6B50B50POSTgoalgoalIdmilestonemilestoneIdcompleteFE3A0B2B": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdcompletePOSTApiPermissiontestWorkoutWagerAPIB6B50B50POSTgoalgoalIdmilestonemilestoneIdcompleteFE3A0B2B": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "completemilestoneD0CAC833",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
               },
               "/POST/goal/*/milestone/*/complete",
@@ -1680,31 +1785,31 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdcompletePOSTB28EEA3C": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdcompletePOSTB28EEA3C": Object {
+      "Properties": Object {
         "AuthorizationType": "CUSTOM",
-        "AuthorizerId": {
+        "AuthorizerId": Object {
           "Ref": "MyAuthorizer6575980E",
         },
         "HttpMethod": "POST",
-        "Integration": {
+        "Integration": Object {
           "IntegrationHttpMethod": "POST",
           "Type": "AWS_PROXY",
-          "Uri": {
-            "Fn::Join": [
+          "Uri": Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":apigateway:",
-                {
+                Object {
                   "Ref": "AWS::Region",
                 },
                 ":lambda:path/2015-03-31/functions/",
-                {
-                  "Fn::GetAtt": [
+                Object {
+                  "Fn::GetAtt": Array [
                     "completemilestoneD0CAC833",
                     "Arn",
                   ],
@@ -1714,52 +1819,52 @@ exports[`Snapshot 1`] = `
             ],
           },
         },
-        "ResourceId": {
+        "ResourceId": Object {
           "Ref": "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdcompleteC57C88A7",
         },
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Method",
     },
-    "WorkoutWagerAPIgoalgoalIdtransactions948D0192": {
-      "Properties": {
-        "ParentId": {
+    "WorkoutWagerAPIgoalgoalIdtransactions948D0192": Object {
+      "Properties": Object {
+        "ParentId": Object {
           "Ref": "WorkoutWagerAPIgoalgoalId7347D9F1",
         },
         "PathPart": "transactions",
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Resource",
     },
-    "WorkoutWagerAPIgoalgoalIdtransactionsGET8FC8839B": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdtransactionsGET8FC8839B": Object {
+      "Properties": Object {
         "AuthorizationType": "CUSTOM",
-        "AuthorizerId": {
+        "AuthorizerId": Object {
           "Ref": "MyAuthorizer6575980E",
         },
         "HttpMethod": "GET",
-        "Integration": {
+        "Integration": Object {
           "IntegrationHttpMethod": "POST",
           "Type": "AWS_PROXY",
-          "Uri": {
-            "Fn::Join": [
+          "Uri": Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":apigateway:",
-                {
+                Object {
                   "Ref": "AWS::Region",
                 },
                 ":lambda:path/2015-03-31/functions/",
-                {
-                  "Fn::GetAtt": [
+                Object {
+                  "Fn::GetAtt": Array [
                     "gettransactions7F00A68D",
                     "Arn",
                   ],
@@ -1769,43 +1874,43 @@ exports[`Snapshot 1`] = `
             ],
           },
         },
-        "ResourceId": {
+        "ResourceId": Object {
           "Ref": "WorkoutWagerAPIgoalgoalIdtransactions948D0192",
         },
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Method",
     },
-    "WorkoutWagerAPIgoalgoalIdtransactionsGETApiPermissionTesttestWorkoutWagerAPIB6B50B50GETgoalgoalIdtransactions3ADE739B": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdtransactionsGETApiPermissionTesttestWorkoutWagerAPIB6B50B50GETgoalgoalIdtransactions3ADE739B": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "gettransactions7F00A68D",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/test-invoke-stage/GET/goal/*/transactions",
@@ -1815,38 +1920,38 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalgoalIdtransactionsGETApiPermissiontestWorkoutWagerAPIB6B50B50GETgoalgoalIdtransactions2D3C3834": {
-      "Properties": {
+    "WorkoutWagerAPIgoalgoalIdtransactionsGETApiPermissiontestWorkoutWagerAPIB6B50B50GETgoalgoalIdtransactions2D3C3834": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "gettransactions7F00A68D",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
               },
               "/GET/goal/*/transactions",
@@ -1856,49 +1961,49 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalsEFE2178F": {
-      "Properties": {
-        "ParentId": {
-          "Fn::GetAtt": [
+    "WorkoutWagerAPIgoalsEFE2178F": Object {
+      "Properties": Object {
+        "ParentId": Object {
+          "Fn::GetAtt": Array [
             "WorkoutWagerAPI12237448",
             "RootResourceId",
           ],
         },
         "PathPart": "goals",
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Resource",
     },
-    "WorkoutWagerAPIgoalsGETApiPermissionTesttestWorkoutWagerAPIB6B50B50GETgoalsB2C3E703": {
-      "Properties": {
+    "WorkoutWagerAPIgoalsGETApiPermissionTesttestWorkoutWagerAPIB6B50B50GETgoalsB2C3E703": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "getallgoals33E3AF39",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/test-invoke-stage/GET/goals",
@@ -1908,38 +2013,38 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalsGETApiPermissiontestWorkoutWagerAPIB6B50B50GETgoals2264279F": {
-      "Properties": {
+    "WorkoutWagerAPIgoalsGETApiPermissiontestWorkoutWagerAPIB6B50B50GETgoals2264279F": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "getallgoals33E3AF39",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
               },
               "/GET/goals",
@@ -1949,31 +2054,31 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIgoalsGETF9808CCD": {
-      "Properties": {
+    "WorkoutWagerAPIgoalsGETF9808CCD": Object {
+      "Properties": Object {
         "AuthorizationType": "CUSTOM",
-        "AuthorizerId": {
+        "AuthorizerId": Object {
           "Ref": "MyAuthorizer6575980E",
         },
         "HttpMethod": "GET",
-        "Integration": {
+        "Integration": Object {
           "IntegrationHttpMethod": "POST",
           "Type": "AWS_PROXY",
-          "Uri": {
-            "Fn::Join": [
+          "Uri": Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":apigateway:",
-                {
+                Object {
                   "Ref": "AWS::Region",
                 },
                 ":lambda:path/2015-03-31/functions/",
-                {
-                  "Fn::GetAtt": [
+                Object {
+                  "Fn::GetAtt": Array [
                     "getallgoals33E3AF39",
                     "Arn",
                   ],
@@ -1983,55 +2088,55 @@ exports[`Snapshot 1`] = `
             ],
           },
         },
-        "ResourceId": {
+        "ResourceId": Object {
           "Ref": "WorkoutWagerAPIgoalsEFE2178F",
         },
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Method",
     },
-    "WorkoutWagerAPIhealth2AFE654B": {
-      "Properties": {
-        "ParentId": {
-          "Fn::GetAtt": [
+    "WorkoutWagerAPIhealth2AFE654B": Object {
+      "Properties": Object {
+        "ParentId": Object {
+          "Fn::GetAtt": Array [
             "WorkoutWagerAPI12237448",
             "RootResourceId",
           ],
         },
         "PathPart": "health",
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Resource",
     },
-    "WorkoutWagerAPIhealthGET1CB2A007": {
-      "Properties": {
+    "WorkoutWagerAPIhealthGET1CB2A007": Object {
+      "Properties": Object {
         "AuthorizationType": "CUSTOM",
-        "AuthorizerId": {
+        "AuthorizerId": Object {
           "Ref": "MyAuthorizer6575980E",
         },
         "HttpMethod": "GET",
-        "Integration": {
+        "Integration": Object {
           "IntegrationHttpMethod": "POST",
           "Type": "AWS_PROXY",
-          "Uri": {
-            "Fn::Join": [
+          "Uri": Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":apigateway:",
-                {
+                Object {
                   "Ref": "AWS::Region",
                 },
                 ":lambda:path/2015-03-31/functions/",
-                {
-                  "Fn::GetAtt": [
+                Object {
+                  "Fn::GetAtt": Array [
                     "healthC878E2FF",
                     "Arn",
                   ],
@@ -2041,43 +2146,43 @@ exports[`Snapshot 1`] = `
             ],
           },
         },
-        "ResourceId": {
+        "ResourceId": Object {
           "Ref": "WorkoutWagerAPIhealth2AFE654B",
         },
-        "RestApiId": {
+        "RestApiId": Object {
           "Ref": "WorkoutWagerAPI12237448",
         },
       },
       "Type": "AWS::ApiGateway::Method",
     },
-    "WorkoutWagerAPIhealthGETApiPermissionTesttestWorkoutWagerAPIB6B50B50GEThealth5838DC8C": {
-      "Properties": {
+    "WorkoutWagerAPIhealthGETApiPermissionTesttestWorkoutWagerAPIB6B50B50GEThealth5838DC8C": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "healthC878E2FF",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/test-invoke-stage/GET/health",
@@ -2087,38 +2192,38 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerAPIhealthGETApiPermissiontestWorkoutWagerAPIB6B50B50GEThealth73EC8E1A": {
-      "Properties": {
+    "WorkoutWagerAPIhealthGETApiPermissiontestWorkoutWagerAPIB6B50B50GEThealth73EC8E1A": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "healthC878E2FF",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
               },
               "/GET/health",
@@ -2128,31 +2233,31 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WorkoutWagerUserPool0F200A97": {
+    "WorkoutWagerUserPool0F200A97": Object {
       "DeletionPolicy": "Retain",
-      "Properties": {
-        "AccountRecoverySetting": {
-          "RecoveryMechanisms": [
-            {
+      "Properties": Object {
+        "AccountRecoverySetting": Object {
+          "RecoveryMechanisms": Array [
+            Object {
               "Name": "verified_phone_number",
               "Priority": 1,
             },
-            {
+            Object {
               "Name": "verified_email",
               "Priority": 2,
             },
           ],
         },
-        "AdminCreateUserConfig": {
+        "AdminCreateUserConfig": Object {
           "AllowAdminCreateUserOnly": false,
         },
-        "AutoVerifiedAttributes": [
+        "AutoVerifiedAttributes": Array [
           "email",
         ],
         "EmailVerificationMessage": "The verification code to your new account is {####}",
         "EmailVerificationSubject": "Verify your new account",
-        "Policies": {
-          "PasswordPolicy": {
+        "Policies": Object {
+          "PasswordPolicy": Object {
             "MinimumLength": 8,
             "RequireLowercase": true,
             "RequireNumbers": true,
@@ -2160,21 +2265,21 @@ exports[`Snapshot 1`] = `
             "RequireUppercase": true,
           },
         },
-        "Schema": [
-          {
+        "Schema": Array [
+          Object {
             "Mutable": true,
             "Name": "email",
             "Required": true,
           },
         ],
         "SmsVerificationMessage": "The verification code to your new account is {####}",
-        "UsernameAttributes": [
+        "UsernameAttributes": Array [
           "email",
         ],
-        "UsernameConfiguration": {
+        "UsernameConfiguration": Object {
           "CaseSensitive": false,
         },
-        "VerificationMessageTemplate": {
+        "VerificationMessageTemplate": Object {
           "DefaultEmailOption": "CONFIRM_WITH_CODE",
           "EmailMessage": "The verification code to your new account is {####}",
           "EmailSubject": "Verify your new account",
@@ -2184,18 +2289,18 @@ exports[`Snapshot 1`] = `
       "Type": "AWS::Cognito::UserPool",
       "UpdateReplacePolicy": "Retain",
     },
-    "WorkoutWagerUserPoolClientForClientCredsE5C87350": {
-      "Properties": {
-        "AllowedOAuthFlows": [
+    "WorkoutWagerUserPoolClientForClientCredsE5C87350": Object {
+      "Properties": Object {
+        "AllowedOAuthFlows": Array [
           "client_credentials",
         ],
         "AllowedOAuthFlowsUserPoolClient": true,
-        "AllowedOAuthScopes": [
-          {
-            "Fn::Join": [
+        "AllowedOAuthScopes": Array [
+          Object {
+            "Fn::Join": Array [
               "",
-              [
-                {
+              Array [
+                Object {
                   "Ref": "ResourceServerF27E5189",
                 },
                 "/customScope",
@@ -2204,34 +2309,66 @@ exports[`Snapshot 1`] = `
           },
         ],
         "GenerateSecret": true,
-        "SupportedIdentityProviders": [
+        "SupportedIdentityProviders": Array [
           "COGNITO",
         ],
-        "UserPoolId": {
+        "UserPoolId": Object {
           "Ref": "WorkoutWagerUserPool0F200A97",
         },
       },
       "Type": "AWS::Cognito::UserPoolClient",
     },
-    "addmilestoneEE3C71D3": {
-      "DependsOn": [
+    "WorkoutWagerUserPoolClientForUserAuthA3F3B50A": Object {
+      "Properties": Object {
+        "AllowedOAuthFlows": Array [
+          "implicit",
+          "code",
+        ],
+        "AllowedOAuthFlowsUserPoolClient": true,
+        "AllowedOAuthScopes": Array [
+          "profile",
+          "phone",
+          "email",
+          "openid",
+          "aws.cognito.signin.user.admin",
+        ],
+        "CallbackURLs": Array [
+          "https://example.com",
+        ],
+        "ExplicitAuthFlows": Array [
+          "ALLOW_USER_PASSWORD_AUTH",
+          "ALLOW_USER_SRP_AUTH",
+          "ALLOW_REFRESH_TOKEN_AUTH",
+        ],
+        "GenerateSecret": false,
+        "SupportedIdentityProviders": Array [
+          "COGNITO",
+        ],
+        "UserPoolId": Object {
+          "Ref": "WorkoutWagerUserPool0F200A97",
+        },
+      },
+      "Type": "AWS::Cognito::UserPoolClient",
+    },
+    "addmilestoneEE3C71D3": Object {
+      "DependsOn": Array [
         "addmilestoneServiceRoleDefaultPolicy5C77D95C",
         "addmilestoneServiceRole469213EB",
       ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": {
+      "Properties": Object {
+        "Code": Object {
+          "S3Bucket": Object {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "228dfd8393defe12671b116e0af841f2d13a0b47e4565663dadd09734dddc2ff.zip",
+          "S3Key": "a8594fcf0598895151427b0ade62597e05a7ad17f36a1532aaeba523d46da4a2.zip",
         },
-        "Environment": {
-          "Variables": {
-            "GOALS_TABLE": {
+        "Environment": Object {
+          "Variables": Object {
+            "GOALS_TABLE": Object {
               "Ref": "GoalsB6B7CD6B",
             },
-            "SQS_QUEUE_ARN": {
-              "Fn::GetAtt": [
+            "SQS_QUEUE_ARN": Object {
+              "Fn::GetAtt": Array [
                 "MilestoneQueue1C66F757",
                 "Arn",
               ],
@@ -2239,8 +2376,8 @@ exports[`Snapshot 1`] = `
           },
         },
         "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
+        "Role": Object {
+          "Fn::GetAtt": Array [
             "addmilestoneServiceRole469213EB",
             "Arn",
           ],
@@ -2249,27 +2386,27 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Function",
     },
-    "addmilestoneServiceRole469213EB": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
+    "addmilestoneServiceRole469213EB": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
               "Action": "sts:AssumeRole",
               "Effect": "Allow",
-              "Principal": {
+              "Principal": Object {
                 "Service": "lambda.amazonaws.com",
               },
             },
           ],
           "Version": "2012-10-17",
         },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
@@ -2280,12 +2417,12 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::IAM::Role",
     },
-    "addmilestoneServiceRoleDefaultPolicy5C77D95C": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": [
+    "addmilestoneServiceRoleDefaultPolicy5C77D95C": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
                 "dynamodb:BatchGetItem",
                 "dynamodb:Query",
                 "dynamodb:GetItem",
@@ -2298,19 +2435,19 @@ exports[`Snapshot 1`] = `
                 "dynamodb:DescribeTable",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -2321,25 +2458,25 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:GetRecords",
                 "dynamodb:GetShardIterator",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -2350,22 +2487,22 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "sqs:SendMessage",
                 "sqs:GetQueueAttributes",
                 "sqs:GetQueueUrl",
               ],
               "Effect": "Allow",
-              "Resource": {
-                "Fn::GetAtt": [
+              "Resource": Object {
+                "Fn::GetAtt": Array [
                   "MilestoneQueue1C66F757",
                   "Arn",
                 ],
               },
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "events:DeleteRule",
                 "events:DescribeRule",
                 "events:ListRules",
@@ -2381,29 +2518,29 @@ exports[`Snapshot 1`] = `
           "Version": "2012-10-17",
         },
         "PolicyName": "addmilestoneServiceRoleDefaultPolicy5C77D95C",
-        "Roles": [
-          {
+        "Roles": Array [
+          Object {
             "Ref": "addmilestoneServiceRole469213EB",
           },
         ],
       },
       "Type": "AWS::IAM::Policy",
     },
-    "authorizerD23CB5CD": {
-      "DependsOn": [
+    "authorizerD23CB5CD": Object {
+      "DependsOn": Array [
         "authorizerServiceRoleC3069BB4",
       ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": {
+      "Properties": Object {
+        "Code": Object {
+          "S3Bucket": Object {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "3b0371cdc11ffd4abfe53347d3e95a79ed1ff0c2cec98c7427bc2e44a1a6daee.zip",
+          "S3Key": "01607b0026c96a10971e51085147439474a42b60232b70f0060050033f2c4a8c.zip",
         },
-        "Environment": {
-          "Variables": {
-            "USER_POOL_CONGNITO_URI": {
-              "Fn::GetAtt": [
+        "Environment": Object {
+          "Variables": Object {
+            "USER_POOL_CONGNITO_URI": Object {
+              "Fn::GetAtt": Array [
                 "WorkoutWagerUserPool0F200A97",
                 "ProviderURL",
               ],
@@ -2411,8 +2548,8 @@ exports[`Snapshot 1`] = `
           },
         },
         "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
+        "Role": Object {
+          "Fn::GetAtt": Array [
             "authorizerServiceRoleC3069BB4",
             "Arn",
           ],
@@ -2421,27 +2558,27 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Function",
     },
-    "authorizerServiceRoleC3069BB4": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
+    "authorizerServiceRoleC3069BB4": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
               "Action": "sts:AssumeRole",
               "Effect": "Allow",
-              "Principal": {
+              "Principal": Object {
                 "Service": "lambda.amazonaws.com",
               },
             },
           ],
           "Version": "2012-10-17",
         },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
@@ -2452,38 +2589,38 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::IAM::Role",
     },
-    "authorizertestMyAuthorizer0303EEEAPermissions977FB159": {
-      "Properties": {
+    "authorizertestMyAuthorizer0303EEEAPermissions977FB159": Object {
+      "Properties": Object {
         "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Fn::GetAtt": [
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
             "authorizerD23CB5CD",
             "Arn",
           ],
         },
         "Principal": "apigateway.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
+        "SourceArn": Object {
+          "Fn::Join": Array [
             "",
-            [
+            Array [
               "arn:",
-              {
+              Object {
                 "Ref": "AWS::Partition",
               },
               ":execute-api:",
-              {
+              Object {
                 "Ref": "AWS::Region",
               },
               ":",
-              {
+              Object {
                 "Ref": "AWS::AccountId",
               },
               ":",
-              {
+              Object {
                 "Ref": "WorkoutWagerAPI12237448",
               },
               "/authorizers/",
-              {
+              Object {
                 "Ref": "MyAuthorizer6575980E",
               },
             ],
@@ -2492,28 +2629,28 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "cancelgoal02B098DA": {
-      "DependsOn": [
+    "cancelgoal02B098DA": Object {
+      "DependsOn": Array [
         "cancelgoalServiceRoleDefaultPolicy1F9A2EAF",
         "cancelgoalServiceRole29EC3A80",
       ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": {
+      "Properties": Object {
+        "Code": Object {
+          "S3Bucket": Object {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "f18fb00562b924cda79df7cd1d2485ef2b3723835402903121d991d314cf84f5.zip",
+          "S3Key": "8d7162e55b1fdf60098c09f8bec16b1dc45f115e389d41dbb27786bf48c13521.zip",
         },
-        "Environment": {
-          "Variables": {
-            "GOALS_TABLE": {
+        "Environment": Object {
+          "Variables": Object {
+            "GOALS_TABLE": Object {
               "Ref": "GoalsB6B7CD6B",
             },
           },
         },
         "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
+        "Role": Object {
+          "Fn::GetAtt": Array [
             "cancelgoalServiceRole29EC3A80",
             "Arn",
           ],
@@ -2522,27 +2659,27 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Function",
     },
-    "cancelgoalServiceRole29EC3A80": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
+    "cancelgoalServiceRole29EC3A80": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
               "Action": "sts:AssumeRole",
               "Effect": "Allow",
-              "Principal": {
+              "Principal": Object {
                 "Service": "lambda.amazonaws.com",
               },
             },
           ],
           "Version": "2012-10-17",
         },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
@@ -2553,12 +2690,12 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::IAM::Role",
     },
-    "cancelgoalServiceRoleDefaultPolicy1F9A2EAF": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": [
+    "cancelgoalServiceRoleDefaultPolicy1F9A2EAF": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
                 "dynamodb:BatchGetItem",
                 "dynamodb:Query",
                 "dynamodb:GetItem",
@@ -2571,19 +2708,19 @@ exports[`Snapshot 1`] = `
                 "dynamodb:DescribeTable",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -2594,25 +2731,25 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:GetRecords",
                 "dynamodb:GetShardIterator",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -2623,8 +2760,8 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "events:DeleteRule",
                 "events:DescribeRule",
                 "events:ListRules",
@@ -2640,39 +2777,39 @@ exports[`Snapshot 1`] = `
           "Version": "2012-10-17",
         },
         "PolicyName": "cancelgoalServiceRoleDefaultPolicy1F9A2EAF",
-        "Roles": [
-          {
+        "Roles": Array [
+          Object {
             "Ref": "cancelgoalServiceRole29EC3A80",
           },
         ],
       },
       "Type": "AWS::IAM::Policy",
     },
-    "completemilestoneD0CAC833": {
-      "DependsOn": [
+    "completemilestoneD0CAC833": Object {
+      "DependsOn": Array [
         "completemilestoneServiceRoleDefaultPolicy149FA1A4",
         "completemilestoneServiceRole64C167F7",
       ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": {
+      "Properties": Object {
+        "Code": Object {
+          "S3Bucket": Object {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "1d8d0075686d2480c53b1c7e88b29d936367cfa87f0b8bc34e0acf6d0bdcb710.zip",
+          "S3Key": "0d9ade0a29a175c1e7deea2e3c75380a0203f169d3f408753a7a1fd731237575.zip",
         },
-        "Environment": {
-          "Variables": {
-            "GOALS_TABLE": {
+        "Environment": Object {
+          "Variables": Object {
+            "GOALS_TABLE": Object {
               "Ref": "GoalsB6B7CD6B",
             },
-            "TRANSACTIONS_TABLE": {
+            "TRANSACTIONS_TABLE": Object {
               "Ref": "Transactions098C5767",
             },
           },
         },
         "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
+        "Role": Object {
+          "Fn::GetAtt": Array [
             "completemilestoneServiceRole64C167F7",
             "Arn",
           ],
@@ -2681,27 +2818,27 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Function",
     },
-    "completemilestoneServiceRole64C167F7": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
+    "completemilestoneServiceRole64C167F7": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
               "Action": "sts:AssumeRole",
               "Effect": "Allow",
-              "Principal": {
+              "Principal": Object {
                 "Service": "lambda.amazonaws.com",
               },
             },
           ],
           "Version": "2012-10-17",
         },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
@@ -2712,12 +2849,12 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::IAM::Role",
     },
-    "completemilestoneServiceRoleDefaultPolicy149FA1A4": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": [
+    "completemilestoneServiceRoleDefaultPolicy149FA1A4": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
                 "dynamodb:BatchGetItem",
                 "dynamodb:Query",
                 "dynamodb:GetItem",
@@ -2730,19 +2867,19 @@ exports[`Snapshot 1`] = `
                 "dynamodb:DescribeTable",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -2753,25 +2890,25 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:GetRecords",
                 "dynamodb:GetShardIterator",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -2782,8 +2919,8 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:BatchGetItem",
                 "dynamodb:Query",
                 "dynamodb:GetItem",
@@ -2796,19 +2933,19 @@ exports[`Snapshot 1`] = `
                 "dynamodb:DescribeTable",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "Transactions098C5767",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "Transactions098C5767",
                           "Arn",
                         ],
@@ -2819,25 +2956,25 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:GetRecords",
                 "dynamodb:GetShardIterator",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "Transactions098C5767",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "Transactions098C5767",
                           "Arn",
                         ],
@@ -2848,8 +2985,8 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "events:DeleteRule",
                 "events:DescribeRule",
                 "events:ListRules",
@@ -2865,42 +3002,42 @@ exports[`Snapshot 1`] = `
           "Version": "2012-10-17",
         },
         "PolicyName": "completemilestoneServiceRoleDefaultPolicy149FA1A4",
-        "Roles": [
-          {
+        "Roles": Array [
+          Object {
             "Ref": "completemilestoneServiceRole64C167F7",
           },
         ],
       },
       "Type": "AWS::IAM::Policy",
     },
-    "configureuser09ACB650": {
-      "DependsOn": [
+    "configureuser09ACB650": Object {
+      "DependsOn": Array [
         "configureuserServiceRoleDefaultPolicyED581E71",
         "configureuserServiceRoleE9915DAE",
       ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": {
+      "Properties": Object {
+        "Code": Object {
+          "S3Bucket": Object {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "f41cc129fa83eccd3a1f9b830fe13de6677efb3146b1059b7c458a9402eca4f3.zip",
+          "S3Key": "3b415eb6461848aca36b4487a1a1044fbe5df29c9c15d73514d7fe9a77a1e380.zip",
         },
-        "Environment": {
-          "Variables": {
-            "COGNITO_USER_POOL_ID": {
+        "Environment": Object {
+          "Variables": Object {
+            "COGNITO_USER_POOL_ID": Object {
               "Ref": "WorkoutWagerUserPool0F200A97",
             },
-            "GOALS_TABLE": {
+            "GOALS_TABLE": Object {
               "Ref": "GoalsB6B7CD6B",
             },
-            "USER_INFO_TABLE": {
+            "USER_INFO_TABLE": Object {
               "Ref": "UserInfo4540AD3C",
             },
           },
         },
         "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
+        "Role": Object {
+          "Fn::GetAtt": Array [
             "configureuserServiceRoleE9915DAE",
             "Arn",
           ],
@@ -2909,38 +3046,38 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Function",
     },
-    "configureuserServiceRoleDefaultPolicyED581E71": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": [
+    "configureuserServiceRoleDefaultPolicyED581E71": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
                 "cognito-idp:AdminGetUser",
                 "cognito-idp:ListUsers",
               ],
               "Effect": "Allow",
-              "Resource": {
-                "Fn::Join": [
+              "Resource": Object {
+                "Fn::Join": Array [
                   "",
-                  [
+                  Array [
                     "arn:aws:cognito-idp:",
-                    {
+                    Object {
                       "Ref": "AWS::Region",
                     },
                     ":",
-                    {
+                    Object {
                       "Ref": "AWS::AccountId",
                     },
                     ":userpool/",
-                    {
+                    Object {
                       "Ref": "WorkoutWagerUserPool0F200A97",
                     },
                   ],
                 ],
               },
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:BatchGetItem",
                 "dynamodb:Query",
                 "dynamodb:GetItem",
@@ -2953,19 +3090,19 @@ exports[`Snapshot 1`] = `
                 "dynamodb:DescribeTable",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -2976,25 +3113,25 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:GetRecords",
                 "dynamodb:GetShardIterator",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -3005,8 +3142,8 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:BatchGetItem",
                 "dynamodb:Query",
                 "dynamodb:GetItem",
@@ -3019,24 +3156,24 @@ exports[`Snapshot 1`] = `
                 "dynamodb:DescribeTable",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "UserInfo4540AD3C",
                     "Arn",
                   ],
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:GetRecords",
                 "dynamodb:GetShardIterator",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "UserInfo4540AD3C",
                     "Arn",
                   ],
@@ -3047,35 +3184,35 @@ exports[`Snapshot 1`] = `
           "Version": "2012-10-17",
         },
         "PolicyName": "configureuserServiceRoleDefaultPolicyED581E71",
-        "Roles": [
-          {
+        "Roles": Array [
+          Object {
             "Ref": "configureuserServiceRoleE9915DAE",
           },
         ],
       },
       "Type": "AWS::IAM::Policy",
     },
-    "configureuserServiceRoleE9915DAE": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
+    "configureuserServiceRoleE9915DAE": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
               "Action": "sts:AssumeRole",
               "Effect": "Allow",
-              "Principal": {
+              "Principal": Object {
                 "Service": "lambda.amazonaws.com",
               },
             },
           ],
           "Version": "2012-10-17",
         },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
@@ -3086,25 +3223,25 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::IAM::Role",
     },
-    "creategoal89EC991B": {
-      "DependsOn": [
+    "creategoal89EC991B": Object {
+      "DependsOn": Array [
         "creategoalServiceRoleDefaultPolicy0187C07E",
         "creategoalServiceRole08132BBC",
       ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": {
+      "Properties": Object {
+        "Code": Object {
+          "S3Bucket": Object {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "f0a912881e6ff1c0529ce1560ebb4684d69e948a6f92ed2dd822abe5862a2aba.zip",
+          "S3Key": "d56651cfd2dbff25b44f34f2d0fc6851d7d485a0ca7e1903c12ab0900aeafea6.zip",
         },
-        "Environment": {
-          "Variables": {
-            "GOALS_TABLE": {
+        "Environment": Object {
+          "Variables": Object {
+            "GOALS_TABLE": Object {
               "Ref": "GoalsB6B7CD6B",
             },
-            "SQS_QUEUE_ARN": {
-              "Fn::GetAtt": [
+            "SQS_QUEUE_ARN": Object {
+              "Fn::GetAtt": Array [
                 "MilestoneQueue1C66F757",
                 "Arn",
               ],
@@ -3112,8 +3249,8 @@ exports[`Snapshot 1`] = `
           },
         },
         "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
+        "Role": Object {
+          "Fn::GetAtt": Array [
             "creategoalServiceRole08132BBC",
             "Arn",
           ],
@@ -3122,27 +3259,27 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Function",
     },
-    "creategoalServiceRole08132BBC": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
+    "creategoalServiceRole08132BBC": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
               "Action": "sts:AssumeRole",
               "Effect": "Allow",
-              "Principal": {
+              "Principal": Object {
                 "Service": "lambda.amazonaws.com",
               },
             },
           ],
           "Version": "2012-10-17",
         },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
@@ -3153,12 +3290,12 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::IAM::Role",
     },
-    "creategoalServiceRoleDefaultPolicy0187C07E": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": [
+    "creategoalServiceRoleDefaultPolicy0187C07E": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
                 "dynamodb:BatchGetItem",
                 "dynamodb:Query",
                 "dynamodb:GetItem",
@@ -3171,19 +3308,19 @@ exports[`Snapshot 1`] = `
                 "dynamodb:DescribeTable",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -3194,25 +3331,25 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:GetRecords",
                 "dynamodb:GetShardIterator",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -3223,22 +3360,22 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "sqs:SendMessage",
                 "sqs:GetQueueAttributes",
                 "sqs:GetQueueUrl",
               ],
               "Effect": "Allow",
-              "Resource": {
-                "Fn::GetAtt": [
+              "Resource": Object {
+                "Fn::GetAtt": Array [
                   "MilestoneQueue1C66F757",
                   "Arn",
                 ],
               },
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "events:DeleteRule",
                 "events:DescribeRule",
                 "events:ListRules",
@@ -3254,36 +3391,36 @@ exports[`Snapshot 1`] = `
           "Version": "2012-10-17",
         },
         "PolicyName": "creategoalServiceRoleDefaultPolicy0187C07E",
-        "Roles": [
-          {
+        "Roles": Array [
+          Object {
             "Ref": "creategoalServiceRole08132BBC",
           },
         ],
       },
       "Type": "AWS::IAM::Policy",
     },
-    "deletegoal752FB95B": {
-      "DependsOn": [
+    "deletegoal752FB95B": Object {
+      "DependsOn": Array [
         "deletegoalServiceRoleDefaultPolicyED264682",
         "deletegoalServiceRole35DA8593",
       ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": {
+      "Properties": Object {
+        "Code": Object {
+          "S3Bucket": Object {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "6ca8aa25cc886adfc0cd9ac44d13a5c40463d8002d4338893ae8b17384c136d5.zip",
+          "S3Key": "998bd8048083970a6b93853b69ccf0e10b7eaad55c92206ff2f4b34bc7cc0479.zip",
         },
-        "Environment": {
-          "Variables": {
-            "GOALS_TABLE": {
+        "Environment": Object {
+          "Variables": Object {
+            "GOALS_TABLE": Object {
               "Ref": "GoalsB6B7CD6B",
             },
           },
         },
         "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
+        "Role": Object {
+          "Fn::GetAtt": Array [
             "deletegoalServiceRole35DA8593",
             "Arn",
           ],
@@ -3292,27 +3429,27 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Function",
     },
-    "deletegoalServiceRole35DA8593": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
+    "deletegoalServiceRole35DA8593": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
               "Action": "sts:AssumeRole",
               "Effect": "Allow",
-              "Principal": {
+              "Principal": Object {
                 "Service": "lambda.amazonaws.com",
               },
             },
           ],
           "Version": "2012-10-17",
         },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
@@ -3323,12 +3460,12 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::IAM::Role",
     },
-    "deletegoalServiceRoleDefaultPolicyED264682": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": [
+    "deletegoalServiceRoleDefaultPolicyED264682": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
                 "dynamodb:BatchGetItem",
                 "dynamodb:Query",
                 "dynamodb:GetItem",
@@ -3341,19 +3478,19 @@ exports[`Snapshot 1`] = `
                 "dynamodb:DescribeTable",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -3364,25 +3501,25 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:GetRecords",
                 "dynamodb:GetShardIterator",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -3393,8 +3530,8 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "events:DeleteRule",
                 "events:DescribeRule",
                 "events:ListRules",
@@ -3410,36 +3547,36 @@ exports[`Snapshot 1`] = `
           "Version": "2012-10-17",
         },
         "PolicyName": "deletegoalServiceRoleDefaultPolicyED264682",
-        "Roles": [
-          {
+        "Roles": Array [
+          Object {
             "Ref": "deletegoalServiceRole35DA8593",
           },
         ],
       },
       "Type": "AWS::IAM::Policy",
     },
-    "getallgoals33E3AF39": {
-      "DependsOn": [
+    "getallgoals33E3AF39": Object {
+      "DependsOn": Array [
         "getallgoalsServiceRoleDefaultPolicy867C1709",
         "getallgoalsServiceRole7ECAC696",
       ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": {
+      "Properties": Object {
+        "Code": Object {
+          "S3Bucket": Object {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "e959ad0a56b62bb9892032ef15972e7492141b3fe2be02bd7925f73a9e00066f.zip",
+          "S3Key": "1d25349e37e53f28fef97cbccff1407d7d357e9b6ba8d1974c2149b1048f898b.zip",
         },
-        "Environment": {
-          "Variables": {
-            "GOALS_TABLE": {
+        "Environment": Object {
+          "Variables": Object {
+            "GOALS_TABLE": Object {
               "Ref": "GoalsB6B7CD6B",
             },
           },
         },
         "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
+        "Role": Object {
+          "Fn::GetAtt": Array [
             "getallgoalsServiceRole7ECAC696",
             "Arn",
           ],
@@ -3448,27 +3585,27 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Function",
     },
-    "getallgoalsServiceRole7ECAC696": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
+    "getallgoalsServiceRole7ECAC696": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
               "Action": "sts:AssumeRole",
               "Effect": "Allow",
-              "Principal": {
+              "Principal": Object {
                 "Service": "lambda.amazonaws.com",
               },
             },
           ],
           "Version": "2012-10-17",
         },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
@@ -3479,12 +3616,12 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::IAM::Role",
     },
-    "getallgoalsServiceRoleDefaultPolicy867C1709": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": [
+    "getallgoalsServiceRoleDefaultPolicy867C1709": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
                 "dynamodb:BatchGetItem",
                 "dynamodb:Query",
                 "dynamodb:GetItem",
@@ -3493,19 +3630,19 @@ exports[`Snapshot 1`] = `
                 "dynamodb:DescribeTable",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -3516,25 +3653,25 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:GetRecords",
                 "dynamodb:GetShardIterator",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -3549,36 +3686,36 @@ exports[`Snapshot 1`] = `
           "Version": "2012-10-17",
         },
         "PolicyName": "getallgoalsServiceRoleDefaultPolicy867C1709",
-        "Roles": [
-          {
+        "Roles": Array [
+          Object {
             "Ref": "getallgoalsServiceRole7ECAC696",
           },
         ],
       },
       "Type": "AWS::IAM::Policy",
     },
-    "getgoalbyidE152392E": {
-      "DependsOn": [
+    "getgoalbyidE152392E": Object {
+      "DependsOn": Array [
         "getgoalbyidServiceRoleDefaultPolicy7B6888E4",
         "getgoalbyidServiceRole791424A3",
       ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": {
+      "Properties": Object {
+        "Code": Object {
+          "S3Bucket": Object {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "bc72e42f5bb106340e80458e3032f1b915707d291b76ba849db444defa788902.zip",
+          "S3Key": "9346701d8263d4dc98185df2a31eea6e0ffb5d9702102d8d287081a62c90af66.zip",
         },
-        "Environment": {
-          "Variables": {
-            "GOALS_TABLE": {
+        "Environment": Object {
+          "Variables": Object {
+            "GOALS_TABLE": Object {
               "Ref": "GoalsB6B7CD6B",
             },
           },
         },
         "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
+        "Role": Object {
+          "Fn::GetAtt": Array [
             "getgoalbyidServiceRole791424A3",
             "Arn",
           ],
@@ -3587,27 +3724,27 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Function",
     },
-    "getgoalbyidServiceRole791424A3": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
+    "getgoalbyidServiceRole791424A3": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
               "Action": "sts:AssumeRole",
               "Effect": "Allow",
-              "Principal": {
+              "Principal": Object {
                 "Service": "lambda.amazonaws.com",
               },
             },
           ],
           "Version": "2012-10-17",
         },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
@@ -3618,12 +3755,12 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::IAM::Role",
     },
-    "getgoalbyidServiceRoleDefaultPolicy7B6888E4": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": [
+    "getgoalbyidServiceRoleDefaultPolicy7B6888E4": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
                 "dynamodb:BatchGetItem",
                 "dynamodb:Query",
                 "dynamodb:GetItem",
@@ -3632,19 +3769,19 @@ exports[`Snapshot 1`] = `
                 "dynamodb:DescribeTable",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -3655,25 +3792,25 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:GetRecords",
                 "dynamodb:GetShardIterator",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -3688,36 +3825,36 @@ exports[`Snapshot 1`] = `
           "Version": "2012-10-17",
         },
         "PolicyName": "getgoalbyidServiceRoleDefaultPolicy7B6888E4",
-        "Roles": [
-          {
+        "Roles": Array [
+          Object {
             "Ref": "getgoalbyidServiceRole791424A3",
           },
         ],
       },
       "Type": "AWS::IAM::Policy",
     },
-    "gettransactions7F00A68D": {
-      "DependsOn": [
+    "gettransactions7F00A68D": Object {
+      "DependsOn": Array [
         "gettransactionsServiceRoleDefaultPolicy2B58181D",
         "gettransactionsServiceRoleA81AB16F",
       ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": {
+      "Properties": Object {
+        "Code": Object {
+          "S3Bucket": Object {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "57e2e21fc7d2869a61e32855de3899ad11997072a6862083565671b28d6b4703.zip",
+          "S3Key": "d57544743098c32051f06cb588745e4eced26991fd09e7a2e0aaf601476eb397.zip",
         },
-        "Environment": {
-          "Variables": {
-            "TRANSACTIONS_TABLE": {
+        "Environment": Object {
+          "Variables": Object {
+            "TRANSACTIONS_TABLE": Object {
               "Ref": "Transactions098C5767",
             },
           },
         },
         "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
+        "Role": Object {
+          "Fn::GetAtt": Array [
             "gettransactionsServiceRoleA81AB16F",
             "Arn",
           ],
@@ -3726,27 +3863,27 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Function",
     },
-    "gettransactionsServiceRoleA81AB16F": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
+    "gettransactionsServiceRoleA81AB16F": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
               "Action": "sts:AssumeRole",
               "Effect": "Allow",
-              "Principal": {
+              "Principal": Object {
                 "Service": "lambda.amazonaws.com",
               },
             },
           ],
           "Version": "2012-10-17",
         },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
@@ -3757,12 +3894,12 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::IAM::Role",
     },
-    "gettransactionsServiceRoleDefaultPolicy2B58181D": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": [
+    "gettransactionsServiceRoleDefaultPolicy2B58181D": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
                 "dynamodb:BatchGetItem",
                 "dynamodb:Query",
                 "dynamodb:GetItem",
@@ -3771,19 +3908,19 @@ exports[`Snapshot 1`] = `
                 "dynamodb:DescribeTable",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "Transactions098C5767",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "Transactions098C5767",
                           "Arn",
                         ],
@@ -3794,25 +3931,25 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:GetRecords",
                 "dynamodb:GetShardIterator",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "Transactions098C5767",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "Transactions098C5767",
                           "Arn",
                         ],
@@ -3827,40 +3964,40 @@ exports[`Snapshot 1`] = `
           "Version": "2012-10-17",
         },
         "PolicyName": "gettransactionsServiceRoleDefaultPolicy2B58181D",
-        "Roles": [
-          {
+        "Roles": Array [
+          Object {
             "Ref": "gettransactionsServiceRoleA81AB16F",
           },
         ],
       },
       "Type": "AWS::IAM::Policy",
     },
-    "getuserinfoF2CB8B88": {
-      "DependsOn": [
+    "getuserinfoF2CB8B88": Object {
+      "DependsOn": Array [
         "getuserinfoServiceRoleDefaultPolicy5977E718",
         "getuserinfoServiceRole51DD7D85",
       ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": {
+      "Properties": Object {
+        "Code": Object {
+          "S3Bucket": Object {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "13b046ffe8f99b7210cc36ab3a4c2bb72b5cbde1a1170ea4f9227d769333ec10.zip",
+          "S3Key": "22601e3acf0cfc7fc7f8f8718545a5231f1c215d84fa6b4b506f43abf371fb43.zip",
         },
-        "Environment": {
-          "Variables": {
-            "COGNITO_USER_POOL_ID": {
+        "Environment": Object {
+          "Variables": Object {
+            "COGNITO_USER_POOL_ID": Object {
               "Ref": "WorkoutWagerUserPool0F200A97",
             },
-            "USER_INFO_TABLE": {
+            "USER_INFO_TABLE": Object {
               "Ref": "UserInfo4540AD3C",
             },
           },
         },
         "Handler": "index.handler",
         "MemorySize": 256,
-        "Role": {
-          "Fn::GetAtt": [
+        "Role": Object {
+          "Fn::GetAtt": Array [
             "getuserinfoServiceRole51DD7D85",
             "Arn",
           ],
@@ -3870,27 +4007,27 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Function",
     },
-    "getuserinfoServiceRole51DD7D85": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
+    "getuserinfoServiceRole51DD7D85": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
               "Action": "sts:AssumeRole",
               "Effect": "Allow",
-              "Principal": {
+              "Principal": Object {
                 "Service": "lambda.amazonaws.com",
               },
             },
           ],
           "Version": "2012-10-17",
         },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
@@ -3901,38 +4038,38 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::IAM::Role",
     },
-    "getuserinfoServiceRoleDefaultPolicy5977E718": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": [
+    "getuserinfoServiceRoleDefaultPolicy5977E718": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
                 "cognito-idp:AdminGetUser",
                 "cognito-idp:ListUsers",
               ],
               "Effect": "Allow",
-              "Resource": {
-                "Fn::Join": [
+              "Resource": Object {
+                "Fn::Join": Array [
                   "",
-                  [
+                  Array [
                     "arn:aws:cognito-idp:",
-                    {
+                    Object {
                       "Ref": "AWS::Region",
                     },
                     ":",
-                    {
+                    Object {
                       "Ref": "AWS::AccountId",
                     },
                     ":userpool/",
-                    {
+                    Object {
                       "Ref": "WorkoutWagerUserPool0F200A97",
                     },
                   ],
                 ],
               },
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:BatchGetItem",
                 "dynamodb:Query",
                 "dynamodb:GetItem",
@@ -3945,24 +4082,24 @@ exports[`Snapshot 1`] = `
                 "dynamodb:DescribeTable",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "UserInfo4540AD3C",
                     "Arn",
                   ],
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:GetRecords",
                 "dynamodb:GetShardIterator",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "UserInfo4540AD3C",
                     "Arn",
                   ],
@@ -3973,33 +4110,33 @@ exports[`Snapshot 1`] = `
           "Version": "2012-10-17",
         },
         "PolicyName": "getuserinfoServiceRoleDefaultPolicy5977E718",
-        "Roles": [
-          {
+        "Roles": Array [
+          Object {
             "Ref": "getuserinfoServiceRole51DD7D85",
           },
         ],
       },
       "Type": "AWS::IAM::Policy",
     },
-    "healthC878E2FF": {
-      "DependsOn": [
+    "healthC878E2FF": Object {
+      "DependsOn": Array [
         "healthServiceRole962E3AA5",
       ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": {
+      "Properties": Object {
+        "Code": Object {
+          "S3Bucket": Object {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "8a8a4fe4182bf204c3a0be878e807aad6f5f07c1cac359bdeb55f01139e99f0c.zip",
+          "S3Key": "2d1344cbbb36b3f8d6c07de0e0e6b3429c996d8eaf54254f47910ca725a9dd6e.zip",
         },
-        "Environment": {
-          "Variables": {
+        "Environment": Object {
+          "Variables": Object {
             "SOME_KEY": "some_key variable",
           },
         },
         "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
+        "Role": Object {
+          "Fn::GetAtt": Array [
             "healthServiceRole962E3AA5",
             "Arn",
           ],
@@ -4008,27 +4145,27 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Function",
     },
-    "healthServiceRole962E3AA5": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
+    "healthServiceRole962E3AA5": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
               "Action": "sts:AssumeRole",
               "Effect": "Allow",
-              "Principal": {
+              "Principal": Object {
                 "Service": "lambda.amazonaws.com",
               },
             },
           ],
           "Version": "2012-10-17",
         },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
@@ -4039,34 +4176,34 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::IAM::Role",
     },
-    "milestonehandler1E186260": {
-      "DependsOn": [
+    "milestonehandler1E186260": Object {
+      "DependsOn": Array [
         "milestonehandlerServiceRoleDefaultPolicy8126BF81",
         "milestonehandlerServiceRole4EB41AF5",
       ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": {
+      "Properties": Object {
+        "Code": Object {
+          "S3Bucket": Object {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "a1caa6f7e02c8c0ef4c2520d115d478af4dd32e9b4d958ab5a5ce1048a125182.zip",
+          "S3Key": "cd6fab7ee8320458cf3c165c7b614503bcc478cca001e86af847ab9dcd55a860.zip",
         },
-        "Environment": {
-          "Variables": {
-            "GOALS_TABLE": {
+        "Environment": Object {
+          "Variables": Object {
+            "GOALS_TABLE": Object {
               "Ref": "GoalsB6B7CD6B",
             },
-            "TRANSACTIONS_TABLE": {
+            "TRANSACTIONS_TABLE": Object {
               "Ref": "Transactions098C5767",
             },
-            "USER_INFO_TABLE": {
+            "USER_INFO_TABLE": Object {
               "Ref": "UserInfo4540AD3C",
             },
           },
         },
         "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
+        "Role": Object {
+          "Fn::GetAtt": Array [
             "milestonehandlerServiceRole4EB41AF5",
             "Arn",
           ],
@@ -4076,27 +4213,27 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Function",
     },
-    "milestonehandlerServiceRole4EB41AF5": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
+    "milestonehandlerServiceRole4EB41AF5": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
               "Action": "sts:AssumeRole",
               "Effect": "Allow",
-              "Principal": {
+              "Principal": Object {
                 "Service": "lambda.amazonaws.com",
               },
             },
           ],
           "Version": "2012-10-17",
         },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
@@ -4107,12 +4244,12 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::IAM::Role",
     },
-    "milestonehandlerServiceRoleDefaultPolicy8126BF81": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": [
+    "milestonehandlerServiceRoleDefaultPolicy8126BF81": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
                 "sqs:ReceiveMessage",
                 "sqs:ChangeMessageVisibility",
                 "sqs:GetQueueUrl",
@@ -4120,15 +4257,15 @@ exports[`Snapshot 1`] = `
                 "sqs:GetQueueAttributes",
               ],
               "Effect": "Allow",
-              "Resource": {
-                "Fn::GetAtt": [
+              "Resource": Object {
+                "Fn::GetAtt": Array [
                   "MilestoneQueue1C66F757",
                   "Arn",
                 ],
               },
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:BatchGetItem",
                 "dynamodb:Query",
                 "dynamodb:GetItem",
@@ -4141,19 +4278,19 @@ exports[`Snapshot 1`] = `
                 "dynamodb:DescribeTable",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -4164,25 +4301,25 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:GetRecords",
                 "dynamodb:GetShardIterator",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -4193,8 +4330,8 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:BatchGetItem",
                 "dynamodb:Query",
                 "dynamodb:GetItem",
@@ -4207,19 +4344,19 @@ exports[`Snapshot 1`] = `
                 "dynamodb:DescribeTable",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "Transactions098C5767",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "Transactions098C5767",
                           "Arn",
                         ],
@@ -4230,25 +4367,25 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:GetRecords",
                 "dynamodb:GetShardIterator",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "Transactions098C5767",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "Transactions098C5767",
                           "Arn",
                         ],
@@ -4259,8 +4396,8 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:BatchGetItem",
                 "dynamodb:Query",
                 "dynamodb:GetItem",
@@ -4269,32 +4406,32 @@ exports[`Snapshot 1`] = `
                 "dynamodb:DescribeTable",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "UserInfo4540AD3C",
                     "Arn",
                   ],
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:GetRecords",
                 "dynamodb:GetShardIterator",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "UserInfo4540AD3C",
                     "Arn",
                   ],
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "events:DeleteRule",
                 "events:DescribeRule",
                 "events:ListRules",
@@ -4310,86 +4447,84 @@ exports[`Snapshot 1`] = `
           "Version": "2012-10-17",
         },
         "PolicyName": "milestonehandlerServiceRoleDefaultPolicy8126BF81",
-        "Roles": [
-          {
+        "Roles": Array [
+          Object {
             "Ref": "milestonehandlerServiceRole4EB41AF5",
           },
         ],
       },
       "Type": "AWS::IAM::Policy",
     },
-    "milestonehandlerSqsEventSourcetestMilestoneQueueFF179A8FBA80E46A": {
-      "Properties": {
+    "milestonehandlerSqsEventSourcetestMilestoneQueueFF179A8FBA80E46A": Object {
+      "Properties": Object {
         "BatchSize": 1,
-        "EventSourceArn": {
-          "Fn::GetAtt": [
+        "EventSourceArn": Object {
+          "Fn::GetAtt": Array [
             "MilestoneQueue1C66F757",
             "Arn",
           ],
         },
-        "FunctionName": {
+        "FunctionName": Object {
           "Ref": "milestonehandler1E186260",
         },
       },
       "Type": "AWS::Lambda::EventSourceMapping",
     },
-    "updategoal806CC7DE": {
-      "DependsOn": [
-        "updategoalServiceRoleDefaultPolicy8AE6BF3F",
-        "updategoalServiceRoleC7777C89",
+    "notifyusers020A503B": Object {
+      "DependsOn": Array [
+        "notifyusersServiceRoleDefaultPolicy5E600883",
+        "notifyusersServiceRole9A875A07",
       ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": {
+      "Properties": Object {
+        "Code": Object {
+          "S3Bucket": Object {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "eaec76cbe1649b81b3a7b45e1a9221c6138e2ab2ddfdb8ec87abb37304842161.zip",
+          "S3Key": "11bcf23966f0bb239318cea960e6755b67024f76fcdc749c213ca47bec27d39c.zip",
         },
-        "Environment": {
-          "Variables": {
-            "GOALS_TABLE": {
+        "Environment": Object {
+          "Variables": Object {
+            "GOALS_TABLE": Object {
               "Ref": "GoalsB6B7CD6B",
             },
-            "SQS_QUEUE_ARN": {
-              "Fn::GetAtt": [
-                "MilestoneQueue1C66F757",
-                "Arn",
-              ],
+            "USER_INFO_TABLE": Object {
+              "Ref": "UserInfo4540AD3C",
             },
           },
         },
         "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
-            "updategoalServiceRoleC7777C89",
+        "Role": Object {
+          "Fn::GetAtt": Array [
+            "notifyusersServiceRole9A875A07",
             "Arn",
           ],
         },
         "Runtime": "nodejs20.x",
+        "Timeout": 120,
       },
       "Type": "AWS::Lambda::Function",
     },
-    "updategoalServiceRoleC7777C89": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
+    "notifyusersServiceRole9A875A07": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
               "Action": "sts:AssumeRole",
               "Effect": "Allow",
-              "Principal": {
+              "Principal": Object {
                 "Service": "lambda.amazonaws.com",
               },
             },
           ],
           "Version": "2012-10-17",
         },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
@@ -4400,12 +4535,191 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::IAM::Role",
     },
-    "updategoalServiceRoleDefaultPolicy8AE6BF3F": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": [
+    "notifyusersServiceRoleDefaultPolicy5E600883": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
+                "dynamodb:BatchGetItem",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
+                    "GoalsB6B7CD6B",
+                    "Arn",
+                  ],
+                },
+                Object {
+                  "Fn::Join": Array [
+                    "",
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
+                          "GoalsB6B7CD6B",
+                          "Arn",
+                        ],
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            Object {
+              "Action": Array [
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+              ],
+              "Effect": "Allow",
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
+                    "GoalsB6B7CD6B",
+                    "Arn",
+                  ],
+                },
+                Object {
+                  "Fn::Join": Array [
+                    "",
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
+                          "GoalsB6B7CD6B",
+                          "Arn",
+                        ],
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            Object {
+              "Action": Array [
+                "dynamodb:BatchGetItem",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
+                    "UserInfo4540AD3C",
+                    "Arn",
+                  ],
+                },
+              ],
+            },
+            Object {
+              "Action": Array [
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+              ],
+              "Effect": "Allow",
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
+                    "UserInfo4540AD3C",
+                    "Arn",
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "notifyusersServiceRoleDefaultPolicy5E600883",
+        "Roles": Array [
+          Object {
+            "Ref": "notifyusersServiceRole9A875A07",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "updategoal806CC7DE": Object {
+      "DependsOn": Array [
+        "updategoalServiceRoleDefaultPolicy8AE6BF3F",
+        "updategoalServiceRoleC7777C89",
+      ],
+      "Properties": Object {
+        "Code": Object {
+          "S3Bucket": Object {
+            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+          },
+          "S3Key": "926cab13a52849c8ff3d642d283f61e7ce762d244ac62ab9b0e089868c298b47.zip",
+        },
+        "Environment": Object {
+          "Variables": Object {
+            "GOALS_TABLE": Object {
+              "Ref": "GoalsB6B7CD6B",
+            },
+            "SQS_QUEUE_ARN": Object {
+              "Fn::GetAtt": Array [
+                "MilestoneQueue1C66F757",
+                "Arn",
+              ],
+            },
+          },
+        },
+        "Handler": "index.handler",
+        "Role": Object {
+          "Fn::GetAtt": Array [
+            "updategoalServiceRoleC7777C89",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "updategoalServiceRoleC7777C89": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": Object {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
+              "",
+              Array [
+                "arn:",
+                Object {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "updategoalServiceRoleDefaultPolicy8AE6BF3F": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
                 "dynamodb:BatchGetItem",
                 "dynamodb:Query",
                 "dynamodb:GetItem",
@@ -4418,19 +4732,19 @@ exports[`Snapshot 1`] = `
                 "dynamodb:DescribeTable",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -4441,25 +4755,25 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:GetRecords",
                 "dynamodb:GetShardIterator",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -4470,22 +4784,22 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "sqs:SendMessage",
                 "sqs:GetQueueAttributes",
                 "sqs:GetQueueUrl",
               ],
               "Effect": "Allow",
-              "Resource": {
-                "Fn::GetAtt": [
+              "Resource": Object {
+                "Fn::GetAtt": Array [
                   "MilestoneQueue1C66F757",
                   "Arn",
                 ],
               },
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "events:DeleteRule",
                 "events:DescribeRule",
                 "events:ListRules",
@@ -4501,33 +4815,33 @@ exports[`Snapshot 1`] = `
           "Version": "2012-10-17",
         },
         "PolicyName": "updategoalServiceRoleDefaultPolicy8AE6BF3F",
-        "Roles": [
-          {
+        "Roles": Array [
+          Object {
             "Ref": "updategoalServiceRoleC7777C89",
           },
         ],
       },
       "Type": "AWS::IAM::Policy",
     },
-    "updatemilestone6D1A5941": {
-      "DependsOn": [
+    "updatemilestone6D1A5941": Object {
+      "DependsOn": Array [
         "updatemilestoneServiceRoleDefaultPolicyB395BE0D",
         "updatemilestoneServiceRoleB9D4F292",
       ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": {
+      "Properties": Object {
+        "Code": Object {
+          "S3Bucket": Object {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "5d7ef138cc777e7fbfd418a06affd6cce7a8a2199cfa4a3646d6e92816f57a03.zip",
+          "S3Key": "1d0c5e442c5af9a78fc383a2f881b211c6b949aec8beca0f1eb47d1f783e1da2.zip",
         },
-        "Environment": {
-          "Variables": {
-            "GOALS_TABLE": {
+        "Environment": Object {
+          "Variables": Object {
+            "GOALS_TABLE": Object {
               "Ref": "GoalsB6B7CD6B",
             },
-            "SQS_QUEUE_ARN": {
-              "Fn::GetAtt": [
+            "SQS_QUEUE_ARN": Object {
+              "Fn::GetAtt": Array [
                 "MilestoneQueue1C66F757",
                 "Arn",
               ],
@@ -4535,8 +4849,8 @@ exports[`Snapshot 1`] = `
           },
         },
         "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
+        "Role": Object {
+          "Fn::GetAtt": Array [
             "updatemilestoneServiceRoleB9D4F292",
             "Arn",
           ],
@@ -4545,27 +4859,27 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Function",
     },
-    "updatemilestoneServiceRoleB9D4F292": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
+    "updatemilestoneServiceRoleB9D4F292": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
               "Action": "sts:AssumeRole",
               "Effect": "Allow",
-              "Principal": {
+              "Principal": Object {
                 "Service": "lambda.amazonaws.com",
               },
             },
           ],
           "Version": "2012-10-17",
         },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
               "",
-              [
+              Array [
                 "arn:",
-                {
+                Object {
                   "Ref": "AWS::Partition",
                 },
                 ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
@@ -4576,12 +4890,12 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::IAM::Role",
     },
-    "updatemilestoneServiceRoleDefaultPolicyB395BE0D": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": [
+    "updatemilestoneServiceRoleDefaultPolicyB395BE0D": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
                 "dynamodb:BatchGetItem",
                 "dynamodb:Query",
                 "dynamodb:GetItem",
@@ -4594,19 +4908,19 @@ exports[`Snapshot 1`] = `
                 "dynamodb:DescribeTable",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -4617,25 +4931,25 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "dynamodb:GetRecords",
                 "dynamodb:GetShardIterator",
               ],
               "Effect": "Allow",
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
                     "GoalsB6B7CD6B",
                     "Arn",
                   ],
                 },
-                {
-                  "Fn::Join": [
+                Object {
+                  "Fn::Join": Array [
                     "",
-                    [
-                      {
-                        "Fn::GetAtt": [
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
                           "GoalsB6B7CD6B",
                           "Arn",
                         ],
@@ -4646,22 +4960,22 @@ exports[`Snapshot 1`] = `
                 },
               ],
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "sqs:SendMessage",
                 "sqs:GetQueueAttributes",
                 "sqs:GetQueueUrl",
               ],
               "Effect": "Allow",
-              "Resource": {
-                "Fn::GetAtt": [
+              "Resource": Object {
+                "Fn::GetAtt": Array [
                   "MilestoneQueue1C66F757",
                   "Arn",
                 ],
               },
             },
-            {
-              "Action": [
+            Object {
+              "Action": Array [
                 "events:DeleteRule",
                 "events:DescribeRule",
                 "events:ListRules",
@@ -4677,8 +4991,8 @@ exports[`Snapshot 1`] = `
           "Version": "2012-10-17",
         },
         "PolicyName": "updatemilestoneServiceRoleDefaultPolicyB395BE0D",
-        "Roles": [
-          {
+        "Roles": Array [
+          Object {
             "Ref": "updatemilestoneServiceRoleB9D4F292",
           },
         ],
@@ -4686,22 +5000,22 @@ exports[`Snapshot 1`] = `
       "Type": "AWS::IAM::Policy",
     },
   },
-  "Rules": {
-    "CheckBootstrapVersion": {
-      "Assertions": [
-        {
-          "Assert": {
-            "Fn::Not": [
-              {
-                "Fn::Contains": [
-                  [
+  "Rules": Object {
+    "CheckBootstrapVersion": Object {
+      "Assertions": Array [
+        Object {
+          "Assert": Object {
+            "Fn::Not": Array [
+              Object {
+                "Fn::Contains": Array [
+                  Array [
                     "1",
                     "2",
                     "3",
                     "4",
                     "5",
                   ],
-                  {
+                  Object {
                     "Ref": "BootstrapVersion",
                   },
                 ],

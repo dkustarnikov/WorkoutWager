@@ -8,6 +8,13 @@ export interface Milestone {
   monetaryValue: number;
 }
 
+export interface Venue {
+  address: string;
+  lat: number;
+  lng: number;
+  radiusMeters: number; // geofence radius, default 100
+}
+
 export interface Goal {
   goalId: string; // Primary Key
   userId: string;
@@ -24,6 +31,7 @@ export interface Goal {
   createdAt: string; // ISO 8601 date string
   updatedAt: string; // ISO 8601 date string
   status: GoalStatus;
+  venue?: Venue; // optional: physical location for geofence auto-complete
 }
 
 export enum GoalStatus {
@@ -66,4 +74,5 @@ export interface User {
   username: string;
   email: string;
   goalIds: string[];
+  expoPushToken?: string; // Expo push token for server-side notifications
 }

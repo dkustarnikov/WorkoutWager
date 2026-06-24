@@ -83,7 +83,7 @@ export class MyStack extends Stack {
 
     const resourceServerScope = new cognito.ResourceServerScope({
       scopeName: 'customScope',
-      scopeDescription: 'Custom Scope Description',
+      scopeDescription: 'Custom scope for workout wager',
     });
 
     const resourceServer = new cognito.UserPoolResourceServer(this, 'ResourceServer', {
@@ -256,6 +256,26 @@ export class MyStack extends Stack {
       environment: { GOALS_TABLE: goalsTable.tableName },
     });
 
+    // // notify-users: daily 12pm EST (17:00 UTC) push via Expo Push API
+    // const notifyUsersFunction = new NodejsFunction(this, 'notify-users', {
+    //   runtime: lambda.Runtime.NODEJS_20_X,
+    //   entry: path.join(__dirname, 'lambdas/notify-users/index.ts'),
+    //   handler: 'handler',
+    //   timeout: Duration.minutes(2),
+    //   environment: {
+    //     GOALS_TABLE: goalsTable.tableName,
+    //     USER_INFO_TABLE: userInfoTable.tableName,
+    //   },
+    // });
+    // goalsTable.grantReadData(notifyUsersFunction);
+    // userInfoTable.grantReadData(notifyUsersFunction);
+
+    // new events.Rule(this, 'DailyNotificationRule', {
+    //   schedule: events.Schedule.cron({ minute: '0', hour: '17' }), // 17:00 UTC = 12:00 EST / 13:00 EDT
+    //   targets: [new targets.LambdaFunction(notifyUsersFunction)],
+    //   description: 'Fire daily push notifications to all users at noon EST',
+    // });
+
     // --- API Gateway ---
 
     const authorizer = new apigateway.TokenAuthorizer(this, 'MyAuthorizer', {
@@ -401,8 +421,10 @@ const devEnv = {
 };
 
 const app = new App();
-const stackName = 'workout-wager-dev';
+// const stackName = 'workout-wager-dev';
 
-new MyStack(app, stackName, { env: devEnv });
+new MyStack(app, 'workout-wager-dev', { env: devEnv });
+new MyStack(app, 'workout-wager-prod', { env: devEnv });
+
 
 app.synth();
