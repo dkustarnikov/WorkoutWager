@@ -2,6 +2,7 @@ import * as awsLambda from 'aws-lambda';
 import { DynamoDB, EventBridge } from 'aws-sdk';
 import { v4 as uuidv4 } from 'uuid';
 import * as yup from 'yup';
+import { getCallerId, goalNotFoundResponse, isOwner, unauthorizedResponse } from '../../common/auth';
 import { getApiResponse, goalSchema, convertToCronExpression } from '../../common/helpers';
 import { Goal, GoalStatus } from '../../common/models';
 import { computeCompletionPercentage } from '../../common/transactionUtils';
@@ -18,7 +19,13 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
       return getApiResponse(400, JSON.stringify({ message: 'Missing goalId in path parameters' }));
     }
 
-    const requestBody = JSON.parse(event.body || '{}');
+    const callerId = getCallerId(event);
+    if (!callerId) {
+      return unauthorizedResponse();
+    }
+
+    // Owner comes from the token; a body `userId` is ignored (kept for older clients).
+    const requestBody = { ...JSON.parse(event.body || '{}'), userId: callerId };
 
     try {
       await goalSchema.validate(requestBody, { abortEarly: false });
@@ -62,19 +69,27 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
     }
 
     const getResult = await dynamoDb.get({ TableName: TABLE_NAME, Key: { goalId } }).promise();
-    if (!getResult.Item) {
-      return getApiResponse(404, JSON.stringify({ message: 'Goal not found' }));
+    if (!isOwner(getResult.Item as Goal | undefined, callerId)) {
+      return goalNotFoundResponse();
     }
 
     const existingGoal = getResult.Item as Goal;
 
-    if (existingGoal.status === GoalStatus.completed || existingGoal.status === GoalStatus.failed) {
+    // Completion state is owned by the server (complete-milestone / milestone-handler).
+    // Never take it from the request, or a client could mark milestones done or undo a miss.
+    const storedCompletion = new Map(existingGoal.milestones.map(m => [m.milestoneId, m.completion]));
+    for (const m of updatedMilestones) {
+      m.completion = storedCompletion.get(m.milestoneId);
+    }
+
+    if (existingGoal.status === GoalStatus.completed || existingGoal.status === GoalStatus.failed
+      || existingGoal.status === GoalStatus.cancelled) {
       return getApiResponse(400, JSON.stringify({ message: 'Cannot update a resolved goal' }));
     }
 
     const updatedGoal: Goal = {
       ...existingGoal,
-      userId,
+      userId: existingGoal.userId,
       goalType,
       goalName,
       generalObjective,

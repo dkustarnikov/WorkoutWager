@@ -3,6 +3,73 @@
 exports[`Snapshot 1`] = `
 {
   "Outputs": {
+    "BrunoBaseUrl": {
+      "Description": "Bruno env → baseUrl (API Gateway URL incl. stage)",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "WorkoutWagerAPI12237448",
+            },
+            ".execute-api.",
+            {
+              "Ref": "AWS::Region",
+            },
+            ".",
+            {
+              "Ref": "AWS::URLSuffix",
+            },
+            "/",
+            {
+              "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
+            },
+            "/",
+          ],
+        ],
+      },
+    },
+    "BrunoGetTokenCommand": {
+      "Description": "CLI command to get a JWT — paste output into Bruno authToken env var",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "aws cognito-idp initiate-auth --client-id <BrunoUserPoolClientId> --auth-flow USER_PASSWORD_AUTH --auth-parameters USERNAME=<your-email>,PASSWORD=<your-password> --region ",
+            {
+              "Ref": "AWS::Region",
+            },
+            " | jq -r '.AuthenticationResult.IdToken'",
+          ],
+        ],
+      },
+    },
+    "BrunoTokenEndpoint": {
+      "Description": "Bruno env → tokenEndpoint — POST here to exchange credentials for JWT",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "UserPoolDomain5479B217",
+            },
+            ".auth.",
+            {
+              "Ref": "AWS::Region",
+            },
+            ".amazoncognito.com/oauth2/token",
+          ],
+        ],
+      },
+    },
+    "BrunoUserPoolClientId": {
+      "Description": "Bruno env → clientId — use with Cognito InitiateAuth to get authToken",
+      "Value": {
+        "Ref": "WorkoutWagerUserPoolClientForUserAuthA3F3B50A",
+      },
+    },
     "CognitoDomain": {
       "Value": {
         "Fn::Join": [
@@ -2213,6 +2280,38 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Cognito::UserPoolClient",
     },
+    "WorkoutWagerUserPoolClientForUserAuthA3F3B50A": {
+      "Properties": {
+        "AllowedOAuthFlows": [
+          "implicit",
+          "code",
+        ],
+        "AllowedOAuthFlowsUserPoolClient": true,
+        "AllowedOAuthScopes": [
+          "profile",
+          "phone",
+          "email",
+          "openid",
+          "aws.cognito.signin.user.admin",
+        ],
+        "CallbackURLs": [
+          "https://example.com",
+        ],
+        "ExplicitAuthFlows": [
+          "ALLOW_USER_PASSWORD_AUTH",
+          "ALLOW_USER_SRP_AUTH",
+          "ALLOW_REFRESH_TOKEN_AUTH",
+        ],
+        "GenerateSecret": false,
+        "SupportedIdentityProviders": [
+          "COGNITO",
+        ],
+        "UserPoolId": {
+          "Ref": "WorkoutWagerUserPool0F200A97",
+        },
+      },
+      "Type": "AWS::Cognito::UserPoolClient",
+    },
     "addmilestoneEE3C71D3": {
       "DependsOn": [
         "addmilestoneServiceRoleDefaultPolicy5C77D95C",
@@ -2223,7 +2322,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "228dfd8393defe12671b116e0af841f2d13a0b47e4565663dadd09734dddc2ff.zip",
+          "S3Key": "9612c40ab7d685ee61c6b28575772546f107e6ce4a8835e8dbf2059c779d0eaf.zip",
         },
         "Environment": {
           "Variables": {
@@ -2398,7 +2497,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "3b0371cdc11ffd4abfe53347d3e95a79ed1ff0c2cec98c7427bc2e44a1a6daee.zip",
+          "S3Key": "5f9bc621c62c7889a3853b170e11a938b358e310aef74d97976aebfbec875a36.zip",
         },
         "Environment": {
           "Variables": {
@@ -2502,7 +2601,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "f18fb00562b924cda79df7cd1d2485ef2b3723835402903121d991d314cf84f5.zip",
+          "S3Key": "4b65950f78a62300d3aa47f7aaee42a7a4d83a269adf41b908ca26fcc399097f.zip",
         },
         "Environment": {
           "Variables": {
@@ -2658,7 +2757,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "1d8d0075686d2480c53b1c7e88b29d936367cfa87f0b8bc34e0acf6d0bdcb710.zip",
+          "S3Key": "89e449c7e72f9ce480cd45333cfd4bd806733307e85156afdf085c563f8c34f2.zip",
         },
         "Environment": {
           "Variables": {
@@ -2883,7 +2982,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "f41cc129fa83eccd3a1f9b830fe13de6677efb3146b1059b7c458a9402eca4f3.zip",
+          "S3Key": "9014c97314551d911cff7f7e1ba515b945de7816ebf74646f26ee561046dcc55.zip",
         },
         "Environment": {
           "Variables": {
@@ -3096,7 +3195,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "f0a912881e6ff1c0529ce1560ebb4684d69e948a6f92ed2dd822abe5862a2aba.zip",
+          "S3Key": "d2773776eaa7127834b9f5ee4e034443c8ebfa1ba669412a0f6fc423e73a278a.zip",
         },
         "Environment": {
           "Variables": {
@@ -3272,7 +3371,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "6ca8aa25cc886adfc0cd9ac44d13a5c40463d8002d4338893ae8b17384c136d5.zip",
+          "S3Key": "dd6eb46675d90fc18d4c3081e9f94ae36e1376250a8f23af911e7cb0c9028205.zip",
         },
         "Environment": {
           "Variables": {
@@ -3428,7 +3527,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "e959ad0a56b62bb9892032ef15972e7492141b3fe2be02bd7925f73a9e00066f.zip",
+          "S3Key": "6450110f74dcb96d6bc90943ec8573e1740a39b4b58402ea6ed095a922a90b0e.zip",
         },
         "Environment": {
           "Variables": {
@@ -3567,7 +3666,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "bc72e42f5bb106340e80458e3032f1b915707d291b76ba849db444defa788902.zip",
+          "S3Key": "bcb3f9ec1e14e9b91efb3365881995960ed31ae661fb929365243f87d78ba5ff.zip",
         },
         "Environment": {
           "Variables": {
@@ -3706,7 +3805,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "57e2e21fc7d2869a61e32855de3899ad11997072a6862083565671b28d6b4703.zip",
+          "S3Key": "92c1f04bfef13902a2a631a0262c6b4fabf84b501760e3cdfb0ae645bc17ab05.zip",
         },
         "Environment": {
           "Variables": {
@@ -3845,7 +3944,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "13b046ffe8f99b7210cc36ab3a4c2bb72b5cbde1a1170ea4f9227d769333ec10.zip",
+          "S3Key": "2523b7130f9a2e028dee20328b9c24dfd20c31c68bdf583dfa7fcceb4599049f.zip",
         },
         "Environment": {
           "Variables": {
@@ -3990,7 +4089,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "8a8a4fe4182bf204c3a0be878e807aad6f5f07c1cac359bdeb55f01139e99f0c.zip",
+          "S3Key": "a65a46a00b70cedb60a8c531ed19e002c0bcca3b63a01a52bcc21879804e9d14.zip",
         },
         "Environment": {
           "Variables": {
@@ -4343,7 +4442,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "eaec76cbe1649b81b3a7b45e1a9221c6138e2ab2ddfdb8ec87abb37304842161.zip",
+          "S3Key": "b175aa0d1a94f7a3f3c50820158f972b71e21e5056b2b3ccb7e4fbce7bd82882.zip",
         },
         "Environment": {
           "Variables": {
@@ -4519,7 +4618,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "5d7ef138cc777e7fbfd418a06affd6cce7a8a2199cfa4a3646d6e92816f57a03.zip",
+          "S3Key": "f17b4e0c3da0cb2c32c210fcc2d3aa354f1f919561ff71076f91a8b3ce916054.zip",
         },
         "Environment": {
           "Variables": {

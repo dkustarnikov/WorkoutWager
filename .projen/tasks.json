@@ -215,13 +215,13 @@
       },
       "steps": [
         {
-          "exec": "npx npm-check-updates@16 --upgrade --target=minor --peer --no-deprecated --dep=dev,peer,prod,optional --filter=@types/aws-lambda,@types/jest,@types/jsonwebtoken,@types/jwk-to-pem,@types/node,@types/uuid,aws-cdk-lib,aws-lambda-mock-context,copyfiles,esbuild,eslint-import-resolver-typescript,eslint-plugin-import,jest,projen,ts-dotenv,ts-jest,ts-node,typescript,aws-sdk,axios,dotenv,dotenv-cli,jsonwebtoken,jwk-to-pem,jwks-rsa,uuid,yup"
+          "exec": "npx npm-check-updates@20 --upgrade --target=minor --peer --no-deprecated --dep=dev,peer,prod,optional --filter=@types/jest,@types/jsonwebtoken,@types/node,@types/uuid,esbuild,eslint-import-resolver-typescript,eslint-plugin-import,jest,projen,ts-jest,ts-node,typescript,@types/aws-lambda,aws-sdk,jsonwebtoken,jwks-rsa,uuid,yup"
         },
         {
           "exec": "npm install"
         },
         {
-          "exec": "npm update @stylistic/eslint-plugin @types/aws-lambda @types/jest @types/jsonwebtoken @types/jwk-to-pem @types/node @types/uuid @typescript-eslint/eslint-plugin @typescript-eslint/parser aws-cdk-lib aws-cdk aws-lambda-mock-context copyfiles esbuild eslint-import-resolver-typescript eslint-plugin-import eslint jest jest-junit projen ts-dotenv ts-jest ts-node typescript aws-sdk axios constructs dotenv dotenv-cli jsonwebtoken jwk-to-pem jwks-rsa uuid yup"
+          "exec": "npm update @stylistic/eslint-plugin @types/jest @types/jsonwebtoken @types/node @types/uuid @typescript-eslint/eslint-plugin @typescript-eslint/parser aws-cdk esbuild eslint-import-resolver-typescript eslint-plugin-import eslint jest jest-junit projen ts-jest ts-node typescript @types/aws-lambda aws-cdk-lib aws-sdk constructs jsonwebtoken jwks-rsa uuid yup"
         },
         {
           "exec": "npx projen"

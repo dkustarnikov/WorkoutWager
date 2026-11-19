@@ -214,17 +214,6 @@
   "overrides": [
     {
       "files": [
-        "test/**/*.ts"
-      ],
-      "parserOptions": {
-        "project": [
-          "./tsconfig.json",
-          "./tsconfig.test.json"
-        ]
-      }
-    },
-    {
-      "files": [
         ".projenrc.ts"
       ],
       "rules": {

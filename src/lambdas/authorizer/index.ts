@@ -27,7 +27,6 @@ export const handler = async (
   context: Context,
 ): Promise<APIGatewayAuthorizerResult> => {
   const token = event.authorizationToken;
-  console.log('Authorization token:', token);
 
   try {
     const tokenWithoutBearer = token.startsWith('Bearer ') ? token.slice(7) : token;
@@ -35,12 +34,16 @@ export const handler = async (
     return await new Promise((resolve) => {
       jwt.verify(tokenWithoutBearer, getKey, { algorithms: ['RS256'] }, (err, decoded) => {
         if (err) {
-          console.log('JWT verification failed:', err);
+          // Never log the token or its claims — they are credentials / personal data.
+          console.log('JWT verification failed:', err.name);
           resolve(generateDenyPolicy('user', event.methodArn));
         } else {
-          console.log('JWT verified:', decoded);
-          const userId = (decoded as any).sub as string;
-          resolve(generateAllowPolicy(userId, event.methodArn));
+          const claims = decoded as { sub?: string; email?: string };
+          if (!claims.sub) {
+            resolve(generateDenyPolicy('user', event.methodArn));
+            return;
+          }
+          resolve(generateAllowPolicy(claims.sub, event.methodArn, claims.email));
         }
       });
     });
@@ -50,7 +53,7 @@ export const handler = async (
   }
 };
 
-function generateAllowPolicy(principalId: string, resource: string): APIGatewayAuthorizerResult {
+function generateAllowPolicy(principalId: string, resource: string, email?: string): APIGatewayAuthorizerResult {
   // Allow all methods/resources in this stage so the cached policy covers every endpoint
   const parts = resource.split('/');
   const wildcardResource = `${parts[0]}/${parts[1]}/*/*`;
@@ -68,6 +71,7 @@ function generateAllowPolicy(principalId: string, resource: string): APIGatewayA
     },
     context: {
       userId: principalId,
+      ...(email ? { email } : {}),
     },
   };
 }

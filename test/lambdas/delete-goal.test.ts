@@ -1,4 +1,4 @@
-import context from 'aws-lambda-mock-context';
+import { context } from '../mockContext';
 // @ts-ignore
 import { getMockEvent } from '../testHelper';
 
@@ -113,5 +113,28 @@ describe('DELETE /goal/{goalId} (delete-goal)', () => {
     const result = await handler(event, ctx, jest.fn()) as any;
 
     expect(result.statusCode).toBe(500);
+  });
+
+  it('returns 401 when the caller identity is missing', async () => {
+    mockDynamoGet.mockResolvedValueOnce({ Item: makeGoal() });
+    const event = getMockEvent();
+    event.pathParameters = { goalId: GOAL_ID };
+    event.requestContext.authorizer = {};
+
+    const result = await handler(event, ctx, jest.fn()) as any;
+
+    expect(result.statusCode).toBe(401);
+  });
+
+  it("returns 404 (not 403) for another user's goal and does not delete it", async () => {
+    mockDynamoGet.mockResolvedValueOnce({ Item: makeGoal() });
+    const event = getMockEvent();
+    event.pathParameters = { goalId: GOAL_ID };
+    event.requestContext.authorizer = { userId: 'someone-else' };
+
+    const result = await handler(event, ctx, jest.fn()) as any;
+
+    expect(result.statusCode).toBe(404);
+    expect(mockDynamoDelete).not.toHaveBeenCalled();
   });
 });

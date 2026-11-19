@@ -1,6 +1,7 @@
 import * as awsLambda from 'aws-lambda';
 import { DynamoDB } from 'aws-sdk';
 import * as yup from 'yup';
+import { getCallerEmail, getCallerId, unauthorizedResponse } from '../../common/auth';
 import { getApiResponse } from '../../common/helpers';
 import { User } from '../../common/models';
 
@@ -10,7 +11,13 @@ const TABLE_NAME_GOALS = process.env.GOALS_TABLE || 'Goals';
 
 export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProxyEvent) => {
   try {
-    const { userId, email } = JSON.parse(event.body || '{}');
+    // Users can only configure their own profile: the id comes from the verified token.
+    const userId = getCallerId(event);
+    if (!userId) {
+      return unauthorizedResponse();
+    }
+    const body = JSON.parse(event.body || '{}');
+    const email: string | undefined = getCallerEmail(event) ?? body.email;
 
     const schema = yup.object().shape({
       userId: yup.string().required('User ID is required'),
@@ -40,10 +47,12 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
       actions.push('User already exists');
       userInfo = userInfoResult.Item as User;
     } else {
+      // `email` is guaranteed by the schema validation above.
+      const validEmail = email as string;
       userInfo = {
         userId,
-        username: email,
-        email,
+        username: validEmail,
+        email: validEmail,
         goalIds: [],
       };
 

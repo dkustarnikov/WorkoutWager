@@ -31,7 +31,7 @@ jspm_packages/
 .yarn-integrity
 .cache
 .env
-./.claude/
+.claude/
 /test-reports/
 junit.xml
 /coverage/

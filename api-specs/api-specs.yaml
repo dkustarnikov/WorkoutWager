@@ -1,275 +1,352 @@
-
-openapi: 3.0.0
+openapi: 3.0.3
 info:
-  title: Workout Wager API (Archived Version)
+  title: WorkoutWager API
   version: 1.0.0
-  description: This is the archived version of the Workout Wager API, showcasing the earlier implementation of user and workout management features.
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+  description: |
+    Goals with money on the line. Create a goal, split it into milestones with
+    deadlines and amounts, and the API settles rewards and penalties automatically.
+
+    **Authentication:** every endpoint requires a Cognito **ID token** in the
+    `Authorization` header (`Bearer <token>`). The caller's identity always comes
+    from the verified token; any `userId` sent in a request body is ignored.
+    Requests for another user's goals return `404`, exactly like a missing goal.
 servers:
-  - url: https://api-gateway-url.{domain}.com/api
+  - url: https://{apiId}.execute-api.{region}.amazonaws.com/prod
+    description: API Gateway stage. Get the URL from the `BrunoBaseUrl` stack output.
+    variables:
+      apiId: { default: your-api-id }
+      region: { default: us-east-1 }
+security:
+  - cognitoIdToken: []
+
 paths:
-  /users/signup:
-    post:
-      summary: Sign up a new user
-      description: Register a new user account using AWS Cognito.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserSignupRequest'
-      responses:
-        '201':
-          description: User created successfully.
-        '400':
-          description: Invalid input data.
-        '500':
-          description: Server error.
-  /users/login:
-    post:
-      summary: Log in a user
-      description: Authenticate a user and return a JWT token.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserLoginRequest'
-      responses:
-        '200':
-          description: Successful login with JWT token.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '401':
-          description: Invalid credentials.
-        '500':
-          description: Server error.
-  /workouts:
+  /health:
     get:
-      summary: Get workouts
-      description: Retrieve a list of workouts for the authenticated user.
+      operationId: getHealth
+      summary: Health check
+      tags: [Health]
+      responses:
+        '200': { description: Healthy, content: { application/json: { schema: { $ref: '#/components/schemas/Message' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /goals:
+    get:
+      operationId: listGoals
+      summary: List the caller's goals
+      tags: [Goals]
       responses:
         '200':
-          description: List of workouts.
+          description: The caller's goals (empty array if none)
+          content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Goal' } } } }
+        '400': { description: No user identity on the request }
+
+  /goal:
+    post:
+      operationId: createGoal
+      summary: Create a goal
+      description: |
+        Rules: milestone `monetaryValue`s must sum exactly to `totalAmount`; the last
+        milestone's deadline must equal the goal `deadline`; the deadline must be in
+        the future. If `milestones` is empty, a single milestone covering the whole goal
+        is created. New milestones always start pending.
+      tags: [Goals]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/GoalInput' } } }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/GoalWithProgress' } } } }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /goal/{goalId}:
+    parameters: [{ $ref: '#/components/parameters/goalId' }]
+    get:
+      operationId: getGoal
+      summary: Get a goal
+      tags: [Goals]
+      responses:
+        '200': { description: The goal, content: { application/json: { schema: { $ref: '#/components/schemas/GoalWithProgress' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/GoalNotFound' }
+    put:
+      operationId: updateGoal
+      summary: Replace a goal's details and milestones
+      description: |
+        Same rules as create. Milestone `completion` is kept from the stored goal and
+        cannot be changed here — use the complete endpoint. Completed, failed and
+        cancelled goals cannot be updated.
+      tags: [Goals]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/GoalInput' } } }
+      responses:
+        '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/GoalWithProgress' } } } }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/GoalNotFound' }
+    delete:
+      operationId: deleteGoal
+      summary: Delete a goal and its scheduled deadline rules
+      tags: [Goals]
+      responses:
+        '200': { description: Deleted, content: { application/json: { schema: { $ref: '#/components/schemas/Message' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/GoalNotFound' }
+
+  /goal/{goalId}/cancel:
+    parameters: [{ $ref: '#/components/parameters/goalId' }]
+    post:
+      operationId: cancelGoal
+      summary: Cancel a goal with no financial consequence
+      description: Removes pending deadline rules. No transaction is written. Not allowed once the goal is completed, failed or already cancelled.
+      tags: [Goals]
+      responses:
+        '200':
+          description: Cancelled
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Workout'
-        '401':
-          description: Unauthorized access.
-        '500':
-          description: Server error.
+                type: object
+                properties:
+                  message: { type: string }
+                  goal: { $ref: '#/components/schemas/Goal' }
+        '400': { description: Goal is already resolved or cancelled }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/GoalNotFound' }
+
+  /goal/{goalId}/milestone:
+    parameters: [{ $ref: '#/components/parameters/goalId' }]
     post:
-      summary: Create a workout
-      description: Create a new workout for the authenticated user.
+      operationId: addMilestone
+      summary: Add a milestone to a goal
+      tags: [Milestones]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/WorkoutRequest'
+              type: object
+              required: [milestone]
+              properties:
+                milestone: { $ref: '#/components/schemas/MilestoneInput' }
       responses:
-        '201':
-          description: Workout created successfully.
-        '400':
-          description: Invalid input data.
-        '401':
-          description: Unauthorized access.
-        '500':
-          description: Server error.
-  /workouts/{workoutId}:
+        '200': { description: The updated goal, content: { application/json: { schema: { $ref: '#/components/schemas/Goal' } } } }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/GoalNotFound' }
+
+  /goal/{goalId}/milestone/{milestoneId}:
+    parameters:
+      - { $ref: '#/components/parameters/goalId' }
+      - { $ref: '#/components/parameters/milestoneId' }
     put:
-      summary: Update a workout
-      description: Update details of an existing workout.
-      parameters:
-        - name: workoutId
-          in: path
-          required: true
-          description: ID of the workout to update.
-          schema:
-            type: string
+      operationId: updateMilestone
+      summary: Update a milestone's details or deadline
+      description: The milestone's completion state is preserved. Changing the deadline reschedules its deadline rule.
+      tags: [Milestones]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/WorkoutRequest'
+              type: object
+              required: [milestone]
+              properties:
+                milestone: { $ref: '#/components/schemas/MilestoneInput' }
       responses:
-        '200':
-          description: Workout updated successfully.
-        '400':
-          description: Invalid input data.
-        '401':
-          description: Unauthorized access.
-        '404':
-          description: Workout not found.
-        '500':
-          description: Server error.
-    delete:
-      summary: Delete a workout
-      description: Remove an existing workout.
-      parameters:
-        - name: workoutId
-          in: path
-          required: true
-          description: ID of the workout to delete.
-          schema:
-            type: string
+        '200': { description: The updated goal, content: { application/json: { schema: { $ref: '#/components/schemas/Goal' } } } }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: Goal or milestone not found }
+
+  /goal/{goalId}/milestone/{milestoneId}/complete:
+    parameters:
+      - { $ref: '#/components/parameters/goalId' }
+      - { $ref: '#/components/parameters/milestoneId' }
+    post:
+      operationId: completeMilestone
+      summary: Mark a milestone as completed
+      description: If this resolves the last pending milestone, the goal is settled and a transaction is written.
+      tags: [Milestones]
       responses:
-        '204':
-          description: Workout deleted successfully.
-        '401':
-          description: Unauthorized access.
-        '404':
-          description: Workout not found.
-        '500':
-          description: Server error.
+        '200': { description: Completed (or already completed) }
+        '400': { description: 'Milestone was already missed, or the goal is resolved' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: Goal or milestone not found }
+
+  /goal/{goalId}/transactions:
+    parameters: [{ $ref: '#/components/parameters/goalId' }]
+    get:
+      operationId: listGoalTransactions
+      summary: Settlement history for a goal (newest first)
+      tags: [Transactions]
+      responses:
+        '200': { description: Transactions, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Transaction' } } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /configure-user:
+    post:
+      operationId: configureUser
+      summary: Create or refresh the caller's profile
+      description: Creates the profile on first call and syncs `goalIds` from the caller's goals. The email comes from the token, falling back to the body.
+      tags: [Users]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '200': { description: Configured }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /get-user-info:
+    post:
+      operationId: getUserInfo
+      summary: Get the caller's profile
+      description: Always returns the caller's own profile. Body fields are ignored.
+      tags: [Users]
+      responses:
+        '200': { description: Profile, content: { application/json: { schema: { $ref: '#/components/schemas/User' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: No profile yet — call /configure-user first }
+
 components:
+  securitySchemes:
+    cognitoIdToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Cognito ID token (RS256), e.g. from `aws cognito-idp initiate-auth` — see the `BrunoGetTokenCommand` stack output.
+
+  parameters:
+    goalId: { name: goalId, in: path, required: true, schema: { type: string, format: uuid } }
+    milestoneId: { name: milestoneId, in: path, required: true, schema: { type: string } }
+
+  responses:
+    Unauthorized: { description: Missing or invalid token }
+    GoalNotFound: { description: The goal doesn't exist or belongs to another user }
+    ValidationError:
+      description: Request failed validation
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message: { type: string }
+              errors: { type: array, items: { type: string } }
+
   schemas:
-    UserSignupRequest:
+    Message:
       type: object
-      properties:
-        email:
-          type: string
-          example: user@example.com
-        password:
-          type: string
-          example: Password123!
-    UserLoginRequest:
+      properties: { message: { type: string } }
+
+    GoalStatus:
+      type: string
+      enum: [created, inProgress, completed, failed, cancelled]
+
+    MilestoneInput:
       type: object
+      required: [milestoneName, type, milestoneDeadline, monetaryValue]
       properties:
-        email:
-          type: string
-          example: user@example.com
-        password:
-          type: string
-          example: Password123!
-    AuthResponse:
-      type: object
-      properties:
-        token:
-          type: string
-          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        milestoneId: { type: string, description: Optional on create; generated if missing }
+        milestoneName: { type: string, example: Week 1 }
+        type: { type: string, example: common }
+        milestoneDeadline: { type: string, format: date-time, example: '2026-12-31T00:00:00Z' }
+        monetaryValue: { type: number, minimum: 0, exclusiveMinimum: true, example: 50 }
+
     Milestone:
+      allOf:
+        - $ref: '#/components/schemas/MilestoneInput'
+        - type: object
+          required: [milestoneId, milestoneCounter]
+          properties:
+            milestoneCounter: { type: integer, description: 1-based order within the goal }
+            completion:
+              type: boolean
+              description: '`true` = completed, `false` = missed, absent = pending. Set by the server only.'
+
+    GoalInput:
+      type: object
+      required: [goalType, goalName, generalObjective, totalAmount, deadline, milestones]
+      properties:
+        goalType: { type: string, example: fitness }
+        goalName: { type: string, example: Run 3x per week }
+        generalObjective: { type: string }
+        totalAmount: { type: number, description: Total wager in dollars, example: 100 }
+        deadline: { type: string, format: date-time }
+        milestones: { type: array, items: { $ref: '#/components/schemas/MilestoneInput' } }
+        allOrNothing: { type: boolean, default: false, description: 'If true, any missed milestone fails the whole goal' }
+        rewardDestination: { type: string, default: savings }
+        penaltyDestination: { type: string, default: savings, example: charity }
+        penaltyInterestRate: { type: number, minimum: 0, default: 0, description: Extra % added to penalties }
+
+    Goal:
       type: object
       properties:
-        milestoneName:
-          type: string
-          example: First Milestone
-        milestoneId:
-          type: string
-          example: milestone123
-        type:
-          type: string
-          example: fitness
-        completion:
-          type: boolean
-          example: false
-        milestoneCounter:
-          type: integer
-          example: 1
-        milestoneDeadline:
-          type: string
-          format: date-time
-          example: 2024-01-01T12:00:00Z
-        monetaryValue:
-          type: number
-          format: float
-          example: 100.0
-    Rule:
+        goalId: { type: string, format: uuid }
+        userId: { type: string, description: Owner's Cognito sub }
+        goalType: { type: string }
+        goalName: { type: string }
+        generalObjective: { type: string }
+        totalAmount: { type: number }
+        deadline: { type: string, format: date-time }
+        milestones: { type: array, items: { $ref: '#/components/schemas/Milestone' } }
+        allOrNothing: { type: boolean }
+        rewardDestination: { type: string }
+        penaltyDestination: { type: string }
+        penaltyInterestRate: { type: number }
+        status: { $ref: '#/components/schemas/GoalStatus' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    GoalWithProgress:
+      allOf:
+        - $ref: '#/components/schemas/Goal'
+        - type: object
+          properties:
+            completionPercentage: { type: number, description: '% of milestones completed, one decimal' }
+
+    Transaction:
       type: object
       properties:
-        ruleId:
-          type: string
-          example: rule123
-        userId:
-          type: string
-          example: user123
-        ruleType:
-          type: string
-          example: fitness_goal
-        ruleName:
-          type: string
-          example: Weight Loss Plan
-        generalObjective:
-          type: string
-          example: Lose 10 pounds in 3 months
-        totalAmount:
-          type: number
-          format: float
-          example: 500.0
-        deadline:
-          type: string
-          format: date-time
-          example: 2024-04-01T12:00:00Z
-        milestones:
+        transactionId: { type: string }
+        goalId: { type: string }
+        userId: { type: string }
+        timestamp: { type: string, format: date-time }
+        outcome: { type: string, enum: [reward, penalty, mixed] }
+        entries:
           type: array
           items:
-            $ref: '#/components/schemas/Milestone'
-        createdAt:
-          type: string
-          format: date-time
-          example: 2023-12-01T12:00:00Z
-        updatedAt:
-          type: string
-          format: date-time
-          example: 2024-01-01T12:00:00Z
-        status:
-          type: string
-          enum:
-            - created
-            - inProgress
-            - completed
-          example: inProgress
+            type: object
+            properties:
+              type: { type: string, enum: [reward, penalty] }
+              destination: { type: string }
+              amount: { type: number }
+              reason: { type: string }
+        milestonesSummary:
+          type: object
+          properties:
+            total: { type: integer }
+            completed: { type: integer }
+            missed: { type: integer }
+        goalSnapshot:
+          type: object
+          properties:
+            goalName: { type: string }
+            totalAmount: { type: number }
+            allOrNothing: { type: boolean }
+            penaltyInterestRate: { type: number }
+
     User:
       type: object
       properties:
-        userId:
-          type: string
-          example: user123
-        username:
-          type: string
-          example: johndoe
-        email:
-          type: string
-          example: johndoe@example.com
-        ruleIds:
-          type: array
-          items:
-            type: string
-            example: rule123
-        paperTrading:
-          type: boolean
-          example: false
-    Workout:
-      type: object
-      properties:
-        id:
-          type: string
-          example: workout123
-        name:
-          type: string
-          example: Push-ups
-        description:
-          type: string
-          example: A workout focusing on push-ups.
-        date:
-          type: string
-          format: date-time
-          example: 2024-01-01T12:00:00Z
-    WorkoutRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          example: Push-ups
-        description:
-          type: string
-          example: A workout focusing on push-ups.
-        date:
-          type: string
-          format: date-time
-          example: 2024-01-01T12:00:00Z
+        userId: { type: string }
+        username: { type: string }
+        email: { type: string, format: email }
+        goalIds: { type: array, items: { type: string } }

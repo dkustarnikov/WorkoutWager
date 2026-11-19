@@ -1,6 +1,7 @@
 import * as awsLambda from 'aws-lambda';
 import { DynamoDB, EventBridge } from 'aws-sdk';
 import { v4 as uuidv4 } from 'uuid';
+import { getCallerId, goalNotFoundResponse, isOwner, unauthorizedResponse } from '../../common/auth';
 import { convertToCronExpression, getApiResponse, goalSchema } from '../../common/helpers';
 import { Goal, GoalStatus, Milestone } from '../../common/models';
 import { computeCompletionPercentage } from '../../common/transactionUtils';
@@ -12,7 +13,14 @@ const SQS_QUEUE_ARN = process.env.SQS_QUEUE_ARN || '';
 
 export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProxyEvent) => {
   try {
-    const requestBody = JSON.parse(event.body || '{}');
+    const callerId = getCallerId(event);
+    if (!callerId) {
+      return unauthorizedResponse();
+    }
+
+    // The goal owner is always the authenticated caller. A `userId` in the body is
+    // accepted for backward compatibility with older clients but ignored.
+    const requestBody = { ...JSON.parse(event.body || '{}'), userId: callerId };
 
     try {
       await goalSchema.validate(requestBody, { abortEarly: false });
@@ -44,6 +52,8 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
           ...m,
           milestoneId: m.milestoneId || uuidv4(),
           milestoneCounter: index + 1,
+          // New milestones always start pending; clients cannot pre-set completion.
+          completion: undefined,
         };
       })
       : [{
@@ -113,6 +123,6 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
     }));
   } catch (error) {
     console.error('Error creating goal:', error);
-    return getApiResponse(500, JSON.stringify({ message: `Internal Server Error: ${error}` }));
+    return getApiResponse(500, JSON.stringify({ message: 'Internal Server Error' }));
   }
 };

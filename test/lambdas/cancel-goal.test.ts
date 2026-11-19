@@ -1,4 +1,4 @@
-import context from 'aws-lambda-mock-context';
+import { context } from '../mockContext';
 // @ts-ignore
 import { getMockEvent } from '../testHelper';
 
@@ -118,10 +118,10 @@ describe('POST /goal/{goalId}/cancel (cancel-goal)', () => {
 
   it('cancels EventBridge rules for each pending milestone', async () => {
     const milestones = [
-      makeMilestone(MS_ID_1, 'Week 1', 50),         // pending — rule should be cancelled
-      makeMilestone(MS_ID_2, 'Week 2', 50, true),    // completed — rule already gone
-      makeMilestone(MS_ID_3, 'Week 3', 50, false),   // missed — rule already gone
-      makeMilestone('ms-4', 'Week 4', 50),           // pending — rule should be cancelled
+      makeMilestone(MS_ID_1, 'Week 1', 50), // pending — rule should be cancelled
+      makeMilestone(MS_ID_2, 'Week 2', 50, true), // completed — rule already gone
+      makeMilestone(MS_ID_3, 'Week 3', 50, false), // missed — rule already gone
+      makeMilestone('ms-4', 'Week 4', 50), // pending — rule should be cancelled
     ];
     mockDynamoGet.mockResolvedValueOnce({ Item: makeGoal({ milestones }) });
 
@@ -172,5 +172,28 @@ describe('POST /goal/{goalId}/cancel (cancel-goal)', () => {
     const result = await handler(event, ctx, jest.fn()) as any;
 
     expect(result.statusCode).toBe(500);
+  });
+
+  it('returns 401 when the caller identity is missing', async () => {
+    mockDynamoGet.mockResolvedValueOnce({ Item: makeGoal() });
+    const event = getMockEvent();
+    event.pathParameters = { goalId: GOAL_ID };
+    event.requestContext.authorizer = {};
+
+    const result = await handler(event, ctx, jest.fn()) as any;
+
+    expect(result.statusCode).toBe(401);
+  });
+
+  it("returns 404 (not 403) for another user's goal and does not cancel it", async () => {
+    mockDynamoGet.mockResolvedValueOnce({ Item: makeGoal() });
+    const event = getMockEvent();
+    event.pathParameters = { goalId: GOAL_ID };
+    event.requestContext.authorizer = { userId: 'someone-else' };
+
+    const result = await handler(event, ctx, jest.fn()) as any;
+
+    expect(result.statusCode).toBe(404);
+    expect(mockDynamoPut).not.toHaveBeenCalled();
   });
 });

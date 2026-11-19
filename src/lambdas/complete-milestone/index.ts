@@ -1,5 +1,6 @@
 import * as awsLambda from 'aws-lambda';
 import { DynamoDB, EventBridge } from 'aws-sdk';
+import { getCallerId, goalNotFoundResponse, isOwner, unauthorizedResponse } from '../../common/auth';
 import { getApiResponse } from '../../common/helpers';
 import { Goal, GoalStatus } from '../../common/models';
 import {
@@ -24,14 +25,19 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
       return getApiResponse(400, JSON.stringify({ message: 'Missing goalId or milestoneId' }));
     }
 
+    const callerId = getCallerId(event);
+    if (!callerId) {
+      return unauthorizedResponse();
+    }
+
     const goalResult = await dynamoDb.get({ TableName: GOALS_TABLE, Key: { goalId } }).promise();
-    if (!goalResult.Item) {
-      return getApiResponse(404, JSON.stringify({ message: 'Goal not found' }));
+    if (!isOwner(goalResult.Item as Goal | undefined, callerId)) {
+      return goalNotFoundResponse();
     }
 
     const goal = goalResult.Item as Goal;
 
-    if (goal.status === GoalStatus.completed || goal.status === GoalStatus.failed) {
+    if (goal.status === GoalStatus.completed || goal.status === GoalStatus.failed || goal.status === GoalStatus.cancelled) {
       return getApiResponse(400, JSON.stringify({ message: 'Goal already resolved' }));
     }
 

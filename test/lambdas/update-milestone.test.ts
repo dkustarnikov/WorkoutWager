@@ -1,8 +1,6 @@
-import context from 'aws-lambda-mock-context';
+import { context } from '../mockContext';
 import * as yup from 'yup';
 // @ts-ignore
-import { handler } from '../../src/lambdas/update-milestone';
-import { getMockEvent } from '../testHelper';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -19,8 +17,9 @@ const mockMilestoneSchemaValidate = jest.fn();
 jest.mock('aws-sdk', () => ({
   DynamoDB: {
     DocumentClient: jest.fn(() => ({
-      get: () => ({ promise: mockDynamoGet }),
-      put: () => ({ promise: mockDynamoPut }),
+      // Forward the request params so tests can assert on what was read/written.
+      get: (params: unknown) => ({ promise: () => mockDynamoGet(params) }),
+      put: (params: unknown) => ({ promise: () => mockDynamoPut(params) }),
     })),
   },
   EventBridge: jest.fn(() => ({
@@ -33,7 +32,9 @@ jest.mock('aws-sdk', () => ({
 
 jest.mock('../../src/common/helpers', () => ({
   getApiResponse: jest.fn((statusCode: number, body: string) => ({ statusCode, body })),
-  milestoneSchema: { validate: mockMilestoneSchemaValidate },
+  // Wrapped in a function: jest.mock factories are hoisted above the `const` declarations,
+  // so referencing the mock directly here throws "Cannot access before initialization".
+  milestoneSchema: { validate: (...args: unknown[]) => mockMilestoneSchemaValidate(...args) },
   convertToCronExpression: jest.fn().mockReturnValue('0 0 31 12 *'),
 }));
 
@@ -43,7 +44,9 @@ jest.mock('../../src/common/helpers', () => ({
 // ---------------------------------------------------------------------------
 
 import { GoalStatus } from '../../src/common/models';
+import { handler } from '../../src/lambdas/update-milestone';
 import { GOAL_ID, GOAL_DEADLINE, EARLY_DEADLINE, MS_ID_1, MS_ID_2, makeGoal, makeMilestone } from '../fixtures';
+import { getMockEvent } from '../testHelper';
 
 /** A date between EARLY_DEADLINE and GOAL_DEADLINE, unique to this test. */
 const NEW_DEADLINE = '2099-09-01T00:00:00.000Z';

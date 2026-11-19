@@ -383,7 +383,7 @@ export class MyStack extends Stack {
     new CfnOutput(this, 'BrunoGetTokenCommand', {
       value: [
         'aws cognito-idp initiate-auth',
-        `--client-id <BrunoUserPoolClientId>`,
+        '--client-id <BrunoUserPoolClientId>',
         '--auth-flow USER_PASSWORD_AUTH',
         '--auth-parameters USERNAME=<your-email>,PASSWORD=<your-password>',
         `--region ${this.region}`,
