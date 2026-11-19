@@ -37,10 +37,6 @@
       "type": "build"
     },
     {
-      "name": "aws-lambda-mock-context",
-      "type": "build"
-    },
-    {
       "name": "esbuild",
       "type": "build"
     },
@@ -63,7 +59,7 @@
     },
     {
       "name": "jest-junit",
-      "version": "^16",
+      "version": "^17",
       "type": "build"
     },
     {

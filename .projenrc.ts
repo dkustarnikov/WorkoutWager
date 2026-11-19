@@ -6,8 +6,8 @@ import { NodePackageManager } from 'projen/lib/javascript';
 const project = new awscdk.AwsCdkTypeScriptApp({
   cdkVersion: '2.243.0',
   defaultReleaseBranch: 'main',
-  name: 'goalpledge-api',
-  description: 'GoalPledge — a serverless API for goals with money on the line.',
+  name: 'workout-wager',
+  description: 'WorkoutWager — a serverless API for goals with money on the line.',
   projenrcTs: true,
   packageManager: NodePackageManager.NPM,
   npmRegistryUrl: 'https://registry.npmjs.org',
