@@ -27,9 +27,7 @@
     "moduleResolution": "nodenext",
     "typeRoots": [
       "./node_modules/@types"
-    ],
-    "outDir": "./dist",
-    "rootDir": "./src"
+    ]
   },
   "include": [
     "src/**/*.ts",

@@ -6,19 +6,11 @@
       "type": "build"
     },
     {
-      "name": "@types/aws-lambda",
-      "type": "build"
-    },
-    {
       "name": "@types/jest",
       "type": "build"
     },
     {
       "name": "@types/jsonwebtoken",
-      "type": "build"
-    },
-    {
-      "name": "@types/jwk-to-pem",
       "type": "build"
     },
     {
@@ -40,20 +32,12 @@
       "type": "build"
     },
     {
-      "name": "aws-cdk-lib",
-      "type": "build"
-    },
-    {
       "name": "aws-cdk",
       "version": "^2",
       "type": "build"
     },
     {
       "name": "aws-lambda-mock-context",
-      "type": "build"
-    },
-    {
-      "name": "copyfiles",
       "type": "build"
     },
     {
@@ -87,10 +71,6 @@
       "type": "build"
     },
     {
-      "name": "ts-dotenv",
-      "type": "build"
-    },
-    {
       "name": "ts-jest",
       "type": "build"
     },
@@ -108,15 +88,11 @@
     },
     {
       "name": "aws-cdk-lib",
-      "version": "^2.240.0",
+      "version": "^2.243.0",
       "type": "runtime"
     },
     {
       "name": "aws-sdk",
-      "type": "runtime"
-    },
-    {
-      "name": "axios",
       "type": "runtime"
     },
     {
@@ -125,19 +101,7 @@
       "type": "runtime"
     },
     {
-      "name": "dotenv",
-      "type": "runtime"
-    },
-    {
-      "name": "dotenv-cli",
-      "type": "runtime"
-    },
-    {
       "name": "jsonwebtoken",
-      "type": "runtime"
-    },
-    {
-      "name": "jwk-to-pem",
       "type": "runtime"
     },
     {

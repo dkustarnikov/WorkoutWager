@@ -1,4 +1,4 @@
-import context from 'aws-lambda-mock-context';
+import { context } from '../mockContext';
 // @ts-ignore
 import { getMockEvent } from '../testHelper';
 

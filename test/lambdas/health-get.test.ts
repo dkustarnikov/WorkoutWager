@@ -1,4 +1,4 @@
-import context from 'aws-lambda-mock-context';
+import { context } from '../mockContext';
 import { getApiResponse } from '../../src/common/helpers';
 import { handler } from '../../src/lambdas/health';
 // @ts-ignore

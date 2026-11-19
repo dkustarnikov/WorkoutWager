@@ -1,4 +1,4 @@
-import context from 'aws-lambda-mock-context';
+import { context } from '../mockContext';
 import * as yup from 'yup';
 // @ts-ignore
 import { handler } from '../../src/lambdas/update-milestone';
@@ -19,8 +19,9 @@ const mockMilestoneSchemaValidate = jest.fn();
 jest.mock('aws-sdk', () => ({
   DynamoDB: {
     DocumentClient: jest.fn(() => ({
-      get: () => ({ promise: mockDynamoGet }),
-      put: () => ({ promise: mockDynamoPut }),
+      // Forward the request params so tests can assert on what was read/written.
+      get: (params: unknown) => ({ promise: () => mockDynamoGet(params) }),
+      put: (params: unknown) => ({ promise: () => mockDynamoPut(params) }),
     })),
   },
   EventBridge: jest.fn(() => ({
@@ -33,7 +34,9 @@ jest.mock('aws-sdk', () => ({
 
 jest.mock('../../src/common/helpers', () => ({
   getApiResponse: jest.fn((statusCode: number, body: string) => ({ statusCode, body })),
-  milestoneSchema: { validate: mockMilestoneSchemaValidate },
+  // Wrapped in a function: jest.mock factories are hoisted above the `const` declarations,
+  // so referencing the mock directly here throws "Cannot access before initialization".
+  milestoneSchema: { validate: (...args: unknown[]) => mockMilestoneSchemaValidate(...args) },
   convertToCronExpression: jest.fn().mockReturnValue('0 0 31 12 *'),
 }));
 
