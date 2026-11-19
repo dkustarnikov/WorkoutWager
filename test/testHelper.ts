@@ -1,4 +1,7 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
+import { USER_ID } from './fixtures';
+
+/** A mock API Gateway event. By default the caller is USER_ID — the owner of the fixture goals. */
 
 export const getMockEvent = (): APIGatewayProxyEvent => ({
   body: null,
@@ -14,7 +17,7 @@ export const getMockEvent = (): APIGatewayProxyEvent => ({
   requestContext: {
     accountId: '',
     apiId: '',
-    authorizer: {},
+    authorizer: { userId: USER_ID },
     protocol: '',
     httpMethod: 'GET',
     identity: {

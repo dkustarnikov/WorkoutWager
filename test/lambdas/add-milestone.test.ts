@@ -24,13 +24,11 @@ jest.mock('aws-sdk', () => ({
 
 jest.mock('../../src/common/helpers', () => ({
   getApiResponse: jest.fn((statusCode: number, body: string) => ({ statusCode, body })),
-  milestoneSchema: { validate: (args: any) => mockMilestoneSchemaValidate(args) }, 
+  milestoneSchema: { validate: (args: any) => mockMilestoneSchemaValidate(args) },
   convertToCronExpression: jest.fn().mockReturnValue('0 0 31 12 *'),
 }));
 
 // @ts-ignore
-import { handler } from '../../src/lambdas/add-milestone';
-import { getMockEvent } from '../testHelper';
 
 
 // ---------------------------------------------------------------------------
@@ -38,7 +36,9 @@ import { getMockEvent } from '../testHelper';
 // ---------------------------------------------------------------------------
 
 import { GoalStatus } from '../../src/common/models';
+import { handler } from '../../src/lambdas/add-milestone';
 import { GOAL_ID, GOAL_DEADLINE, MS_ID_1, makeGoal, makeMilestone, validMilestoneBody } from '../fixtures';
+import { getMockEvent } from '../testHelper';
 
 // A single-milestone goal (ms-1 at GOAL_DEADLINE) — new milestone will be added to it
 const baseGoal = makeGoal({

@@ -21,15 +21,15 @@ jest.mock('../../src/common/helpers', () => ({
 }));
 
 import { handler } from '../../src/lambdas/get-transactions';
-import { GOAL_ID } from '../fixtures';
+import { GOAL_ID, USER_ID } from '../fixtures';
 
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
 
 const mockTransactions = [
-  { transactionId: 'tx-1', goalId: GOAL_ID, outcome: 'reward', timestamp: '2099-06-01T00:00:00.000Z' },
-  { transactionId: 'tx-2', goalId: GOAL_ID, outcome: 'penalty', timestamp: '2099-01-01T00:00:00.000Z' },
+  { transactionId: 'tx-1', goalId: GOAL_ID, userId: USER_ID, outcome: 'reward', timestamp: '2099-06-01T00:00:00.000Z' },
+  { transactionId: 'tx-2', goalId: GOAL_ID, userId: USER_ID, outcome: 'penalty', timestamp: '2099-01-01T00:00:00.000Z' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -100,5 +100,29 @@ describe('GET /goal/{goalId}/transactions (get-transactions)', () => {
     const result = await handler(event, ctx, jest.fn()) as any;
 
     expect(result.statusCode).toBe(500);
+  });
+
+  it('returns 401 when the caller identity is missing', async () => {
+    const event = getMockEvent();
+    event.pathParameters = { goalId: GOAL_ID };
+    event.requestContext.authorizer = {};
+
+    const result = await handler(event, ctx, jest.fn()) as any;
+
+    expect(result.statusCode).toBe(401);
+    expect(mockDynamoQuery).not.toHaveBeenCalled();
+  });
+
+  it("never returns another user's transactions", async () => {
+    mockDynamoQuery.mockResolvedValueOnce({ Items: mockTransactions });
+
+    const event = getMockEvent();
+    event.pathParameters = { goalId: GOAL_ID };
+    event.requestContext.authorizer = { userId: 'someone-else' };
+
+    const result = await handler(event, ctx, jest.fn()) as any;
+
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toEqual([]);
   });
 });

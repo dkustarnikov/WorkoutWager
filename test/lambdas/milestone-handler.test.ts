@@ -32,8 +32,8 @@ jest.mock('../../src/common/transactionUtils', () => ({
   updateGoalStatus: mockUpdateGoalStatus,
 }));
 
-import { handler } from '../../src/lambdas/milestone-handler';
 import { GoalStatus } from '../../src/common/models';
+import { handler } from '../../src/lambdas/milestone-handler';
 import { GOAL_ID, MS_ID_1, MS_ID_2, MS_ID_3, makeGoal, makeMilestone, makeSQSEvent } from '../fixtures';
 
 // ---------------------------------------------------------------------------
@@ -191,9 +191,9 @@ describe('milestone-handler (SQS trigger)', () => {
 
   it('cancels EventBridge rules for all remaining pending milestones when allOrNothing fails', async () => {
     const milestones = [
-      makeMilestone(MS_ID_1, 'Week 1', 50),         // the miss that triggered failure
-      makeMilestone(MS_ID_2, 'Week 2', 50, true),    // already completed — no rule to cancel
-      makeMilestone(MS_ID_3, 'Week 3', 50),          // still pending — rule should be cancelled
+      makeMilestone(MS_ID_1, 'Week 1', 50), // the miss that triggered failure
+      makeMilestone(MS_ID_2, 'Week 2', 50, true), // already completed — no rule to cancel
+      makeMilestone(MS_ID_3, 'Week 3', 50), // still pending — rule should be cancelled
     ];
     mockDynamoGet.mockResolvedValueOnce({ Item: makeGoal({ milestones, allOrNothing: true }) });
     mockBuildTransactionEntries.mockReturnValueOnce({ entries: [], outcome: 'penalty' });

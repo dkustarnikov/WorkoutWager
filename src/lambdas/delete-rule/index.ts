@@ -1,5 +1,6 @@
 import * as awsLambda from 'aws-lambda';
 import { DynamoDB, EventBridge } from 'aws-sdk';
+import { getCallerId, goalNotFoundResponse, isOwner, unauthorizedResponse } from '../../common/auth';
 import { getApiResponse } from '../../common/helpers';
 import { Goal } from '../../common/models';
 
@@ -14,9 +15,14 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
       return getApiResponse(400, JSON.stringify({ message: 'Goal ID is required' }));
     }
 
+    const callerId = getCallerId(event);
+    if (!callerId) {
+      return unauthorizedResponse();
+    }
+
     const existingGoal = await dynamoDb.get({ TableName: TABLE_NAME, Key: { goalId } }).promise();
-    if (!existingGoal.Item) {
-      return getApiResponse(404, JSON.stringify({ message: 'Goal not found' }));
+    if (!isOwner(existingGoal.Item as Goal | undefined, callerId)) {
+      return goalNotFoundResponse();
     }
 
     const goal = existingGoal.Item as Goal;
@@ -38,6 +44,6 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
     return getApiResponse(200, JSON.stringify({ message: `Goal ${goalId} deleted successfully` }));
   } catch (error) {
     console.error('Error deleting goal:', error);
-    return getApiResponse(500, JSON.stringify({ message: `Internal Server Error: ${error}` }));
+    return getApiResponse(500, JSON.stringify({ message: 'Internal Server Error' }));
   }
 };

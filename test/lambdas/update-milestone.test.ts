@@ -1,8 +1,6 @@
 import { context } from '../mockContext';
 import * as yup from 'yup';
 // @ts-ignore
-import { handler } from '../../src/lambdas/update-milestone';
-import { getMockEvent } from '../testHelper';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -46,7 +44,9 @@ jest.mock('../../src/common/helpers', () => ({
 // ---------------------------------------------------------------------------
 
 import { GoalStatus } from '../../src/common/models';
+import { handler } from '../../src/lambdas/update-milestone';
 import { GOAL_ID, GOAL_DEADLINE, EARLY_DEADLINE, MS_ID_1, MS_ID_2, makeGoal, makeMilestone } from '../fixtures';
+import { getMockEvent } from '../testHelper';
 
 /** A date between EARLY_DEADLINE and GOAL_DEADLINE, unique to this test. */
 const NEW_DEADLINE = '2099-09-01T00:00:00.000Z';

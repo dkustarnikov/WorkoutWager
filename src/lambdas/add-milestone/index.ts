@@ -2,6 +2,7 @@ import * as awsLambda from 'aws-lambda';
 import { DynamoDB, EventBridge } from 'aws-sdk';
 import { v4 as uuidv4 } from 'uuid';
 import * as yup from 'yup';
+import { getCallerId, goalNotFoundResponse, isOwner, unauthorizedResponse } from '../../common/auth';
 import { getApiResponse, milestoneSchema, convertToCronExpression } from '../../common/helpers';
 import { Goal, GoalStatus } from '../../common/models';
 
@@ -32,15 +33,20 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
       throw validationError;
     }
 
+    const callerId = getCallerId(event);
+    if (!callerId) {
+      return unauthorizedResponse();
+    }
+
     const goalResult = await dynamoDb.get({ TableName: TABLE_NAME, Key: { goalId } }).promise();
-    if (!goalResult.Item) {
-      return getApiResponse(404, JSON.stringify({ message: 'Goal not found' }));
+    if (!isOwner(goalResult.Item as Goal | undefined, callerId)) {
+      return goalNotFoundResponse();
     }
 
     const goal = goalResult.Item as Goal;
     goal.milestones = goal.milestones || [];
 
-    if (goal.status === GoalStatus.completed || goal.status === GoalStatus.failed) {
+    if (goal.status === GoalStatus.completed || goal.status === GoalStatus.failed || goal.status === GoalStatus.cancelled) {
       return getApiResponse(400, JSON.stringify({ message: 'Cannot add milestone to a resolved goal' }));
     }
 

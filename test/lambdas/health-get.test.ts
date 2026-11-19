@@ -1,6 +1,6 @@
-import { context } from '../mockContext';
 import { getApiResponse } from '../../src/common/helpers';
 import { handler } from '../../src/lambdas/health';
+import { context } from '../mockContext';
 // @ts-ignore
 import { getMockEvent } from '../testHelper';
 

@@ -1,8 +1,6 @@
 import { context } from '../mockContext';
 import * as yup from 'yup';
 // @ts-ignore
-import { handler } from '../../src/lambdas/update-rule';
-import { getMockEvent } from '../testHelper';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -43,7 +41,9 @@ jest.mock('../../src/common/transactionUtils', () => ({
 // ---------------------------------------------------------------------------
 
 import { GoalStatus } from '../../src/common/models';
+import { handler } from '../../src/lambdas/update-rule';
 import { GOAL_ID, GOAL_DEADLINE, makeGoal, validGoalBody } from '../fixtures';
+import { getMockEvent } from '../testHelper';
 
 // ---------------------------------------------------------------------------
 // Tests

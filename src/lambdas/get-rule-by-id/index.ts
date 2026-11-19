@@ -1,5 +1,6 @@
 import * as awsLambda from 'aws-lambda';
 import { DynamoDB } from 'aws-sdk';
+import { getCallerId, goalNotFoundResponse, isOwner, unauthorizedResponse } from '../../common/auth';
 import { getApiResponse } from '../../common/helpers';
 import { Goal } from '../../common/models';
 import { computeCompletionPercentage } from '../../common/transactionUtils';
@@ -15,13 +16,18 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
       return getApiResponse(400, JSON.stringify({ message: 'Missing goal ID' }));
     }
 
+    const callerId = getCallerId(event);
+    if (!callerId) {
+      return unauthorizedResponse();
+    }
+
     const result = await dynamoDb.get({
       TableName: TABLE_NAME,
       Key: { goalId },
     }).promise();
 
-    if (!result.Item) {
-      return getApiResponse(404, JSON.stringify({ message: 'Goal not found' }));
+    if (!isOwner(result.Item as Goal | undefined, callerId)) {
+      return goalNotFoundResponse();
     }
 
     const goal = result.Item as Goal;

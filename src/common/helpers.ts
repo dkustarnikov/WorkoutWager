@@ -13,7 +13,8 @@ export function getApiResponse(statusCode: number, body: string) {
 export const milestoneSchema = yup.object().shape({
   milestoneName: yup.string().required('Milestone name is required'),
   type: yup.string().required('Milestone type is required'),
-  completion: yup.boolean().required('Milestone completion status is required'),
+  // Optional: completion is set by the server, never trusted from clients.
+  completion: yup.boolean().optional(),
   milestoneDeadline: yup.string().required('Milestone deadline is required').matches(
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/,
     'Milestone deadline must be a valid ISO 8601 date string',
