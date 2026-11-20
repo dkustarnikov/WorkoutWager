@@ -6,19 +6,23 @@ info:
     name: Apache-2.0
     url: https://www.apache.org/licenses/LICENSE-2.0
   description: |
-    Goals with money on the line. Create a goal, split it into milestones with
-    deadlines and amounts, and the API settles rewards and penalties automatically.
+    Goals with money on the line, in **play money** for now. Every user starts with a
+    balance of 50. Creating a goal escrows its `stake` from `balance` into `pendingBalance`.
+    Completing a milestone returns its share of the stake plus 10% of it as **stars**;
+    missing a deadline forfeits it. All-or-nothing goals settle once: everything or nothing.
+    Stars rank users on the leaderboard.
 
     **Authentication:** every endpoint requires a Cognito **ID token** in the
     `Authorization` header (`Bearer <token>`). The caller's identity always comes
     from the verified token; any `userId` sent in a request body is ignored.
     Requests for another user's goals return `404`, exactly like a missing goal.
 servers:
-  - url: https://{apiId}.execute-api.{region}.amazonaws.com/prod
-    description: API Gateway stage. Get the URL from the `BrunoBaseUrl` stack output.
+  - url: https://wager.api.dkustarnikov.com
+    description: Production (API Gateway custom domain)
+  - url: https://{apiId}.execute-api.us-east-2.amazonaws.com/prod
+    description: Raw API Gateway URL (the `BrunoExecuteApiUrl` stack output)
     variables:
       apiId: { default: your-api-id }
-      region: { default: us-east-1 }
 security:
   - cognitoIdToken: []
 
@@ -26,11 +30,11 @@ paths:
   /health:
     get:
       operationId: getHealth
-      summary: Health check
+      summary: Health check (public)
       tags: [Health]
+      security: []
       responses:
         '200': { description: Healthy, content: { application/json: { schema: { $ref: '#/components/schemas/Message' } } } }
-        '401': { $ref: '#/components/responses/Unauthorized' }
 
   /goals:
     get:
@@ -48,10 +52,12 @@ paths:
       operationId: createGoal
       summary: Create a goal
       description: |
-        Rules: milestone `monetaryValue`s must sum exactly to `totalAmount`; the last
-        milestone's deadline must equal the goal `deadline`; the deadline must be in
-        the future. If `milestones` is empty, a single milestone covering the whole goal
-        is created. New milestones always start pending.
+        Escrows `stake` from the caller's balance (`400` if the balance is too low).
+        Milestone stakes are optional: if every milestone has one they must sum exactly
+        to `stake`, otherwise the stake is split evenly. The last milestone's deadline
+        must equal the goal `deadline`, which must be in the future. If `milestones` is
+        empty, a single milestone covering the whole goal is created. New milestones
+        always start pending.
       tags: [Goals]
       requestBody:
         required: true
@@ -75,9 +81,9 @@ paths:
       operationId: updateGoal
       summary: Replace a goal's details and milestones
       description: |
-        Same rules as create. Milestone `completion` is kept from the stored goal and
-        cannot be changed here — use the complete endpoint. Completed, failed and
-        cancelled goals cannot be updated.
+        Same rules as create. Only allowed while the goal is still `created` (nothing
+        resolved yet); a changed stake escrows or releases the difference. Milestones
+        removed by the update have their deadline rules deleted.
       tags: [Goals]
       requestBody:
         required: true
@@ -89,7 +95,7 @@ paths:
         '404': { $ref: '#/components/responses/GoalNotFound' }
     delete:
       operationId: deleteGoal
-      summary: Delete a goal and its scheduled deadline rules
+      summary: Delete a goal, its deadline rules, and release any escrowed stake
       tags: [Goals]
       responses:
         '200': { description: Deleted, content: { application/json: { schema: { $ref: '#/components/schemas/Message' } } } }
@@ -100,8 +106,11 @@ paths:
     parameters: [{ $ref: '#/components/parameters/goalId' }]
     post:
       operationId: cancelGoal
-      summary: Cancel a goal with no financial consequence
-      description: Removes pending deadline rules. No transaction is written. Not allowed once the goal is completed, failed or already cancelled.
+      summary: Cancel a goal with no penalty
+      description: |
+        Removes pending deadline rules and returns whatever stake is still escrowed (all of
+        it before start or for all-or-nothing goals, otherwise the pending milestones' share),
+        recorded as a `cancelled` transaction. Not allowed once the goal is resolved.
       tags: [Goals]
       responses:
         '200':
@@ -121,7 +130,8 @@ paths:
     parameters: [{ $ref: '#/components/parameters/goalId' }]
     post:
       operationId: addMilestone
-      summary: Add a milestone to a goal
+      summary: Add a milestone (before the goal starts)
+      description: The goal stake is unchanged and re-split across all milestones, unless the new milestone has an explicit `stake`.
       tags: [Milestones]
       requestBody:
         required: true
@@ -144,7 +154,7 @@ paths:
       - { $ref: '#/components/parameters/milestoneId' }
     put:
       operationId: updateMilestone
-      summary: Update a milestone's details or deadline
+      summary: Update a milestone (before the goal starts)
       description: The milestone's completion state is preserved. Changing the deadline reschedules its deadline rule.
       tags: [Milestones]
       requestBody:
@@ -169,7 +179,10 @@ paths:
     post:
       operationId: completeMilestone
       summary: Mark a milestone as completed
-      description: If this resolves the last pending milestone, the goal is settled and a transaction is written.
+      description: |
+        Per-milestone goals: returns that milestone's stake plus 10% stars right away.
+        All-or-nothing goals: nothing settles until the last milestone; then the whole
+        stake plus stars. Completing an already-completed milestone is a no-op.
       tags: [Milestones]
       responses:
         '200': { description: Completed (or already completed) }
@@ -216,6 +229,39 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { description: No profile yet — call /configure-user first }
 
+  /leaderboard:
+    get:
+      operationId: getLeaderboard
+      summary: All users ranked by stars
+      description: Usernames that are email addresses are masked (e.g. `runn•••`).
+      tags: [Users]
+      responses:
+        '200': { description: Leaderboard, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/LeaderboardEntry' } } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /configure-payments:
+    post:
+      operationId: configurePayments
+      summary: Switch between play money and (future) real money
+      description: Real payments aren't integrated yet; the provider is recorded as `stub`.
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [playMoney]
+              properties:
+                playMoney: { type: boolean }
+                provider: { type: string, default: stub }
+                details: { type: object, additionalProperties: true }
+      responses:
+        '200': { description: Configured }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: No profile yet — call /configure-user first }
+
 components:
   securitySchemes:
     cognitoIdToken:
@@ -252,19 +298,19 @@ components:
 
     MilestoneInput:
       type: object
-      required: [milestoneName, type, milestoneDeadline, monetaryValue]
+      required: [milestoneName, type, milestoneDeadline]
       properties:
         milestoneId: { type: string, description: Optional on create; generated if missing }
         milestoneName: { type: string, example: Week 1 }
         type: { type: string, example: common }
         milestoneDeadline: { type: string, format: date-time, example: '2026-12-31T00:00:00Z' }
-        monetaryValue: { type: number, minimum: 0, exclusiveMinimum: true, example: 50 }
+        stake: { type: number, minimum: 0, exclusiveMinimum: true, example: 50, description: Optional share of the goal stake }
 
     Milestone:
       allOf:
         - $ref: '#/components/schemas/MilestoneInput'
         - type: object
-          required: [milestoneId, milestoneCounter]
+          required: [milestoneId, milestoneCounter, stake]
           properties:
             milestoneCounter: { type: integer, description: 1-based order within the goal }
             completion:
@@ -273,18 +319,15 @@ components:
 
     GoalInput:
       type: object
-      required: [goalType, goalName, generalObjective, totalAmount, deadline, milestones]
+      required: [goalType, goalName, generalObjective, stake, deadline, milestones]
       properties:
         goalType: { type: string, example: fitness }
         goalName: { type: string, example: Run 3x per week }
         generalObjective: { type: string }
-        totalAmount: { type: number, description: Total wager in dollars, example: 100 }
+        stake: { type: number, minimum: 0, exclusiveMinimum: true, description: Play money escrowed from your balance, example: 20 }
         deadline: { type: string, format: date-time }
         milestones: { type: array, items: { $ref: '#/components/schemas/MilestoneInput' } }
-        allOrNothing: { type: boolean, default: false, description: 'If true, any missed milestone fails the whole goal' }
-        rewardDestination: { type: string, default: savings }
-        penaltyDestination: { type: string, default: savings, example: charity }
-        penaltyInterestRate: { type: number, minimum: 0, default: 0, description: Extra % added to penalties }
+        allOrNothing: { type: boolean, default: false, description: 'If true, the stake settles once: all milestones or nothing' }
 
     Goal:
       type: object
@@ -294,13 +337,10 @@ components:
         goalType: { type: string }
         goalName: { type: string }
         generalObjective: { type: string }
-        totalAmount: { type: number }
+        stake: { type: number }
         deadline: { type: string, format: date-time }
         milestones: { type: array, items: { $ref: '#/components/schemas/Milestone' } }
         allOrNothing: { type: boolean }
-        rewardDestination: { type: string }
-        penaltyDestination: { type: string }
-        penaltyInterestRate: { type: number }
         status: { $ref: '#/components/schemas/GoalStatus' }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
@@ -319,14 +359,13 @@ components:
         goalId: { type: string }
         userId: { type: string }
         timestamp: { type: string, format: date-time }
-        outcome: { type: string, enum: [reward, penalty, mixed] }
+        outcome: { type: string, enum: [escrowed, won, lost, mixed, cancelled] }
         entries:
           type: array
           items:
             type: object
             properties:
-              type: { type: string, enum: [reward, penalty] }
-              destination: { type: string }
+              type: { type: string, enum: [escrow, refund, forfeit, stars] }
               amount: { type: number }
               reason: { type: string }
         milestonesSummary:
@@ -339,9 +378,8 @@ components:
           type: object
           properties:
             goalName: { type: string }
-            totalAmount: { type: number }
             allOrNothing: { type: boolean }
-            penaltyInterestRate: { type: number }
+            stake: { type: number }
 
     User:
       type: object
@@ -350,3 +388,16 @@ components:
         username: { type: string }
         email: { type: string, format: email }
         goalIds: { type: array, items: { type: string } }
+        balance: { type: number, description: Available play money (new users start with 50) }
+        pendingBalance: { type: number, description: Escrowed in active goals }
+        stars: { type: number }
+        playMoney: { type: boolean }
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        userId: { type: string }
+        username: { type: string, description: Emails are masked }
+        stars: { type: number }
+        balance: { type: number }
+        pendingBalance: { type: number }

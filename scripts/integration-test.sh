@@ -99,11 +99,18 @@ assert_status "GET /health" "200" "$status"
 # ── 2. User ───────────────────────────────────────────────────────────────────
 section "User"
 
-status=$(post "configure-user" "{\"userId\":\"$USER_ID\"}")
+status=$(post "configure-user" "{}")  # identity and email come from the token
 assert_status "POST /configure-user" "200" "$status"
 
-status=$(post "get-user-info" "{\"userId\":\"$USER_ID\"}")
+status=$(post "get-user-info" "{}")
 assert_status "POST /get-user-info" "200" "$status"
+echo    "    balance     : $(jq_val '.balance')  pending: $(jq_val '.pendingBalance')  stars: $(jq_val '.stars')"
+
+status=$(post "configure-payments" '{"playMoney": true}')
+assert_status "POST /configure-payments" "200" "$status"
+
+status=$(get "leaderboard")
+assert_status "GET /leaderboard" "200" "$status"
 
 # ── 3. Goals ─────────────────────────────────────────────────────────────────
 section "Goals"
@@ -111,18 +118,15 @@ section "Goals"
 status=$(get "goals")
 assert_status "GET /goals" "200" "$status"
 
+# Stake 5 of the user's play-money balance (new users start with 50).
 GOAL_PAYLOAD='{
-  "userId": "'"$USER_ID"'",
   "goalType": "fitness",
   "goalName": "Integration Test Goal",
   "generalObjective": "Test goal created by integration script",
-  "totalAmount": 100,
-  "deadline": "2027-01-01T00:00:00.000Z",
+  "stake": 5,
+  "deadline": "2099-01-01T00:00:00.000Z",
   "milestones": [],
-  "allOrNothing": false,
-  "rewardDestination": "savings",
-  "penaltyDestination": "savings",
-  "penaltyInterestRate": 0
+  "allOrNothing": false
 }'
 
 status=$(post "goal" "$GOAL_PAYLOAD")
@@ -135,33 +139,18 @@ echo    "    milestoneId : $MILESTONE_ID"
 status=$(get "goal/$GOAL_ID")
 assert_status "GET /goal/{goalId}" "200" "$status"
 
+# Allowed while the goal is still "created"; the stake is split evenly across milestones.
 UPDATE_PAYLOAD='{
-  "userId": "'"$USER_ID"'",
   "goalType": "fitness",
   "goalName": "Integration Test Goal - Updated",
   "generalObjective": "Updated by integration script",
-  "totalAmount": 150,
-  "deadline": "2027-07-01T00:00:00.000Z",
+  "stake": 6,
+  "deadline": "2099-07-01T00:00:00.000Z",
   "milestones": [
-    {
-      "milestoneName": "Halfway Check-In",
-      "type": "fitness",
-      "completion": false,
-      "milestoneDeadline": "2027-04-01T00:00:00.000Z",
-      "monetaryValue": 75
-    },
-    {
-      "milestoneName": "Final Run",
-      "type": "fitness",
-      "completion": false,
-      "milestoneDeadline": "2027-07-01T00:00:00.000Z",
-      "monetaryValue": 75
-    }
+    { "milestoneName": "Halfway Check-In", "type": "fitness", "milestoneDeadline": "2099-04-01T00:00:00.000Z" },
+    { "milestoneName": "Final Run", "type": "fitness", "milestoneDeadline": "2099-07-01T00:00:00.000Z" }
   ],
-  "allOrNothing": false,
-  "rewardDestination": "savings",
-  "penaltyDestination": "savings",
-  "penaltyInterestRate": 10
+  "allOrNothing": false
 }'
 
 status=$(put "goal/$GOAL_ID" "$UPDATE_PAYLOAD")
@@ -175,9 +164,7 @@ ADD_MILESTONE_PAYLOAD='{
   "milestone": {
     "milestoneName": "Bonus Checkpoint",
     "type": "fitness",
-    "completion": false,
-    "milestoneDeadline": "2027-03-15T00:00:00.000Z",
-    "monetaryValue": 50
+    "milestoneDeadline": "2099-03-15T00:00:00.000Z"
   }
 }'
 
@@ -186,11 +173,11 @@ assert_status "POST /goal/{goalId}/milestone" "200" "$status"
 NEW_MILESTONE_ID=$(jq_val '.milestones | map(select(.milestoneName == "Bonus Checkpoint")) | .[0].milestoneId')
 
 UPDATE_MILESTONE_PAYLOAD='{
-  "milestoneName": "Bonus Checkpoint - Updated",
-  "type": "fitness",
-  "completion": false,
-  "milestoneDeadline": "2027-03-20T00:00:00.000Z",
-  "monetaryValue": 60
+  "milestone": {
+    "milestoneName": "Bonus Checkpoint - Updated",
+    "type": "fitness",
+    "milestoneDeadline": "2099-03-20T00:00:00.000Z"
+  }
 }'
 
 status=$(put "goal/$GOAL_ID/milestone/$NEW_MILESTONE_ID" "$UPDATE_MILESTONE_PAYLOAD")

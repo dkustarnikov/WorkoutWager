@@ -1,0 +1,15 @@
+meta {
+  name: Get Leaderboard
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/leaderboard
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
