@@ -8,7 +8,7 @@
  */
 
 import { SQSEvent, SQSRecord } from 'aws-lambda';
-import { Goal, GoalStatus, Milestone } from '../src/common/models';
+import { Goal, GoalStatus, Milestone, User } from '../src/common/models';
 
 // ---------------------------------------------------------------------------
 // Stable IDs & dates used throughout
@@ -33,7 +33,7 @@ export const MS_ID_3 = 'ms-3';
 // ---------------------------------------------------------------------------
 // Milestone factory
 //
-//   makeMilestone('ms-1', 'Week 1', 50)            → pending  (no completion)
+//   makeMilestone('ms-1', 'Week 1', 50)            → pending  (no completion), $50 stake
 //   makeMilestone('ms-1', 'Week 1', 50, true)       → completed
 //   makeMilestone('ms-1', 'Week 1', 50, false)      → missed
 //
@@ -43,7 +43,7 @@ export const MS_ID_3 = 'ms-3';
 export const makeMilestone = (
   id: string,
   name: string,
-  monetaryValue: number,
+  stake: number,
   completion?: boolean,
   milestoneDeadline: string = EARLY_DEADLINE,
 ): Milestone => ({
@@ -52,11 +52,11 @@ export const makeMilestone = (
   type: 'common',
   milestoneCounter: 1,
   milestoneDeadline,
-  monetaryValue,
+  stake,
   ...(completion !== undefined ? { completion } : {}),
 });
 
-/** Standard two-milestone set: ms-1 at MID_DEADLINE ($50), ms-2 at GOAL_DEADLINE ($50). */
+/** Standard two-milestone set: ms-1 at MID_DEADLINE ($50 stake), ms-2 at GOAL_DEADLINE ($50 stake). */
 export const defaultMilestones: Milestone[] = [
   makeMilestone(MS_ID_1, 'Week 1', 50, undefined, MID_DEADLINE),
   makeMilestone(MS_ID_2, 'Week 2', 50, undefined, GOAL_DEADLINE),
@@ -65,28 +65,27 @@ export const defaultMilestones: Milestone[] = [
 // ---------------------------------------------------------------------------
 // Goal factory
 //
-//   makeGoal()                          → default in-progress goal
+//   makeGoal()                          → fresh goal (status created)
 //   makeGoal({ status: 'completed' })   → completed goal
 //   makeGoal({ allOrNothing: true })    → all-or-nothing mode
 //   makeGoal({ milestones: [...] })     → custom milestones
 // ---------------------------------------------------------------------------
 
-export const makeGoal = (overrides: Partial<Goal> = {}): Goal => ({
+// Returns fresh copies every call: handlers mutate milestones in place, so sharing objects
+// between tests would leak state (e.g. a milestone "completed" by an earlier test).
+export const makeGoal = (overrides: Partial<Goal> = {}): Goal => structuredClone({
   goalId: GOAL_ID,
   userId: USER_ID,
   goalType: 'fitness',
   goalName: 'Test Goal',
   generalObjective: 'Get fit',
-  totalAmount: 100,
+  stake: 100,
   deadline: GOAL_DEADLINE,
   milestones: defaultMilestones,
   allOrNothing: false,
-  rewardDestination: 'savings',
-  penaltyDestination: 'charity',
-  penaltyInterestRate: 20,
   createdAt: '2027-01-01T00:00:00.000Z',
   updatedAt: '2027-01-01T00:00:00.000Z',
-  status: GoalStatus.inProgress,
+  status: GoalStatus.created, // a fresh goal: stake escrowed, nothing resolved yet
   ...overrides,
 });
 
@@ -124,7 +123,6 @@ export const validGoalBody = {
   goalType: 'fitness',
   goalName: 'Test Goal',
   generalObjective: 'Get fit',
-  totalAmount: 100,
   deadline: GOAL_DEADLINE,
   milestones: [
     {
@@ -132,20 +130,18 @@ export const validGoalBody = {
       milestoneName: 'Week 1',
       type: 'common',
       milestoneDeadline: MID_DEADLINE,
-      monetaryValue: 50,
+      stake: 50,
     },
     {
       milestoneId: MS_ID_2,
       milestoneName: 'Week 2',
       type: 'common',
       milestoneDeadline: GOAL_DEADLINE,
-      monetaryValue: 50,
+      stake: 50,
     },
   ],
   allOrNothing: false,
-  rewardDestination: 'savings',
-  penaltyDestination: 'charity',
-  penaltyInterestRate: 20,
+  stake: 100,
 };
 
 // ---------------------------------------------------------------------------
@@ -156,5 +152,21 @@ export const validMilestoneBody = {
   milestoneName: 'Week 0',
   type: 'common',
   milestoneDeadline: EARLY_DEADLINE,
-  monetaryValue: 25,
+  // no explicit stake: the goal stake is re-split evenly across all milestones
 };
+
+// ---------------------------------------------------------------------------
+// User profile factory (play-money economy)
+// ---------------------------------------------------------------------------
+
+export const makeUser = (overrides: Partial<User> = {}): User => ({
+  userId: USER_ID,
+  username: 'runner@example.com',
+  email: 'runner@example.com',
+  goalIds: [GOAL_ID],
+  balance: 50,
+  pendingBalance: 100,
+  stars: 0,
+  playMoney: true,
+  ...overrides,
+});
