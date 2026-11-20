@@ -8,6 +8,7 @@ import { getMockEvent } from '../testHelper';
 
 const mockDynamoGet = jest.fn();
 const mockDynamoPut = jest.fn();
+const mockDynamoUpdate = jest.fn();
 const mockEventBridgeRemoveTargets = jest.fn();
 const mockEventBridgeDeleteRule = jest.fn();
 
@@ -15,7 +16,8 @@ jest.mock('aws-sdk', () => ({
   DynamoDB: {
     DocumentClient: jest.fn(() => ({
       get: () => ({ promise: mockDynamoGet }),
-      put: () => ({ promise: mockDynamoPut }),
+      put: (params: unknown) => ({ promise: () => mockDynamoPut(params) }),
+      update: (params: unknown) => ({ promise: () => mockDynamoUpdate(params) }),
     })),
   },
   EventBridge: jest.fn(() => ({
@@ -44,6 +46,7 @@ describe('POST /goal/{goalId}/cancel (cancel-goal)', () => {
   });
 
   beforeEach(() => {
+    mockDynamoUpdate.mockResolvedValue({});
     mockDynamoPut.mockResolvedValue({});
     mockEventBridgeRemoveTargets.mockResolvedValue({});
     mockEventBridgeDeleteRule.mockResolvedValue({});
@@ -151,16 +154,40 @@ describe('POST /goal/{goalId}/cancel (cancel-goal)', () => {
     expect(mockDynamoPut).toHaveBeenCalled();
   });
 
-  it('does not write a transaction (no financial consequence on cancel)', async () => {
-    mockDynamoGet.mockResolvedValueOnce({ Item: makeGoal({ milestones: [] }) });
+  it('refunds the full stake of a goal that has not started, and records it', async () => {
+    mockDynamoGet.mockResolvedValueOnce({ Item: makeGoal({ status: GoalStatus.created, stake: 100 }) });
+
+    const event = getMockEvent();
+    event.pathParameters = { goalId: GOAL_ID };
+
+    const result = await handler(event, ctx, jest.fn()) as any;
+
+    expect(result.statusCode).toBe(200);
+    // pendingBalance → balance for the whole stake
+    expect(mockDynamoUpdate).toHaveBeenCalledTimes(1);
+    expect(mockDynamoUpdate.mock.calls[0][0].ExpressionAttributeValues[':amount']).toBe(100);
+    // goal put + a 'cancelled' transaction with a refund entry
+    expect(mockDynamoPut).toHaveBeenCalledTimes(2);
+    const tx = mockDynamoPut.mock.calls[1][0].Item;
+    expect(tx.outcome).toBe('cancelled');
+    expect(tx.entries).toEqual([expect.objectContaining({ type: 'refund', amount: 100 })]);
+  });
+
+  it('refunds only the pending milestones of an in-progress goal (no penalty)', async () => {
+    mockDynamoGet.mockResolvedValueOnce({
+      Item: makeGoal({
+        status: GoalStatus.inProgress,
+        stake: 100,
+        milestones: [makeMilestone(MS_ID_1, 'Week 1', 50, true), makeMilestone(MS_ID_2, 'Week 2', 50)],
+      }),
+    });
 
     const event = getMockEvent();
     event.pathParameters = { goalId: GOAL_ID };
 
     await handler(event, ctx, jest.fn());
 
-    // Only DynamoDB put (goal update) — no Transactions table put
-    expect(mockDynamoPut).toHaveBeenCalledTimes(1);
+    expect(mockDynamoUpdate.mock.calls[0][0].ExpressionAttributeValues[':amount']).toBe(50);
   });
 
   it('returns 500 on DynamoDB error', async () => {

@@ -16,32 +16,24 @@ auth:bearer {
 
 body:json {
   {
-    "userId": "{{userId}}",
     "goalType": "weight_loss",
     "goalName": "Lose 10 lbs - All Or Nothing",
-    "generalObjective": "Lose 10 pounds over 2 months. Miss any weigh-in and the full penalty applies.",
-    "totalAmount": 200,
+    "generalObjective": "Lose 10 pounds over 2 months. Miss any weigh-in and the whole stake is forfeited.",
+    "stake": 20,
     "deadline": "2027-06-01T00:00:00.000Z",
     "milestones": [
       {
         "milestoneName": "Month 1 Weigh-In",
         "type": "weight",
-        "completion": false,
-        "milestoneDeadline": "2027-05-01T00:00:00.000Z",
-        "monetaryValue": 100
+        "milestoneDeadline": "2027-05-01T00:00:00.000Z"
       },
       {
         "milestoneName": "Month 2 Final Weigh-In",
         "type": "weight",
-        "completion": false,
-        "milestoneDeadline": "2027-06-01T00:00:00.000Z",
-        "monetaryValue": 100
+        "milestoneDeadline": "2027-06-01T00:00:00.000Z"
       }
     ],
-    "allOrNothing": true,
-    "rewardDestination": "savings",
-    "penaltyDestination": "charity",
-    "penaltyInterestRate": 50
+    "allOrNothing": true
   }
 }
 

@@ -3,7 +3,7 @@ import { DynamoDB } from 'aws-sdk';
 import * as yup from 'yup';
 import { getCallerEmail, getCallerId, unauthorizedResponse } from '../../common/auth';
 import { getApiResponse } from '../../common/helpers';
-import { User } from '../../common/models';
+import { DEFAULT_PLAY_MONEY, STARTING_BALANCE, User } from '../../common/models';
 
 const dynamoDb = new DynamoDB.DocumentClient();
 const TABLE_NAME_USER_INFO = process.env.USER_INFO_TABLE || 'UserInfo';
@@ -54,6 +54,10 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
         username: validEmail,
         email: validEmail,
         goalIds: [],
+        balance: STARTING_BALANCE,
+        pendingBalance: 0,
+        stars: 0,
+        playMoney: DEFAULT_PLAY_MONEY,
       };
 
       await dynamoDb.put({ TableName: TABLE_NAME_USER_INFO, Item: userInfo }).promise();
@@ -85,7 +89,7 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
     return getApiResponse(200, JSON.stringify({ message: 'User configured successfully', actions }));
   } catch (error) {
     console.error('Error configuring user:', error);
-    return getApiResponse(500, JSON.stringify({ message: `Internal Server Error. Error: ${error}` }));
+    return getApiResponse(500, JSON.stringify({ message: 'Internal Server Error' }));
   }
 };
 // This code is an AWS Lambda function that configures a user by checking if they exist in the DynamoDB UserInfo table,

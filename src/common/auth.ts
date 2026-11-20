@@ -9,7 +9,7 @@ import type { APIGatewayProxyEvent } from 'aws-lambda';
 const json = (statusCode: number, body: unknown) => ({
   statusCode,
   body: JSON.stringify(body),
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
 });
 
 /** The authenticated caller's Cognito `sub`, or undefined if missing. */

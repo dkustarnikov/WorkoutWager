@@ -1,252 +1,177 @@
+import { handler } from '../../src/lambdas/complete-milestone';
 import { context } from '../mockContext';
-// @ts-ignore
 import { getMockEvent } from '../testHelper';
 
 // ---------------------------------------------------------------------------
-// Mocks
+// Mocks — DynamoDB and EventBridge only. Settlement logic (transactionUtils) is real,
+// so these tests check the actual money movements.
 // ---------------------------------------------------------------------------
 
 const mockDynamoGet = jest.fn();
 const mockDynamoPut = jest.fn();
-const mockEventBridgeRemoveTargets = jest.fn();
-const mockEventBridgeDeleteRule = jest.fn();
-
-const mockAllMilestonesResolved = jest.fn();
-const mockBuildTransactionEntries = jest.fn();
-const mockWriteTransaction = jest.fn();
-const mockUpdateGoalStatus = jest.fn();
-const mockComputeCompletionPercentage = jest.fn();
+const mockDynamoUpdate = jest.fn();
+const mockRemoveTargets = jest.fn();
+const mockDeleteRule = jest.fn();
 
 jest.mock('aws-sdk', () => ({
   DynamoDB: {
     DocumentClient: jest.fn(() => ({
-      get: () => ({ promise: mockDynamoGet }),
-      put: () => ({ promise: mockDynamoPut }),
+      get: (params: unknown) => ({ promise: () => mockDynamoGet(params) }),
+      put: (params: unknown) => ({ promise: () => mockDynamoPut(params) }),
+      update: (params: unknown) => ({ promise: () => mockDynamoUpdate(params) }),
     })),
   },
   EventBridge: jest.fn(() => ({
-    removeTargets: () => ({ promise: mockEventBridgeRemoveTargets }),
-    deleteRule: () => ({ promise: mockEventBridgeDeleteRule }),
+    removeTargets: () => ({ promise: mockRemoveTargets }),
+    deleteRule: () => ({ promise: mockDeleteRule }),
   })),
 }));
 
-jest.mock('../../src/common/helpers', () => ({
-  getApiResponse: jest.fn((statusCode: number, body: string) => ({ statusCode, body })),
-}));
-
-jest.mock('../../src/common/transactionUtils', () => ({
-  allMilestonesResolved: mockAllMilestonesResolved,
-  buildTransactionEntries: mockBuildTransactionEntries,
-  writeTransaction: mockWriteTransaction,
-  updateGoalStatus: mockUpdateGoalStatus,
-  computeCompletionPercentage: mockComputeCompletionPercentage,
-}));
-
-import { handler } from '../../src/lambdas/complete-milestone';
 import { GoalStatus } from '../../src/common/models';
 import { GOAL_ID, MS_ID_1, MS_ID_2, makeGoal, makeMilestone } from '../fixtures';
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
+/** Balance updates in call order, as [UpdateExpression, amount]. */
+const balanceUpdates = () => mockDynamoUpdate.mock.calls.map(([p]: any[]) => [p.UpdateExpression, p.ExpressionAttributeValues[':amount']]);
+/** Items written to the Transactions table. */
+const transactions = () => mockDynamoPut.mock.calls.map(([p]: any[]) => p.Item).filter((i: any) => i.transactionId);
+/** The last goal written. */
+const savedGoal = () => mockDynamoPut.mock.calls.map(([p]: any[]) => p.Item).filter((i: any) => i.goalId && !i.transactionId).pop();
+
+const completeEvent = (milestoneId = MS_ID_1) => {
+  const event = getMockEvent();
+  event.pathParameters = { goalId: GOAL_ID, milestoneId };
+  return event;
+};
 
 describe('POST /goal/{goalId}/milestone/{milestoneId}/complete (complete-milestone)', () => {
-  let ctx: any;
-
-  beforeAll(() => {
-    ctx = context();
-  });
+  const ctx = context();
 
   beforeEach(() => {
     mockDynamoPut.mockResolvedValue({});
-    mockEventBridgeRemoveTargets.mockResolvedValue({});
-    mockEventBridgeDeleteRule.mockResolvedValue({});
-    mockWriteTransaction.mockResolvedValue(undefined);
-    mockUpdateGoalStatus.mockResolvedValue(undefined);
-    mockComputeCompletionPercentage.mockReturnValue(50);
-    mockAllMilestonesResolved.mockReturnValue(false);
-    mockBuildTransactionEntries.mockReturnValue({ entries: [], outcome: 'reward' });
+    mockDynamoUpdate.mockResolvedValue({});
+    mockRemoveTargets.mockResolvedValue({});
+    mockDeleteRule.mockResolvedValue({});
   });
 
-  it('returns 400 when goalId or milestoneId path parameters are missing', async () => {
+  it('returns 400 when path parameters are missing', async () => {
     const event = getMockEvent();
-    event.pathParameters = null;
-
+    event.pathParameters = { goalId: GOAL_ID };
     const result = await handler(event, ctx, jest.fn()) as any;
-
     expect(result.statusCode).toBe(400);
   });
 
-  it('returns 404 when the goal does not exist', async () => {
-    mockDynamoGet.mockResolvedValueOnce({ Item: undefined });
-
-    const event = getMockEvent();
-    event.pathParameters = { goalId: GOAL_ID, milestoneId: MS_ID_1 };
-
+  it('returns 401 without a caller identity', async () => {
+    const event = completeEvent();
+    event.requestContext.authorizer = {};
     const result = await handler(event, ctx, jest.fn()) as any;
+    expect(result.statusCode).toBe(401);
+  });
 
+  it("returns 404 for another user's goal and moves no money", async () => {
+    mockDynamoGet.mockResolvedValueOnce({ Item: makeGoal() });
+    const event = completeEvent();
+    event.requestContext.authorizer = { userId: 'someone-else' };
+    const result = await handler(event, ctx, jest.fn()) as any;
+    expect(result.statusCode).toBe(404);
+    expect(mockDynamoUpdate).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when the milestone does not exist', async () => {
+    mockDynamoGet.mockResolvedValueOnce({ Item: makeGoal() });
+    const result = await handler(completeEvent('nope'), ctx, jest.fn()) as any;
     expect(result.statusCode).toBe(404);
   });
 
-  it('returns 400 when the goal is already resolved', async () => {
-    mockDynamoGet.mockResolvedValueOnce({
-      Item: makeGoal({ milestones: [makeMilestone(MS_ID_1, 'Week 1', 50, true)], status: GoalStatus.completed }),
-    });
-
-    const event = getMockEvent();
-    event.pathParameters = { goalId: GOAL_ID, milestoneId: MS_ID_1 };
-
-    const result = await handler(event, ctx, jest.fn()) as any;
-
+  it.each([GoalStatus.completed, GoalStatus.failed, GoalStatus.cancelled])('returns 400 for a %s goal', async (status) => {
+    mockDynamoGet.mockResolvedValueOnce({ Item: makeGoal({ status }) });
+    const result = await handler(completeEvent(), ctx, jest.fn()) as any;
     expect(result.statusCode).toBe(400);
-    expect(JSON.parse(result.body).message).toMatch(/resolved/i);
   });
 
-  it('returns 404 when the milestone is not found in the goal', async () => {
+  it('returns 400 for a milestone that was already missed', async () => {
     mockDynamoGet.mockResolvedValueOnce({
-      Item: makeGoal({ milestones: [makeMilestone(MS_ID_1, 'Week 1', 50)] }),
+      Item: makeGoal({ status: GoalStatus.inProgress, milestones: [makeMilestone(MS_ID_1, 'Week 1', 50, false), makeMilestone(MS_ID_2, 'Week 2', 50)] }),
     });
-
-    const event = getMockEvent();
-    event.pathParameters = { goalId: GOAL_ID, milestoneId: 'ms-nonexistent' };
-
-    const result = await handler(event, ctx, jest.fn()) as any;
-
-    expect(result.statusCode).toBe(404);
-  });
-
-  it('returns 200 with idempotent message when milestone is already completed', async () => {
-    mockDynamoGet.mockResolvedValueOnce({
-      Item: makeGoal({ milestones: [makeMilestone(MS_ID_1, 'Week 1', 50, true)] }),
-    });
-
-    const event = getMockEvent();
-    event.pathParameters = { goalId: GOAL_ID, milestoneId: MS_ID_1 };
-
-    const result = await handler(event, ctx, jest.fn()) as any;
-
-    expect(result.statusCode).toBe(200);
-    expect(JSON.parse(result.body).message).toMatch(/already completed/i);
-  });
-
-  it('returns 400 when the milestone was already missed', async () => {
-    mockDynamoGet.mockResolvedValueOnce({
-      Item: makeGoal({ milestones: [makeMilestone(MS_ID_1, 'Week 1', 50, false)] }),
-    });
-
-    const event = getMockEvent();
-    event.pathParameters = { goalId: GOAL_ID, milestoneId: MS_ID_1 };
-
-    const result = await handler(event, ctx, jest.fn()) as any;
-
+    const result = await handler(completeEvent(), ctx, jest.fn()) as any;
     expect(result.statusCode).toBe(400);
-    expect(JSON.parse(result.body).message).toMatch(/missed/i);
+    expect(mockDynamoUpdate).not.toHaveBeenCalled();
   });
 
-  it('marks milestone as completed and saves when other milestones are still pending', async () => {
-    const milestones = [makeMilestone(MS_ID_1, 'Week 1', 50), makeMilestone(MS_ID_2, 'Week 2', 50)];
-    mockDynamoGet.mockResolvedValueOnce({ Item: makeGoal({ milestones }) });
-    mockAllMilestonesResolved.mockReturnValueOnce(false);
-
-    const event = getMockEvent();
-    event.pathParameters = { goalId: GOAL_ID, milestoneId: MS_ID_1 };
-
-    const result = await handler(event, ctx, jest.fn()) as any;
-
+  it('is idempotent: completing an already-completed milestone moves no money', async () => {
+    mockDynamoGet.mockResolvedValueOnce({
+      Item: makeGoal({ status: GoalStatus.inProgress, milestones: [makeMilestone(MS_ID_1, 'Week 1', 50, true), makeMilestone(MS_ID_2, 'Week 2', 50)] }),
+    });
+    const result = await handler(completeEvent(), ctx, jest.fn()) as any;
     expect(result.statusCode).toBe(200);
-    // Goal saved but no transaction written
-    expect(mockDynamoPut).toHaveBeenCalled();
-    expect(mockWriteTransaction).not.toHaveBeenCalled();
-    expect(mockUpdateGoalStatus).not.toHaveBeenCalled();
+    expect(mockDynamoUpdate).not.toHaveBeenCalled();
+    expect(mockDynamoPut).not.toHaveBeenCalled();
   });
 
-  it('cancels the EventBridge rule for the completed milestone', async () => {
-    mockDynamoGet.mockResolvedValueOnce({
-      Item: makeGoal({ milestones: [makeMilestone(MS_ID_1, 'Week 1', 50)] }),
+  describe('per-milestone goal', () => {
+    it('refunds that milestone’s stake plus 10% stars, and starts the goal', async () => {
+      mockDynamoGet.mockResolvedValueOnce({ Item: makeGoal() }); // ms-1 $50, ms-2 $50, status created
+      const result = await handler(completeEvent(MS_ID_1), ctx, jest.fn()) as any;
+
+      expect(result.statusCode).toBe(200);
+      expect(balanceUpdates()).toEqual([
+        [expect.stringContaining('balance = if_not_exists(balance, :zero) + :amount'), 50], // release
+        [expect.stringContaining('stars = if_not_exists(stars, :zero) + :amount'), 5], // stars
+      ]);
+      expect(transactions()).toHaveLength(1);
+      expect(transactions()[0].outcome).toBe('won');
+      expect(savedGoal().status).toBe(GoalStatus.inProgress);
+      expect(savedGoal().milestones[0].completion).toBe(true);
+      expect(mockDeleteRule).toHaveBeenCalledTimes(1); // the deadline rule is no longer needed
     });
 
-    const event = getMockEvent();
-    event.pathParameters = { goalId: GOAL_ID, milestoneId: MS_ID_1 };
+    it('resolves the goal as "won" when the last milestone is completed', async () => {
+      mockDynamoGet.mockResolvedValueOnce({
+        Item: makeGoal({ status: GoalStatus.inProgress, milestones: [makeMilestone(MS_ID_1, 'Week 1', 50, true), makeMilestone(MS_ID_2, 'Week 2', 50)] }),
+      });
+      const result = await handler(completeEvent(MS_ID_2), ctx, jest.fn()) as any;
 
-    await handler(event, ctx, jest.fn());
-
-    expect(mockEventBridgeRemoveTargets).toHaveBeenCalledTimes(1);
-    expect(mockEventBridgeDeleteRule).toHaveBeenCalledTimes(1);
-  });
-
-  it('writes a transaction and resolves the goal when the last milestone is completed', async () => {
-    const milestones = [makeMilestone(MS_ID_1, 'Week 1', 50)];
-    mockDynamoGet.mockResolvedValueOnce({ Item: makeGoal({ milestones }) });
-    mockAllMilestonesResolved.mockReturnValueOnce(true);
-    mockBuildTransactionEntries.mockReturnValueOnce({ entries: [{ type: 'reward', amount: 100 }], outcome: 'reward' });
-
-    const event = getMockEvent();
-    event.pathParameters = { goalId: GOAL_ID, milestoneId: MS_ID_1 };
-
-    const result = await handler(event, ctx, jest.fn()) as any;
-
-    expect(result.statusCode).toBe(200);
-    expect(mockWriteTransaction).toHaveBeenCalledTimes(1);
-    expect(mockUpdateGoalStatus).toHaveBeenCalledTimes(1);
-    const body = JSON.parse(result.body);
-    expect(body.outcome).toBe('reward');
-  });
-
-  it('sets goal status to failed when outcome is penalty at final resolution', async () => {
-    mockDynamoGet.mockResolvedValueOnce({
-      Item: makeGoal({ milestones: [makeMilestone(MS_ID_1, 'Week 1', 50)] }),
+      expect(JSON.parse(result.body).outcome).toBe('won');
+      expect(savedGoal().status).toBe(GoalStatus.completed);
     });
-    mockAllMilestonesResolved.mockReturnValueOnce(true);
-    mockBuildTransactionEntries.mockReturnValueOnce({ entries: [], outcome: 'penalty' });
 
-    const event = getMockEvent();
-    event.pathParameters = { goalId: GOAL_ID, milestoneId: MS_ID_1 };
+    it('resolves the goal as "mixed" when an earlier milestone was missed', async () => {
+      mockDynamoGet.mockResolvedValueOnce({
+        Item: makeGoal({ status: GoalStatus.inProgress, milestones: [makeMilestone(MS_ID_1, 'Week 1', 50, false), makeMilestone(MS_ID_2, 'Week 2', 50)] }),
+      });
+      const result = await handler(completeEvent(MS_ID_2), ctx, jest.fn()) as any;
 
-    await handler(event, ctx, jest.fn());
-
-    const [, , , finalStatus] = mockUpdateGoalStatus.mock.calls[0];
-    expect(finalStatus).toBe('failed');
-  });
-
-  it('sets goal status to completed when outcome is reward at final resolution', async () => {
-    mockDynamoGet.mockResolvedValueOnce({
-      Item: makeGoal({ milestones: [makeMilestone(MS_ID_1, 'Week 1', 50)] }),
+      expect(JSON.parse(result.body).outcome).toBe('mixed');
+      expect(savedGoal().status).toBe(GoalStatus.completed);
     });
-    mockAllMilestonesResolved.mockReturnValueOnce(true);
-    mockBuildTransactionEntries.mockReturnValueOnce({ entries: [], outcome: 'reward' });
-
-    const event = getMockEvent();
-    event.pathParameters = { goalId: GOAL_ID, milestoneId: MS_ID_1 };
-
-    await handler(event, ctx, jest.fn());
-
-    const [, , , finalStatus] = mockUpdateGoalStatus.mock.calls[0];
-    expect(finalStatus).toBe('completed');
   });
 
-  it('includes completionPercentage in the response', async () => {
-    mockDynamoGet.mockResolvedValueOnce({
-      Item: makeGoal({ milestones: [makeMilestone(MS_ID_1, 'Week 1', 50), makeMilestone(MS_ID_2, 'Week 2', 50)] }),
+  describe('all-or-nothing goal', () => {
+    it('moves no money until the last milestone is completed', async () => {
+      mockDynamoGet.mockResolvedValueOnce({ Item: makeGoal({ allOrNothing: true }) });
+      const result = await handler(completeEvent(MS_ID_1), ctx, jest.fn()) as any;
+
+      expect(result.statusCode).toBe(200);
+      expect(mockDynamoUpdate).not.toHaveBeenCalled();
+      expect(transactions()).toHaveLength(0);
+      expect(savedGoal().status).toBe(GoalStatus.inProgress);
     });
-    mockComputeCompletionPercentage.mockReturnValueOnce(50);
 
-    const event = getMockEvent();
-    event.pathParameters = { goalId: GOAL_ID, milestoneId: MS_ID_1 };
+    it('refunds the whole stake plus stars when the last milestone is completed', async () => {
+      mockDynamoGet.mockResolvedValueOnce({
+        Item: makeGoal({ allOrNothing: true, status: GoalStatus.inProgress, milestones: [makeMilestone(MS_ID_1, 'Week 1', 50, true), makeMilestone(MS_ID_2, 'Week 2', 50)] }),
+      });
+      const result = await handler(completeEvent(MS_ID_2), ctx, jest.fn()) as any;
 
-    const result = await handler(event, ctx, jest.fn()) as any;
-
-    expect(result.statusCode).toBe(200);
-    expect(JSON.parse(result.body).completionPercentage).toBe(50);
+      expect(JSON.parse(result.body).outcome).toBe('won');
+      expect(balanceUpdates()).toEqual([[expect.any(String), 100], [expect.any(String), 10]]);
+      expect(savedGoal().status).toBe(GoalStatus.completed);
+    });
   });
 
-  it('returns 500 when DynamoDB throws an error', async () => {
-    mockDynamoGet.mockRejectedValueOnce(new Error('Read error'));
-
-    const event = getMockEvent();
-    event.pathParameters = { goalId: GOAL_ID, milestoneId: MS_ID_1 };
-
-    const result = await handler(event, ctx, jest.fn()) as any;
-
+  it('returns 500 (without internal details) when DynamoDB fails', async () => {
+    mockDynamoGet.mockRejectedValueOnce(new Error('secret internal detail'));
+    const result = await handler(completeEvent(), ctx, jest.fn()) as any;
     expect(result.statusCode).toBe(500);
+    expect(result.body).not.toContain('secret internal detail');
   });
 });

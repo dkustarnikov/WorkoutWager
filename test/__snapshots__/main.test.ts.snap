@@ -3,8 +3,71 @@
 exports[`Snapshot 1`] = `
 {
   "Outputs": {
+    "ApiBaseUrl": {
+      "Description": "Canonical API base URL for Android, Web, Bruno, and smoke tests",
+      "Value": "https://wager.api.dkustarnikov.com",
+    },
+    "ApiCustomDomainHostedZoneId": {
+      "Description": "API Gateway regional hosted zone id (for alias records if used)",
+      "Value": {
+        "Fn::GetAtt": [
+          "ApiCustomDomain9620A9CE",
+          "RegionalHostedZoneId",
+        ],
+      },
+    },
+    "ApiCustomDomainName": {
+      "Description": "Public API hostname (Cloudflare CNAME name)",
+      "Value": "wager.api.dkustarnikov.com",
+    },
+    "ApiCustomDomainTarget": {
+      "Description": "Cloudflare CNAME target for the API hostname (DNS-only / grey cloud)",
+      "Value": {
+        "Fn::GetAtt": [
+          "ApiCustomDomain9620A9CE",
+          "RegionalDomainName",
+        ],
+      },
+    },
+    "AppAllowedCorsOrigins": {
+      "Description": "Browser origins allowed by the API CORS preflight",
+      "Value": "http://localhost:3000,http://localhost:5173,https://wager.dkustarnikov.com",
+    },
+    "AppAuthorizeUrl": {
+      "Description": "Hosted UI authorize endpoint — use authorization code + PKCE",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "UserPoolDomain5479B217",
+            },
+            ".auth.",
+            {
+              "Ref": "AWS::Region",
+            },
+            ".amazoncognito.com/oauth2/authorize",
+          ],
+        ],
+      },
+    },
+    "AppCallbackUrls": {
+      "Description": "Registered OAuth redirect URIs",
+      "Value": "http://localhost:3000/auth/callback,http://localhost:5173/auth/callback,https://wager.dkustarnikov.com/auth/callback,workoutwager://auth/callback",
+    },
+    "AppClientId": {
+      "Description": "Public app client id for Android, Web and Bruno (no secret, PKCE)",
+      "Value": {
+        "Ref": "WorkoutWagerUserPoolClientForUserAuthA3F3B50A",
+      },
+    },
     "BrunoBaseUrl": {
-      "Description": "Bruno env → baseUrl (API Gateway URL incl. stage)",
+      "Description": "Bruno env → baseUrl (custom domain; execute-api URL still works)",
+      "Value": "https://wager.api.dkustarnikov.com",
+    },
+    "BrunoExecuteApiUrl": {
+      "Description": "Raw API Gateway execute-api URL (fallback while DNS propagates)",
       "Value": {
         "Fn::Join": [
           "",
@@ -70,6 +133,24 @@ exports[`Snapshot 1`] = `
         "Ref": "WorkoutWagerUserPoolClientForUserAuthA3F3B50A",
       },
     },
+    "CloudflareDnsInstructions": {
+      "Description": "DNS steps for Cloudflare after/during deploy",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "1) If deploy waits on ACM: ACM console → Certificate → copy CNAME name/value → add in Cloudflare (DNS-only). 2) Add CNAME wager.api.dkustarnikov.com → ",
+            {
+              "Fn::GetAtt": [
+                "ApiCustomDomain9620A9CE",
+                "RegionalDomainName",
+              ],
+            },
+            " (DNS-only / grey cloud). 3) UI later: point wager.dkustarnikov.com at Vercel.",
+          ],
+        ],
+      },
+    },
     "CognitoDomain": {
       "Value": {
         "Fn::Join": [
@@ -113,6 +194,10 @@ exports[`Snapshot 1`] = `
         "Ref": "WorkoutWagerUserPool0F200A97",
       },
     },
+    "WebOrigin": {
+      "Description": "UI origin used for Cognito callbacks + CORS",
+      "Value": "https://wager.dkustarnikov.com",
+    },
     "WorkoutWagerAPIEndpoint13D5E05A": {
       "Value": {
         "Fn::Join": [
@@ -148,6 +233,48 @@ exports[`Snapshot 1`] = `
     },
   },
   "Resources": {
+    "ApiBasePathMapping5CDC6C7F": {
+      "Properties": {
+        "DomainName": {
+          "Ref": "ApiCustomDomain9620A9CE",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+        "Stage": {
+          "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
+        },
+      },
+      "Type": "AWS::ApiGateway::BasePathMapping",
+    },
+    "ApiCertificate1D5B2B3B": {
+      "Properties": {
+        "DomainName": "wager.api.dkustarnikov.com",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "test/ApiCertificate",
+          },
+        ],
+        "ValidationMethod": "DNS",
+      },
+      "Type": "AWS::CertificateManager::Certificate",
+    },
+    "ApiCustomDomain9620A9CE": {
+      "Properties": {
+        "DomainName": "wager.api.dkustarnikov.com",
+        "EndpointConfiguration": {
+          "Types": [
+            "REGIONAL",
+          ],
+        },
+        "RegionalCertificateArn": {
+          "Ref": "ApiCertificate1D5B2B3B",
+        },
+        "SecurityPolicy": "TLS_1_2",
+      },
+      "Type": "AWS::ApiGateway::DomainName",
+    },
     "GoalsB6B7CD6B": {
       "DeletionPolicy": "Retain",
       "Properties": {
@@ -422,32 +549,50 @@ exports[`Snapshot 1`] = `
       "Type": "AWS::IAM::Role",
       "UpdateReplacePolicy": "Retain",
     },
-    "WorkoutWagerAPIDeployment002354E6ae1e33d12afcd4baad14cff56cf5246e": {
+    "WorkoutWagerAPIDeployment002354E64752e31753c2346ac96534106d898104": {
       "DependsOn": [
+        "WorkoutWagerAPIconfigurepaymentsOPTIONSF5789B2F",
+        "WorkoutWagerAPIconfigurepaymentsPOST892EF1A8",
+        "WorkoutWagerAPIconfigurepayments6D83C433",
+        "WorkoutWagerAPIconfigureuserOPTIONS03624C6D",
         "WorkoutWagerAPIconfigureuserPOST68AD31B9",
         "WorkoutWagerAPIconfigureuserFBCC2D3F",
+        "WorkoutWagerAPIgetuserinfoOPTIONS620C2F9F",
         "WorkoutWagerAPIgetuserinfoPOST69215185",
         "WorkoutWagerAPIgetuserinfo6D83C90B",
+        "WorkoutWagerAPIgoalgoalIdcancelOPTIONSDAF25735",
         "WorkoutWagerAPIgoalgoalIdcancelPOST130F1EFC",
         "WorkoutWagerAPIgoalgoalIdcancel8D5E0B9A",
         "WorkoutWagerAPIgoalgoalIdDELETEC54A896A",
         "WorkoutWagerAPIgoalgoalIdGET02D52315",
+        "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdcompleteOPTIONS3055553C",
         "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdcompletePOSTB28EEA3C",
         "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdcompleteC57C88A7",
+        "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdOPTIONS02C5FC2D",
         "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdPUT2D259F05",
         "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdB0D756A1",
+        "WorkoutWagerAPIgoalgoalIdmilestoneOPTIONS8517C755",
         "WorkoutWagerAPIgoalgoalIdmilestonePOST00ABC3A6",
         "WorkoutWagerAPIgoalgoalIdmilestone8E791221",
+        "WorkoutWagerAPIgoalgoalIdOPTIONS59CA5970",
         "WorkoutWagerAPIgoalgoalIdPUT6B6B5F7F",
         "WorkoutWagerAPIgoalgoalId7347D9F1",
         "WorkoutWagerAPIgoalgoalIdtransactionsGET8FC8839B",
+        "WorkoutWagerAPIgoalgoalIdtransactionsOPTIONS6525F287",
         "WorkoutWagerAPIgoalgoalIdtransactions948D0192",
+        "WorkoutWagerAPIgoalOPTIONSE7FA0D73",
         "WorkoutWagerAPIgoalPOST5365AFFB",
         "WorkoutWagerAPIgoalEE293C81",
         "WorkoutWagerAPIgoalsGETF9808CCD",
+        "WorkoutWagerAPIgoalsOPTIONSF357A761",
         "WorkoutWagerAPIgoalsEFE2178F",
         "WorkoutWagerAPIhealthGET1CB2A007",
+        "WorkoutWagerAPIhealthOPTIONS63559D95",
         "WorkoutWagerAPIhealth2AFE654B",
+        "WorkoutWagerAPIleaderboardGETE4DAC1C2",
+        "WorkoutWagerAPIleaderboardOPTIONS39EECB54",
+        "WorkoutWagerAPIleaderboard0BA9EC38",
+        "WorkoutWagerAPIOPTIONS0995691D",
       ],
       "Metadata": {
         "aws:cdk:do-not-refactor": true,
@@ -466,7 +611,7 @@ exports[`Snapshot 1`] = `
       ],
       "Properties": {
         "DeploymentId": {
-          "Ref": "WorkoutWagerAPIDeployment002354E6ae1e33d12afcd4baad14cff56cf5246e",
+          "Ref": "WorkoutWagerAPIDeployment002354E64752e31753c2346ac96534106d898104",
         },
         "RestApiId": {
           "Ref": "WorkoutWagerAPI12237448",
@@ -474,6 +619,251 @@ exports[`Snapshot 1`] = `
         "StageName": "prod",
       },
       "Type": "AWS::ApiGateway::Stage",
+    },
+    "WorkoutWagerAPIOPTIONS0995691D": {
+      "Properties": {
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "Integration": {
+          "IntegrationResponses": [
+            {
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'",
+                "method.response.header.Access-Control-Allow-Origin": "'http://localhost:3000'",
+                "method.response.header.Access-Control-Max-Age": "'3600'",
+                "method.response.header.Vary": "'Origin'",
+              },
+              "ResponseTemplates": {
+                "application/json": "#set($origin = $input.params().header.get("Origin"))
+#if($origin == "")
+  #set($origin = $input.params().header.get("origin"))
+#end
+#if($origin == "http://localhost:5173" || $origin == "https://wager.dkustarnikov.com")
+  #set($context.responseOverride.header.Access-Control-Allow-Origin = $origin)
+#end",
+              },
+              "StatusCode": "204",
+            },
+          ],
+          "RequestTemplates": {
+            "application/json": "{ statusCode: 200 }",
+          },
+          "Type": "MOCK",
+        },
+        "MethodResponses": [
+          {
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Max-Age": true,
+              "method.response.header.Vary": true,
+            },
+            "StatusCode": "204",
+          },
+        ],
+        "ResourceId": {
+          "Fn::GetAtt": [
+            "WorkoutWagerAPI12237448",
+            "RootResourceId",
+          ],
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "WorkoutWagerAPIconfigurepayments6D83C433": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "WorkoutWagerAPI12237448",
+            "RootResourceId",
+          ],
+        },
+        "PathPart": "configure-payments",
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIconfigurepaymentsOPTIONSF5789B2F": {
+      "Properties": {
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "Integration": {
+          "IntegrationResponses": [
+            {
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'",
+                "method.response.header.Access-Control-Allow-Origin": "'http://localhost:3000'",
+                "method.response.header.Access-Control-Max-Age": "'3600'",
+                "method.response.header.Vary": "'Origin'",
+              },
+              "ResponseTemplates": {
+                "application/json": "#set($origin = $input.params().header.get("Origin"))
+#if($origin == "")
+  #set($origin = $input.params().header.get("origin"))
+#end
+#if($origin == "http://localhost:5173" || $origin == "https://wager.dkustarnikov.com")
+  #set($context.responseOverride.header.Access-Control-Allow-Origin = $origin)
+#end",
+              },
+              "StatusCode": "204",
+            },
+          ],
+          "RequestTemplates": {
+            "application/json": "{ statusCode: 200 }",
+          },
+          "Type": "MOCK",
+        },
+        "MethodResponses": [
+          {
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Max-Age": true,
+              "method.response.header.Vary": true,
+            },
+            "StatusCode": "204",
+          },
+        ],
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIconfigurepayments6D83C433",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "WorkoutWagerAPIconfigurepaymentsPOST892EF1A8": {
+      "Properties": {
+        "AuthorizationType": "CUSTOM",
+        "AuthorizerId": {
+          "Ref": "MyAuthorizer6575980E",
+        },
+        "HttpMethod": "POST",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "configurepaymentsF315DEC5",
+                    "Arn",
+                  ],
+                },
+                "/invocations",
+              ],
+            ],
+          },
+        },
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIconfigurepayments6D83C433",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "WorkoutWagerAPIconfigurepaymentsPOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTconfigurepaymentsCD9890D9": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "configurepaymentsF315DEC5",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/test-invoke-stage/POST/configure-payments",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIconfigurepaymentsPOSTApiPermissiontestWorkoutWagerAPIB6B50B50POSTconfigurepaymentsD3FD0E83": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "configurepaymentsF315DEC5",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/",
+              {
+                "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
+              },
+              "/POST/configure-payments",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
     },
     "WorkoutWagerAPIconfigureuserFBCC2D3F": {
       "Properties": {
@@ -489,6 +879,59 @@ exports[`Snapshot 1`] = `
         },
       },
       "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIconfigureuserOPTIONS03624C6D": {
+      "Properties": {
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "Integration": {
+          "IntegrationResponses": [
+            {
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'",
+                "method.response.header.Access-Control-Allow-Origin": "'http://localhost:3000'",
+                "method.response.header.Access-Control-Max-Age": "'3600'",
+                "method.response.header.Vary": "'Origin'",
+              },
+              "ResponseTemplates": {
+                "application/json": "#set($origin = $input.params().header.get("Origin"))
+#if($origin == "")
+  #set($origin = $input.params().header.get("origin"))
+#end
+#if($origin == "http://localhost:5173" || $origin == "https://wager.dkustarnikov.com")
+  #set($context.responseOverride.header.Access-Control-Allow-Origin = $origin)
+#end",
+              },
+              "StatusCode": "204",
+            },
+          ],
+          "RequestTemplates": {
+            "application/json": "{ statusCode: 200 }",
+          },
+          "Type": "MOCK",
+        },
+        "MethodResponses": [
+          {
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Max-Age": true,
+              "method.response.header.Vary": true,
+            },
+            "StatusCode": "204",
+          },
+        ],
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIconfigureuserFBCC2D3F",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
     },
     "WorkoutWagerAPIconfigureuserPOST68AD31B9": {
       "Properties": {
@@ -626,6 +1069,59 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::ApiGateway::Resource",
     },
+    "WorkoutWagerAPIgetuserinfoOPTIONS620C2F9F": {
+      "Properties": {
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "Integration": {
+          "IntegrationResponses": [
+            {
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'",
+                "method.response.header.Access-Control-Allow-Origin": "'http://localhost:3000'",
+                "method.response.header.Access-Control-Max-Age": "'3600'",
+                "method.response.header.Vary": "'Origin'",
+              },
+              "ResponseTemplates": {
+                "application/json": "#set($origin = $input.params().header.get("Origin"))
+#if($origin == "")
+  #set($origin = $input.params().header.get("origin"))
+#end
+#if($origin == "http://localhost:5173" || $origin == "https://wager.dkustarnikov.com")
+  #set($context.responseOverride.header.Access-Control-Allow-Origin = $origin)
+#end",
+              },
+              "StatusCode": "204",
+            },
+          ],
+          "RequestTemplates": {
+            "application/json": "{ statusCode: 200 }",
+          },
+          "Type": "MOCK",
+        },
+        "MethodResponses": [
+          {
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Max-Age": true,
+              "method.response.header.Vary": true,
+            },
+            "StatusCode": "204",
+          },
+        ],
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIgetuserinfo6D83C90B",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
     "WorkoutWagerAPIgetuserinfoPOST69215185": {
       "Properties": {
         "AuthorizationType": "CUSTOM",
@@ -761,6 +1257,59 @@ exports[`Snapshot 1`] = `
         },
       },
       "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIgoalOPTIONSE7FA0D73": {
+      "Properties": {
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "Integration": {
+          "IntegrationResponses": [
+            {
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'",
+                "method.response.header.Access-Control-Allow-Origin": "'http://localhost:3000'",
+                "method.response.header.Access-Control-Max-Age": "'3600'",
+                "method.response.header.Vary": "'Origin'",
+              },
+              "ResponseTemplates": {
+                "application/json": "#set($origin = $input.params().header.get("Origin"))
+#if($origin == "")
+  #set($origin = $input.params().header.get("origin"))
+#end
+#if($origin == "http://localhost:5173" || $origin == "https://wager.dkustarnikov.com")
+  #set($context.responseOverride.header.Access-Control-Allow-Origin = $origin)
+#end",
+              },
+              "StatusCode": "204",
+            },
+          ],
+          "RequestTemplates": {
+            "application/json": "{ statusCode: 200 }",
+          },
+          "Type": "MOCK",
+        },
+        "MethodResponses": [
+          {
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Max-Age": true,
+              "method.response.header.Vary": true,
+            },
+            "StatusCode": "204",
+          },
+        ],
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIgoalEE293C81",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
     },
     "WorkoutWagerAPIgoalPOST5365AFFB": {
       "Properties": {
@@ -1137,6 +1686,59 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
+    "WorkoutWagerAPIgoalgoalIdOPTIONS59CA5970": {
+      "Properties": {
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "Integration": {
+          "IntegrationResponses": [
+            {
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'",
+                "method.response.header.Access-Control-Allow-Origin": "'http://localhost:3000'",
+                "method.response.header.Access-Control-Max-Age": "'3600'",
+                "method.response.header.Vary": "'Origin'",
+              },
+              "ResponseTemplates": {
+                "application/json": "#set($origin = $input.params().header.get("Origin"))
+#if($origin == "")
+  #set($origin = $input.params().header.get("origin"))
+#end
+#if($origin == "http://localhost:5173" || $origin == "https://wager.dkustarnikov.com")
+  #set($context.responseOverride.header.Access-Control-Allow-Origin = $origin)
+#end",
+              },
+              "StatusCode": "204",
+            },
+          ],
+          "RequestTemplates": {
+            "application/json": "{ statusCode: 200 }",
+          },
+          "Type": "MOCK",
+        },
+        "MethodResponses": [
+          {
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Max-Age": true,
+              "method.response.header.Vary": true,
+            },
+            "StatusCode": "204",
+          },
+        ],
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIgoalgoalId7347D9F1",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
     "WorkoutWagerAPIgoalgoalIdPUT6B6B5F7F": {
       "Properties": {
         "AuthorizationType": "CUSTOM",
@@ -1269,6 +1871,59 @@ exports[`Snapshot 1`] = `
         },
       },
       "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIgoalgoalIdcancelOPTIONSDAF25735": {
+      "Properties": {
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "Integration": {
+          "IntegrationResponses": [
+            {
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'",
+                "method.response.header.Access-Control-Allow-Origin": "'http://localhost:3000'",
+                "method.response.header.Access-Control-Max-Age": "'3600'",
+                "method.response.header.Vary": "'Origin'",
+              },
+              "ResponseTemplates": {
+                "application/json": "#set($origin = $input.params().header.get("Origin"))
+#if($origin == "")
+  #set($origin = $input.params().header.get("origin"))
+#end
+#if($origin == "http://localhost:5173" || $origin == "https://wager.dkustarnikov.com")
+  #set($context.responseOverride.header.Access-Control-Allow-Origin = $origin)
+#end",
+              },
+              "StatusCode": "204",
+            },
+          ],
+          "RequestTemplates": {
+            "application/json": "{ statusCode: 200 }",
+          },
+          "Type": "MOCK",
+        },
+        "MethodResponses": [
+          {
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Max-Age": true,
+              "method.response.header.Vary": true,
+            },
+            "StatusCode": "204",
+          },
+        ],
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIgoalgoalIdcancel8D5E0B9A",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
     },
     "WorkoutWagerAPIgoalgoalIdcancelPOST130F1EFC": {
       "Properties": {
@@ -1403,6 +2058,59 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::ApiGateway::Resource",
     },
+    "WorkoutWagerAPIgoalgoalIdmilestoneOPTIONS8517C755": {
+      "Properties": {
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "Integration": {
+          "IntegrationResponses": [
+            {
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'",
+                "method.response.header.Access-Control-Allow-Origin": "'http://localhost:3000'",
+                "method.response.header.Access-Control-Max-Age": "'3600'",
+                "method.response.header.Vary": "'Origin'",
+              },
+              "ResponseTemplates": {
+                "application/json": "#set($origin = $input.params().header.get("Origin"))
+#if($origin == "")
+  #set($origin = $input.params().header.get("origin"))
+#end
+#if($origin == "http://localhost:5173" || $origin == "https://wager.dkustarnikov.com")
+  #set($context.responseOverride.header.Access-Control-Allow-Origin = $origin)
+#end",
+              },
+              "StatusCode": "204",
+            },
+          ],
+          "RequestTemplates": {
+            "application/json": "{ statusCode: 200 }",
+          },
+          "Type": "MOCK",
+        },
+        "MethodResponses": [
+          {
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Max-Age": true,
+              "method.response.header.Vary": true,
+            },
+            "StatusCode": "204",
+          },
+        ],
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIgoalgoalIdmilestone8E791221",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
     "WorkoutWagerAPIgoalgoalIdmilestonePOST00ABC3A6": {
       "Properties": {
         "AuthorizationType": "CUSTOM",
@@ -1536,6 +2244,59 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::ApiGateway::Resource",
     },
+    "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdOPTIONS02C5FC2D": {
+      "Properties": {
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "Integration": {
+          "IntegrationResponses": [
+            {
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'",
+                "method.response.header.Access-Control-Allow-Origin": "'http://localhost:3000'",
+                "method.response.header.Access-Control-Max-Age": "'3600'",
+                "method.response.header.Vary": "'Origin'",
+              },
+              "ResponseTemplates": {
+                "application/json": "#set($origin = $input.params().header.get("Origin"))
+#if($origin == "")
+  #set($origin = $input.params().header.get("origin"))
+#end
+#if($origin == "http://localhost:5173" || $origin == "https://wager.dkustarnikov.com")
+  #set($context.responseOverride.header.Access-Control-Allow-Origin = $origin)
+#end",
+              },
+              "StatusCode": "204",
+            },
+          ],
+          "RequestTemplates": {
+            "application/json": "{ statusCode: 200 }",
+          },
+          "Type": "MOCK",
+        },
+        "MethodResponses": [
+          {
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Max-Age": true,
+              "method.response.header.Vary": true,
+            },
+            "StatusCode": "204",
+          },
+        ],
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdB0D756A1",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
     "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdPUT2D259F05": {
       "Properties": {
         "AuthorizationType": "CUSTOM",
@@ -1668,6 +2429,59 @@ exports[`Snapshot 1`] = `
         },
       },
       "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdcompleteOPTIONS3055553C": {
+      "Properties": {
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "Integration": {
+          "IntegrationResponses": [
+            {
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'",
+                "method.response.header.Access-Control-Allow-Origin": "'http://localhost:3000'",
+                "method.response.header.Access-Control-Max-Age": "'3600'",
+                "method.response.header.Vary": "'Origin'",
+              },
+              "ResponseTemplates": {
+                "application/json": "#set($origin = $input.params().header.get("Origin"))
+#if($origin == "")
+  #set($origin = $input.params().header.get("origin"))
+#end
+#if($origin == "http://localhost:5173" || $origin == "https://wager.dkustarnikov.com")
+  #set($context.responseOverride.header.Access-Control-Allow-Origin = $origin)
+#end",
+              },
+              "StatusCode": "204",
+            },
+          ],
+          "RequestTemplates": {
+            "application/json": "{ statusCode: 200 }",
+          },
+          "Type": "MOCK",
+        },
+        "MethodResponses": [
+          {
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Max-Age": true,
+              "method.response.header.Vary": true,
+            },
+            "StatusCode": "204",
+          },
+        ],
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdcompleteC57C88A7",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
     },
     "WorkoutWagerAPIgoalgoalIdmilestonemilestoneIdcompletePOSTApiPermissionTesttestWorkoutWagerAPIB6B50B50POSTgoalgoalIdmilestonemilestoneIdcomplete430ED268": {
       "Properties": {
@@ -1923,6 +2737,59 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
+    "WorkoutWagerAPIgoalgoalIdtransactionsOPTIONS6525F287": {
+      "Properties": {
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "Integration": {
+          "IntegrationResponses": [
+            {
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'",
+                "method.response.header.Access-Control-Allow-Origin": "'http://localhost:3000'",
+                "method.response.header.Access-Control-Max-Age": "'3600'",
+                "method.response.header.Vary": "'Origin'",
+              },
+              "ResponseTemplates": {
+                "application/json": "#set($origin = $input.params().header.get("Origin"))
+#if($origin == "")
+  #set($origin = $input.params().header.get("origin"))
+#end
+#if($origin == "http://localhost:5173" || $origin == "https://wager.dkustarnikov.com")
+  #set($context.responseOverride.header.Access-Control-Allow-Origin = $origin)
+#end",
+              },
+              "StatusCode": "204",
+            },
+          ],
+          "RequestTemplates": {
+            "application/json": "{ statusCode: 200 }",
+          },
+          "Type": "MOCK",
+        },
+        "MethodResponses": [
+          {
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Max-Age": true,
+              "method.response.header.Vary": true,
+            },
+            "StatusCode": "204",
+          },
+        ],
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIgoalgoalIdtransactions948D0192",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
     "WorkoutWagerAPIgoalsEFE2178F": {
       "Properties": {
         "ParentId": {
@@ -2059,6 +2926,59 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::ApiGateway::Method",
     },
+    "WorkoutWagerAPIgoalsOPTIONSF357A761": {
+      "Properties": {
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "Integration": {
+          "IntegrationResponses": [
+            {
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'",
+                "method.response.header.Access-Control-Allow-Origin": "'http://localhost:3000'",
+                "method.response.header.Access-Control-Max-Age": "'3600'",
+                "method.response.header.Vary": "'Origin'",
+              },
+              "ResponseTemplates": {
+                "application/json": "#set($origin = $input.params().header.get("Origin"))
+#if($origin == "")
+  #set($origin = $input.params().header.get("origin"))
+#end
+#if($origin == "http://localhost:5173" || $origin == "https://wager.dkustarnikov.com")
+  #set($context.responseOverride.header.Access-Control-Allow-Origin = $origin)
+#end",
+              },
+              "StatusCode": "204",
+            },
+          ],
+          "RequestTemplates": {
+            "application/json": "{ statusCode: 200 }",
+          },
+          "Type": "MOCK",
+        },
+        "MethodResponses": [
+          {
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Max-Age": true,
+              "method.response.header.Vary": true,
+            },
+            "StatusCode": "204",
+          },
+        ],
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIgoalsEFE2178F",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
     "WorkoutWagerAPIhealth2AFE654B": {
       "Properties": {
         "ParentId": {
@@ -2076,10 +2996,7 @@ exports[`Snapshot 1`] = `
     },
     "WorkoutWagerAPIhealthGET1CB2A007": {
       "Properties": {
-        "AuthorizationType": "CUSTOM",
-        "AuthorizerId": {
-          "Ref": "MyAuthorizer6575980E",
-        },
+        "AuthorizationType": "NONE",
         "HttpMethod": "GET",
         "Integration": {
           "IntegrationHttpMethod": "POST",
@@ -2195,6 +3112,248 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::Lambda::Permission",
     },
+    "WorkoutWagerAPIhealthOPTIONS63559D95": {
+      "Properties": {
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "Integration": {
+          "IntegrationResponses": [
+            {
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'",
+                "method.response.header.Access-Control-Allow-Origin": "'http://localhost:3000'",
+                "method.response.header.Access-Control-Max-Age": "'3600'",
+                "method.response.header.Vary": "'Origin'",
+              },
+              "ResponseTemplates": {
+                "application/json": "#set($origin = $input.params().header.get("Origin"))
+#if($origin == "")
+  #set($origin = $input.params().header.get("origin"))
+#end
+#if($origin == "http://localhost:5173" || $origin == "https://wager.dkustarnikov.com")
+  #set($context.responseOverride.header.Access-Control-Allow-Origin = $origin)
+#end",
+              },
+              "StatusCode": "204",
+            },
+          ],
+          "RequestTemplates": {
+            "application/json": "{ statusCode: 200 }",
+          },
+          "Type": "MOCK",
+        },
+        "MethodResponses": [
+          {
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Max-Age": true,
+              "method.response.header.Vary": true,
+            },
+            "StatusCode": "204",
+          },
+        ],
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIhealth2AFE654B",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "WorkoutWagerAPIleaderboard0BA9EC38": {
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "WorkoutWagerAPI12237448",
+            "RootResourceId",
+          ],
+        },
+        "PathPart": "leaderboard",
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Resource",
+    },
+    "WorkoutWagerAPIleaderboardGETApiPermissionTesttestWorkoutWagerAPIB6B50B50GETleaderboard46460B95": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "getleaderboard40FCD537",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/test-invoke-stage/GET/leaderboard",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIleaderboardGETApiPermissiontestWorkoutWagerAPIB6B50B50GETleaderboard9A76940C": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "getleaderboard40FCD537",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":",
+              {
+                "Ref": "WorkoutWagerAPI12237448",
+              },
+              "/",
+              {
+                "Ref": "WorkoutWagerAPIDeploymentStageprod8B944A1A",
+              },
+              "/GET/leaderboard",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WorkoutWagerAPIleaderboardGETE4DAC1C2": {
+      "Properties": {
+        "AuthorizationType": "CUSTOM",
+        "AuthorizerId": {
+          "Ref": "MyAuthorizer6575980E",
+        },
+        "HttpMethod": "GET",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "getleaderboard40FCD537",
+                    "Arn",
+                  ],
+                },
+                "/invocations",
+              ],
+            ],
+          },
+        },
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIleaderboard0BA9EC38",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
+    "WorkoutWagerAPIleaderboardOPTIONS39EECB54": {
+      "Properties": {
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "Integration": {
+          "IntegrationResponses": [
+            {
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'",
+                "method.response.header.Access-Control-Allow-Origin": "'http://localhost:3000'",
+                "method.response.header.Access-Control-Max-Age": "'3600'",
+                "method.response.header.Vary": "'Origin'",
+              },
+              "ResponseTemplates": {
+                "application/json": "#set($origin = $input.params().header.get("Origin"))
+#if($origin == "")
+  #set($origin = $input.params().header.get("origin"))
+#end
+#if($origin == "http://localhost:5173" || $origin == "https://wager.dkustarnikov.com")
+  #set($context.responseOverride.header.Access-Control-Allow-Origin = $origin)
+#end",
+              },
+              "StatusCode": "204",
+            },
+          ],
+          "RequestTemplates": {
+            "application/json": "{ statusCode: 200 }",
+          },
+          "Type": "MOCK",
+        },
+        "MethodResponses": [
+          {
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Max-Age": true,
+              "method.response.header.Vary": true,
+            },
+            "StatusCode": "204",
+          },
+        ],
+        "ResourceId": {
+          "Ref": "WorkoutWagerAPIleaderboard0BA9EC38",
+        },
+        "RestApiId": {
+          "Ref": "WorkoutWagerAPI12237448",
+        },
+      },
+      "Type": "AWS::ApiGateway::Method",
+    },
     "WorkoutWagerUserPool0F200A97": {
       "DeletionPolicy": "Retain",
       "Properties": {
@@ -2282,30 +3441,46 @@ exports[`Snapshot 1`] = `
     },
     "WorkoutWagerUserPoolClientForUserAuthA3F3B50A": {
       "Properties": {
+        "AccessTokenValidity": 60,
         "AllowedOAuthFlows": [
-          "implicit",
           "code",
         ],
         "AllowedOAuthFlowsUserPoolClient": true,
         "AllowedOAuthScopes": [
-          "profile",
-          "phone",
-          "email",
           "openid",
-          "aws.cognito.signin.user.admin",
+          "email",
+          "profile",
         ],
         "CallbackURLs": [
-          "https://example.com",
+          "http://localhost:3000/auth/callback",
+          "http://localhost:5173/auth/callback",
+          "https://wager.dkustarnikov.com/auth/callback",
+          "workoutwager://auth/callback",
         ],
+        "EnableTokenRevocation": true,
         "ExplicitAuthFlows": [
           "ALLOW_USER_PASSWORD_AUTH",
           "ALLOW_USER_SRP_AUTH",
           "ALLOW_REFRESH_TOKEN_AUTH",
         ],
         "GenerateSecret": false,
+        "IdTokenValidity": 60,
+        "LogoutURLs": [
+          "http://localhost:3000/auth/logout",
+          "http://localhost:5173/auth/logout",
+          "https://wager.dkustarnikov.com/auth/logout",
+          "workoutwager://auth/logout",
+        ],
+        "PreventUserExistenceErrors": "ENABLED",
+        "RefreshTokenValidity": 43200,
         "SupportedIdentityProviders": [
           "COGNITO",
         ],
+        "TokenValidityUnits": {
+          "AccessToken": "minutes",
+          "IdToken": "minutes",
+          "RefreshToken": "minutes",
+        },
         "UserPoolId": {
           "Ref": "WorkoutWagerUserPool0F200A97",
         },
@@ -2322,7 +3497,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "9612c40ab7d685ee61c6b28575772546f107e6ce4a8835e8dbf2059c779d0eaf.zip",
+          "S3Key": "48850fc5d2e4bc9f23d0b232ac94ef9d75f216c6c3863c968f132d64dd405610.zip",
         },
         "Environment": {
           "Variables": {
@@ -2497,11 +3672,14 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "5f9bc621c62c7889a3853b170e11a938b358e310aef74d97976aebfbec875a36.zip",
+          "S3Key": "25aec70aa6139ad3448ed4af202ad3559cc9f8f8ca502b8fbd55cf0d538bb23c.zip",
         },
         "Environment": {
           "Variables": {
-            "USER_POOL_CONGNITO_URI": {
+            "COGNITO_ALLOWED_CLIENT_IDS": {
+              "Ref": "WorkoutWagerUserPoolClientForUserAuthA3F3B50A",
+            },
+            "COGNITO_ISSUER": {
               "Fn::GetAtt": [
                 "WorkoutWagerUserPool0F200A97",
                 "ProviderURL",
@@ -2601,12 +3779,18 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "4b65950f78a62300d3aa47f7aaee42a7a4d83a269adf41b908ca26fcc399097f.zip",
+          "S3Key": "f7f97c67476ca40c217cc2f9e004529db026bcf4a8e56cfdf7114644c06309c5.zip",
         },
         "Environment": {
           "Variables": {
             "GOALS_TABLE": {
               "Ref": "GoalsB6B7CD6B",
+            },
+            "TRANSACTIONS_TABLE": {
+              "Ref": "Transactions098C5767",
+            },
+            "USER_INFO_TABLE": {
+              "Ref": "UserInfo4540AD3C",
             },
           },
         },
@@ -2724,6 +3908,110 @@ exports[`Snapshot 1`] = `
             },
             {
               "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UserInfo4540AD3C",
+                    "Arn",
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UserInfo4540AD3C",
+                    "Arn",
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Transactions098C5767",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Transactions098C5767",
+                          "Arn",
+                        ],
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Transactions098C5767",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Transactions098C5767",
+                          "Arn",
+                        ],
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
                 "events:DeleteRule",
                 "events:DescribeRule",
                 "events:ListRules",
@@ -2757,7 +4045,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "89e449c7e72f9ce480cd45333cfd4bd806733307e85156afdf085c563f8c34f2.zip",
+          "S3Key": "57dd7b4490a683cdcb83d4ddaa51454aa9e4dc65ab3b5d82f3ae4b79577d34f9.zip",
         },
         "Environment": {
           "Variables": {
@@ -2766,6 +4054,9 @@ exports[`Snapshot 1`] = `
             },
             "TRANSACTIONS_TABLE": {
               "Ref": "Transactions098C5767",
+            },
+            "USER_INFO_TABLE": {
+              "Ref": "UserInfo4540AD3C",
             },
           },
         },
@@ -2949,6 +4240,44 @@ exports[`Snapshot 1`] = `
             },
             {
               "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UserInfo4540AD3C",
+                    "Arn",
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UserInfo4540AD3C",
+                    "Arn",
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
                 "events:DeleteRule",
                 "events:DescribeRule",
                 "events:ListRules",
@@ -2972,6 +4301,121 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::IAM::Policy",
     },
+    "configurepaymentsF315DEC5": {
+      "DependsOn": [
+        "configurepaymentsServiceRoleDefaultPolicyBF4724E2",
+        "configurepaymentsServiceRole5CF46A84",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+          },
+          "S3Key": "ce1e6d18f6f74019f756420159ce73ac1ff3da5188fb4563d49c7c8918b6b89f.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "USER_INFO_TABLE": {
+              "Ref": "UserInfo4540AD3C",
+            },
+          },
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "configurepaymentsServiceRole5CF46A84",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "configurepaymentsServiceRole5CF46A84": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "configurepaymentsServiceRoleDefaultPolicyBF4724E2": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UserInfo4540AD3C",
+                    "Arn",
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UserInfo4540AD3C",
+                    "Arn",
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "configurepaymentsServiceRoleDefaultPolicyBF4724E2",
+        "Roles": [
+          {
+            "Ref": "configurepaymentsServiceRole5CF46A84",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
     "configureuser09ACB650": {
       "DependsOn": [
         "configureuserServiceRoleDefaultPolicyED581E71",
@@ -2982,7 +4426,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "9014c97314551d911cff7f7e1ba515b945de7816ebf74646f26ee561046dcc55.zip",
+          "S3Key": "8291be10c0a9dc41f98077e3075df86d95966ddb247f4e45964898bc66b8ccf9.zip",
         },
         "Environment": {
           "Variables": {
@@ -3195,7 +4639,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "d2773776eaa7127834b9f5ee4e034443c8ebfa1ba669412a0f6fc423e73a278a.zip",
+          "S3Key": "7f133f50d04bb232b07aebe0569e1b4f745b930c4ce7e7e6a9bf904ece6aca36.zip",
         },
         "Environment": {
           "Variables": {
@@ -3207,6 +4651,12 @@ exports[`Snapshot 1`] = `
                 "MilestoneQueue1C66F757",
                 "Arn",
               ],
+            },
+            "TRANSACTIONS_TABLE": {
+              "Ref": "Transactions098C5767",
+            },
+            "USER_INFO_TABLE": {
+              "Ref": "UserInfo4540AD3C",
             },
           },
         },
@@ -3324,6 +4774,110 @@ exports[`Snapshot 1`] = `
             },
             {
               "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UserInfo4540AD3C",
+                    "Arn",
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UserInfo4540AD3C",
+                    "Arn",
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Transactions098C5767",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Transactions098C5767",
+                          "Arn",
+                        ],
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Transactions098C5767",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Transactions098C5767",
+                          "Arn",
+                        ],
+                      },
+                      "/index/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
                 "sqs:SendMessage",
                 "sqs:GetQueueAttributes",
                 "sqs:GetQueueUrl",
@@ -3371,12 +4925,15 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "dd6eb46675d90fc18d4c3081e9f94ae36e1376250a8f23af911e7cb0c9028205.zip",
+          "S3Key": "7fe9252ff0d3f9f5eccbdcb5af3be64bf72dcfe9fe416fb0be51cbdd542e10cd.zip",
         },
         "Environment": {
           "Variables": {
             "GOALS_TABLE": {
               "Ref": "GoalsB6B7CD6B",
+            },
+            "USER_INFO_TABLE": {
+              "Ref": "UserInfo4540AD3C",
             },
           },
         },
@@ -3494,6 +5051,44 @@ exports[`Snapshot 1`] = `
             },
             {
               "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UserInfo4540AD3C",
+                    "Arn",
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UserInfo4540AD3C",
+                    "Arn",
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
                 "events:DeleteRule",
                 "events:DescribeRule",
                 "events:ListRules",
@@ -3527,7 +5122,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "6450110f74dcb96d6bc90943ec8573e1740a39b4b58402ea6ed095a922a90b0e.zip",
+          "S3Key": "1dbc5c4394ae22b2e1bfdfb978e3774b1329be652a91657191e0ace30a9a1c5d.zip",
         },
         "Environment": {
           "Variables": {
@@ -3666,7 +5261,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "bcb3f9ec1e14e9b91efb3365881995960ed31ae661fb929365243f87d78ba5ff.zip",
+          "S3Key": "b584fdcd59d32487d833d87575cfeb5d07824d0a2481d1823e40719936b34e1c.zip",
         },
         "Environment": {
           "Variables": {
@@ -3795,6 +5390,117 @@ exports[`Snapshot 1`] = `
       },
       "Type": "AWS::IAM::Policy",
     },
+    "getleaderboard40FCD537": {
+      "DependsOn": [
+        "getleaderboardServiceRoleDefaultPolicyE26F6AC2",
+        "getleaderboardServiceRoleD6AD5A85",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+          },
+          "S3Key": "966b42f08cbd9a707683d8dc8dff004d615016b05af839dc72587b64769b9b7a.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "USER_INFO_TABLE": {
+              "Ref": "UserInfo4540AD3C",
+            },
+          },
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "getleaderboardServiceRoleD6AD5A85",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "getleaderboardServiceRoleD6AD5A85": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "getleaderboardServiceRoleDefaultPolicyE26F6AC2": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UserInfo4540AD3C",
+                    "Arn",
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UserInfo4540AD3C",
+                    "Arn",
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "getleaderboardServiceRoleDefaultPolicyE26F6AC2",
+        "Roles": [
+          {
+            "Ref": "getleaderboardServiceRoleD6AD5A85",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
     "gettransactions7F00A68D": {
       "DependsOn": [
         "gettransactionsServiceRoleDefaultPolicy2B58181D",
@@ -3805,7 +5511,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "92c1f04bfef13902a2a631a0262c6b4fabf84b501760e3cdfb0ae645bc17ab05.zip",
+          "S3Key": "ffa08138ef4d8320a4f0733baae99872fc74278c4d8a23410a847feb1a344c8c.zip",
         },
         "Environment": {
           "Variables": {
@@ -3944,13 +5650,10 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "2523b7130f9a2e028dee20328b9c24dfd20c31c68bdf583dfa7fcceb4599049f.zip",
+          "S3Key": "e36e77a807621a59008672b50c2c6e6b0aaeb44bb38d37613ae063d5d90a6df5.zip",
         },
         "Environment": {
           "Variables": {
-            "COGNITO_USER_POOL_ID": {
-              "Ref": "WorkoutWagerUserPool0F200A97",
-            },
             "USER_INFO_TABLE": {
               "Ref": "UserInfo4540AD3C",
             },
@@ -4006,41 +5709,11 @@ exports[`Snapshot 1`] = `
           "Statement": [
             {
               "Action": [
-                "cognito-idp:AdminGetUser",
-                "cognito-idp:ListUsers",
-              ],
-              "Effect": "Allow",
-              "Resource": {
-                "Fn::Join": [
-                  "",
-                  [
-                    "arn:aws:cognito-idp:",
-                    {
-                      "Ref": "AWS::Region",
-                    },
-                    ":",
-                    {
-                      "Ref": "AWS::AccountId",
-                    },
-                    ":userpool/",
-                    {
-                      "Ref": "WorkoutWagerUserPool0F200A97",
-                    },
-                  ],
-                ],
-              },
-            },
-            {
-              "Action": [
                 "dynamodb:BatchGetItem",
                 "dynamodb:Query",
                 "dynamodb:GetItem",
                 "dynamodb:Scan",
                 "dynamodb:ConditionCheckItem",
-                "dynamodb:BatchWriteItem",
-                "dynamodb:PutItem",
-                "dynamodb:UpdateItem",
-                "dynamodb:DeleteItem",
                 "dynamodb:DescribeTable",
               ],
               "Effect": "Allow",
@@ -4089,7 +5762,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "a65a46a00b70cedb60a8c531ed19e002c0bcca3b63a01a52bcc21879804e9d14.zip",
+          "S3Key": "4bcbf375db5afff065ac988beffee184786d88764d957048c9387e684309ba84.zip",
         },
         "Environment": {
           "Variables": {
@@ -4148,7 +5821,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "a1caa6f7e02c8c0ef4c2520d115d478af4dd32e9b4d958ab5a5ce1048a125182.zip",
+          "S3Key": "0dd8c5b10b3345f3a832f68275fcad55591a09c88d8eb596504bd65e8eb9e09b.zip",
         },
         "Environment": {
           "Variables": {
@@ -4365,6 +6038,10 @@ exports[`Snapshot 1`] = `
                 "dynamodb:GetItem",
                 "dynamodb:Scan",
                 "dynamodb:ConditionCheckItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
                 "dynamodb:DescribeTable",
               ],
               "Effect": "Allow",
@@ -4442,7 +6119,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "b175aa0d1a94f7a3f3c50820158f972b71e21e5056b2b3ccb7e4fbce7bd82882.zip",
+          "S3Key": "e0173231b3c0e6cfa05aa85726ae5beeba6fb2bbfd0154e07e3c4b3871ae5fcf.zip",
         },
         "Environment": {
           "Variables": {
@@ -4454,6 +6131,9 @@ exports[`Snapshot 1`] = `
                 "MilestoneQueue1C66F757",
                 "Arn",
               ],
+            },
+            "USER_INFO_TABLE": {
+              "Ref": "UserInfo4540AD3C",
             },
           },
         },
@@ -4571,6 +6251,44 @@ exports[`Snapshot 1`] = `
             },
             {
               "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UserInfo4540AD3C",
+                    "Arn",
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UserInfo4540AD3C",
+                    "Arn",
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
                 "sqs:SendMessage",
                 "sqs:GetQueueAttributes",
                 "sqs:GetQueueUrl",
@@ -4618,7 +6336,7 @@ exports[`Snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "f17b4e0c3da0cb2c32c210fcc2d3aa354f1f919561ff71076f91a8b3ce916054.zip",
+          "S3Key": "1d0e22cf26f0a6383c7b3db5d3348490488c1cadab341bb385ed9750d570d418.zip",
         },
         "Environment": {
           "Variables": {

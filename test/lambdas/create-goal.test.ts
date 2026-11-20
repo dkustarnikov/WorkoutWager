@@ -29,8 +29,17 @@ jest.mock('../../src/common/helpers', () => ({
   convertToCronExpression: jest.fn().mockReturnValue('0 0 31 12 *'),
 }));
 
+// Real pure helpers (stake allocation, completion %); only the DynamoDB-touching ones are stubbed.
+const mockEscrowStake = jest.fn();
+const mockAdjustEscrow = jest.fn();
+const mockReleaseStake = jest.fn();
+const mockWriteTransaction = jest.fn();
 jest.mock('../../src/common/transactionUtils', () => ({
-  computeCompletionPercentage: jest.fn().mockReturnValue(0),
+  ...jest.requireActual('../../src/common/transactionUtils'),
+  escrowStake: (...args: unknown[]) => mockEscrowStake(...args),
+  adjustEscrow: (...args: unknown[]) => mockAdjustEscrow(...args),
+  releaseStake: (...args: unknown[]) => mockReleaseStake(...args),
+  writeTransaction: (...args: unknown[]) => mockWriteTransaction(...args),
 }));
 
 import { handler } from '../../src/lambdas/create-rule';
@@ -48,6 +57,10 @@ describe('POST /goal (create-goal)', () => {
   });
 
   beforeEach(() => {
+    mockEscrowStake.mockResolvedValue(undefined);
+    mockAdjustEscrow.mockResolvedValue(undefined);
+    mockReleaseStake.mockResolvedValue(undefined);
+    mockWriteTransaction.mockResolvedValue(undefined);
     mockGoalSchemaValidate.mockResolvedValue(true);
     mockDynamoPut.mockResolvedValue({});
     mockEventBridgePutRule.mockResolvedValue({});
@@ -82,17 +95,17 @@ describe('POST /goal (create-goal)', () => {
     expect(JSON.parse(result.body).message).toMatch(/future/i);
   });
 
-  it('returns 400 when milestone monetary values do not sum to totalAmount', async () => {
+  it('returns 400 when explicit milestone stakes do not sum to the goal stake', async () => {
     const event = getMockEvent();
     event.body = JSON.stringify({
       ...validGoalBody,
-      totalAmount: 999, // mismatch
+      stake: 999, // milestones explicitly stake 50 + 50
     });
 
     const result = await handler(event, ctx, jest.fn()) as any;
 
     expect(result.statusCode).toBe(400);
-    expect(JSON.parse(result.body).message).toMatch(/monetary value/i);
+    expect(JSON.parse(result.body).message).toMatch(/must sum exactly/i);
   });
 
   it('returns 400 when the last milestone deadline does not match the goal deadline', async () => {
@@ -135,7 +148,7 @@ describe('POST /goal (create-goal)', () => {
     const body = JSON.parse(result.body);
     expect(body.milestones).toHaveLength(1);
     expect(body.milestones[0].milestoneDeadline).toBe(GOAL_DEADLINE);
-    expect(body.milestones[0].monetaryValue).toBe(100); // equals totalAmount
+    expect(body.milestones[0].stake).toBe(100); // the whole goal stake
   });
 
   it('schedules an EventBridge rule for each milestone', async () => {

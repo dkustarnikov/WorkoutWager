@@ -1,0 +1,21 @@
+meta {
+  name: Configure Payments (play money)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/configure-payments
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "playMoney": true
+  }
+}

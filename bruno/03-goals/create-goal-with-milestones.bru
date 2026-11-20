@@ -16,39 +16,29 @@ auth:bearer {
 
 body:json {
   {
-    "userId": "{{userId}}",
     "goalType": "fitness",
     "goalName": "Marathon Training",
     "generalObjective": "Complete a full marathon after 3 months of training",
-    "totalAmount": 300,
+    "stake": 20,
     "deadline": "2027-04-01T00:00:00.000Z",
     "milestones": [
       {
         "milestoneName": "Week 4 - 10K Run",
         "type": "fitness",
-        "completion": false,
-        "milestoneDeadline": "2027-02-01T00:00:00.000Z",
-        "monetaryValue": 100
+        "milestoneDeadline": "2027-02-01T00:00:00.000Z"
       },
       {
         "milestoneName": "Week 8 - Half Marathon",
         "type": "fitness",
-        "completion": false,
-        "milestoneDeadline": "2027-03-01T00:00:00.000Z",
-        "monetaryValue": 100
+        "milestoneDeadline": "2027-03-01T00:00:00.000Z"
       },
       {
         "milestoneName": "Week 12 - Full Marathon",
         "type": "fitness",
-        "completion": false,
-        "milestoneDeadline": "2027-04-01T00:00:00.000Z",
-        "monetaryValue": 100
+        "milestoneDeadline": "2027-04-01T00:00:00.000Z"
       }
     ],
-    "allOrNothing": false,
-    "rewardDestination": "savings",
-    "penaltyDestination": "charity",
-    "penaltyInterestRate": 20
+    "allOrNothing": false
   }
 }
 

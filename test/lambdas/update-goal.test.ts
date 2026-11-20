@@ -31,8 +31,17 @@ jest.mock('../../src/common/helpers', () => ({
   convertToCronExpression: jest.fn().mockReturnValue('0 0 31 12 *'),
 }));
 
+// Real pure helpers (stake allocation, completion %); only the DynamoDB-touching ones are stubbed.
+const mockEscrowStake = jest.fn();
+const mockAdjustEscrow = jest.fn();
+const mockReleaseStake = jest.fn();
+const mockWriteTransaction = jest.fn();
 jest.mock('../../src/common/transactionUtils', () => ({
-  computeCompletionPercentage: jest.fn().mockReturnValue(0),
+  ...jest.requireActual('../../src/common/transactionUtils'),
+  escrowStake: (...args: unknown[]) => mockEscrowStake(...args),
+  adjustEscrow: (...args: unknown[]) => mockAdjustEscrow(...args),
+  releaseStake: (...args: unknown[]) => mockReleaseStake(...args),
+  writeTransaction: (...args: unknown[]) => mockWriteTransaction(...args),
 }));
 
 
@@ -57,6 +66,10 @@ describe('PUT /goal/{goalId} (update-goal)', () => {
   });
 
   beforeEach(() => {
+    mockEscrowStake.mockResolvedValue(undefined);
+    mockAdjustEscrow.mockResolvedValue(undefined);
+    mockReleaseStake.mockResolvedValue(undefined);
+    mockWriteTransaction.mockResolvedValue(undefined);
     mockGoalSchemaValidate.mockResolvedValue(true);
     mockDynamoGet.mockResolvedValue({ Item: makeGoal() });
     mockDynamoPut.mockResolvedValue({});
@@ -101,10 +114,10 @@ describe('PUT /goal/{goalId} (update-goal)', () => {
     expect(result.statusCode).toBe(400);
   });
 
-  it('returns 400 when milestone monetary values do not sum to totalAmount', async () => {
+  it('returns 400 when explicit milestone stakes do not sum to the goal stake', async () => {
     const event = getMockEvent();
     event.pathParameters = { goalId: GOAL_ID };
-    event.body = JSON.stringify({ ...validGoalBody, totalAmount: 999 });
+    event.body = JSON.stringify({ ...validGoalBody, stake: 999 });
 
     const result = await handler(event, ctx, jest.fn()) as any;
 
