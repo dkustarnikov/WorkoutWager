@@ -3,15 +3,26 @@ import { DynamoDB, EventBridge } from 'aws-sdk';
 import { v4 as uuidv4 } from 'uuid';
 import * as yup from 'yup';
 import { getCallerId, goalNotFoundResponse, isOwner, unauthorizedResponse } from '../../common/auth';
-import { getApiResponse, goalSchema, convertToCronExpression } from '../../common/helpers';
-import { Goal, GoalStatus } from '../../common/models';
-import { computeCompletionPercentage } from '../../common/transactionUtils';
+import { convertToCronExpression, getApiResponse, goalSchema } from '../../common/helpers';
+import { Goal, GoalStatus, Milestone } from '../../common/models';
+import {
+  adjustEscrow,
+  allocateMilestoneStakes,
+  computeCompletionPercentage,
+  InsufficientBalanceError,
+} from '../../common/transactionUtils';
 
 const dynamoDb = new DynamoDB.DocumentClient();
 const eventBridge = new EventBridge();
 const TABLE_NAME = process.env.GOALS_TABLE || 'Goals';
+const USER_INFO_TABLE = process.env.USER_INFO_TABLE || 'UserInfo';
 const SQS_QUEUE_ARN = process.env.SQS_QUEUE_ARN || '';
 
+/**
+ * PUT /goal/{goalId} — replace a goal's details, milestones and stake.
+ * Only allowed while the goal is still `created` (no milestone resolved yet), because the
+ * stake is escrowed; a changed stake escrows or releases the difference.
+ */
 export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProxyEvent) => {
   try {
     const goalId = event.pathParameters?.goalId;
@@ -24,9 +35,7 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
       return unauthorizedResponse();
     }
 
-    // Owner comes from the token; a body `userId` is ignored (kept for older clients).
-    const requestBody = { ...JSON.parse(event.body || '{}'), userId: callerId };
-
+    const requestBody = JSON.parse(event.body || '{}');
     try {
       await goalSchema.validate(requestBody, { abortEarly: false });
     } catch (validationError) {
@@ -37,84 +46,94 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
     }
 
     const {
-      userId, goalType, goalName, generalObjective, totalAmount, deadline, milestones,
+      goalType, goalName, generalObjective, deadline, milestones,
       allOrNothing = false,
-      rewardDestination = 'savings',
-      penaltyDestination = 'savings',
-      penaltyInterestRate = 0,
+      stake,
     } = requestBody;
 
     if (new Date(deadline) <= new Date()) {
       return getApiResponse(400, JSON.stringify({ message: 'Goal deadline must be in the future' }));
     }
 
-    let calculatedTotal = 0;
-    const updatedMilestones = milestones.map((m: any, index: number) => {
-      calculatedTotal += m.monetaryValue;
-      return {
-        ...m,
-        milestoneId: m.milestoneId || uuidv4(),
-        milestoneCounter: index + 1,
-        completion: m.completion,
-      };
-    });
-
-    if (calculatedTotal !== totalAmount) {
-      return getApiResponse(400, JSON.stringify({ message: 'Total monetary value of milestones does not match total amount of the goal' }));
-    }
-
-    const lastMilestone = updatedMilestones[updatedMilestones.length - 1];
-    if (lastMilestone.milestoneDeadline !== deadline) {
-      return getApiResponse(400, JSON.stringify({ message: 'Last milestone deadline must match the goal deadline' }));
-    }
-
     const getResult = await dynamoDb.get({ TableName: TABLE_NAME, Key: { goalId } }).promise();
     if (!isOwner(getResult.Item as Goal | undefined, callerId)) {
       return goalNotFoundResponse();
     }
-
     const existingGoal = getResult.Item as Goal;
-
-    // Completion state is owned by the server (complete-milestone / milestone-handler).
-    // Never take it from the request, or a client could mark milestones done or undo a miss.
-    const storedCompletion = new Map(existingGoal.milestones.map(m => [m.milestoneId, m.completion]));
-    for (const m of updatedMilestones) {
-      m.completion = storedCompletion.get(m.milestoneId);
-    }
 
     if (existingGoal.status === GoalStatus.completed || existingGoal.status === GoalStatus.failed
       || existingGoal.status === GoalStatus.cancelled) {
       return getApiResponse(400, JSON.stringify({ message: 'Cannot update a resolved goal' }));
     }
+    if (existingGoal.status !== GoalStatus.created) {
+      return getApiResponse(400, JSON.stringify({ message: 'Cannot change stake after goal has started; cancel and recreate' }));
+    }
+    if (existingGoal.milestones.some(m => m.completion !== undefined)) {
+      return getApiResponse(400, JSON.stringify({ message: 'Cannot update stakes after milestones have been resolved' }));
+    }
+
+    let stakeAllocations: number[];
+    try {
+      stakeAllocations = allocateMilestoneStakes(stake, milestones.length > 0 ? milestones : [{ stake }]);
+    } catch (allocError) {
+      return getApiResponse(400, JSON.stringify({ message: allocError instanceof Error ? allocError.message : 'Invalid milestone stakes' }));
+    }
+
+    // `completion` is owned by the server: never taken from the request.
+    const updatedMilestones: Milestone[] = milestones.map((m: Partial<Milestone>, index: number) => ({
+      milestoneId: m.milestoneId || uuidv4(),
+      milestoneName: m.milestoneName as string,
+      type: m.type as string,
+      milestoneCounter: index + 1,
+      milestoneDeadline: m.milestoneDeadline as string,
+      stake: stakeAllocations[index],
+    }));
+
+    const lastMilestone = updatedMilestones[updatedMilestones.length - 1];
+    if (!lastMilestone || lastMilestone.milestoneDeadline !== deadline) {
+      return getApiResponse(400, JSON.stringify({ message: 'Last milestone deadline must match the goal deadline' }));
+    }
+
+    try {
+      await adjustEscrow(dynamoDb, USER_INFO_TABLE, existingGoal.userId, stake - existingGoal.stake);
+    } catch (err) {
+      if (err instanceof InsufficientBalanceError) {
+        return getApiResponse(400, JSON.stringify({ message: err.message }));
+      }
+      throw err;
+    }
 
     const updatedGoal: Goal = {
       ...existingGoal,
-      userId: existingGoal.userId,
       goalType,
       goalName,
       generalObjective,
-      totalAmount,
       deadline,
       milestones: updatedMilestones,
       allOrNothing,
-      rewardDestination,
-      penaltyDestination,
-      penaltyInterestRate,
+      stake,
       updatedAt: new Date().toISOString(),
     };
-
     await dynamoDb.put({ TableName: TABLE_NAME, Item: updatedGoal }).promise();
 
+    // Remove rules for milestones that were dropped, then (re)schedule the current ones.
+    const keptIds = new Set(updatedMilestones.map(m => m.milestoneId));
+    for (const old of existingGoal.milestones.filter(m => !keptIds.has(m.milestoneId))) {
+      const ruleName = `MilestoneRule_${old.milestoneId}`;
+      try {
+        await eventBridge.removeTargets({ Rule: ruleName, Ids: [ruleName] }).promise();
+        await eventBridge.deleteRule({ Name: ruleName }).promise();
+      } catch {
+        // already gone
+      }
+    }
     for (const milestone of updatedMilestones) {
       const milestoneRuleName = `MilestoneRule_${milestone.milestoneId}`;
-      const scheduleExpression = `cron(${convertToCronExpression(milestone.milestoneDeadline)})`;
-
       await eventBridge.putRule({
         Name: milestoneRuleName,
-        ScheduleExpression: scheduleExpression,
+        ScheduleExpression: `cron(${convertToCronExpression(milestone.milestoneDeadline)})`,
         State: 'ENABLED',
       }).promise();
-
       await eventBridge.putTargets({
         Rule: milestoneRuleName,
         Targets: [{

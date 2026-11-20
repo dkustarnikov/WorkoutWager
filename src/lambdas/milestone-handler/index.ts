@@ -3,8 +3,8 @@ import * as AWS from 'aws-sdk';
 import { Goal, GoalStatus } from '../../common/models';
 import {
   allMilestonesResolved,
-  buildTransactionEntries,
-  updateGoalStatus,
+  settleGoalLoss,
+  settleMilestoneLoss,
   writeTransaction,
 } from '../../common/transactionUtils';
 
@@ -12,16 +12,20 @@ const dynamoDb = new AWS.DynamoDB.DocumentClient();
 const eventBridge = new AWS.EventBridge();
 const GOALS_TABLE = process.env.GOALS_TABLE || 'Goals';
 const TRANSACTIONS_TABLE = process.env.TRANSACTIONS_TABLE || 'Transactions';
+const USER_INFO_TABLE = process.env.USER_INFO_TABLE || 'UserInfo';
 
-// Triggered by SQS (EventBridge → SQS → this Lambda) at milestone deadline.
-// Marks the milestone as missed if not already completed, then resolves the goal if applicable.
+/**
+ * Triggered by SQS (EventBridge → SQS → this Lambda) at a milestone's deadline.
+ * If the milestone is still pending it is marked missed and its stake forfeited.
+ * All-or-nothing goals fail outright: the whole stake is forfeited.
+ */
 export const handler = async (event: SQSEvent): Promise<void> => {
   for (const record of event.Records) {
     try {
       const { goalId, milestoneId } = JSON.parse(record.body);
 
       if (!goalId || !milestoneId) {
-        console.error('Missing goalId or milestoneId in SQS message', record.body);
+        console.error('Missing goalId or milestoneId in SQS message');
         continue;
       }
 
@@ -30,11 +34,9 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         console.warn(`Goal ${goalId} not found — skipping`);
         continue;
       }
-
       const goal = goalResult.Item as Goal;
 
-      // Skip if goal already resolved
-      if (goal.status === GoalStatus.completed || goal.status === GoalStatus.failed) {
+      if (goal.status === GoalStatus.completed || goal.status === GoalStatus.failed || goal.status === GoalStatus.cancelled) {
         console.log(`Goal ${goalId} already resolved — skipping`);
         continue;
       }
@@ -46,20 +48,23 @@ export const handler = async (event: SQSEvent): Promise<void> => {
       }
 
       const milestone = goal.milestones[milestoneIndex];
-
-      // Already completed — no action needed
       if (milestone.completion === true) {
         console.log(`Milestone ${milestoneId} already completed — skipping`);
         continue;
       }
+      if (milestone.completion === false) {
+        // A retried SQS message must not forfeit the stake twice.
+        console.log(`Milestone ${milestoneId} already missed — skipping`);
+        continue;
+      }
 
-      // Mark milestone as missed
       goal.milestones[milestoneIndex] = { ...milestone, completion: false };
       goal.updatedAt = new Date().toISOString();
+      if (goal.status === GoalStatus.created) {
+        goal.status = GoalStatus.inProgress;
+      }
 
-      // allOrNothing: any miss = immediate full failure
       if (goal.allOrNothing) {
-        // Cancel all remaining EventBridge rules for this goal
         for (const m of goal.milestones) {
           if (m.completion === undefined) {
             const ruleName = `MilestoneRule_${m.milestoneId}`;
@@ -71,32 +76,28 @@ export const handler = async (event: SQSEvent): Promise<void> => {
             }
           }
         }
+        goal.milestones = goal.milestones.map(m => (m.completion !== undefined ? m : { ...m, completion: false }));
 
-        // Mark all remaining milestones as missed
-        goal.milestones = goal.milestones.map(m =>
-          m.completion !== undefined ? m : { ...m, completion: false },
-        );
-
-        const { entries, outcome } = buildTransactionEntries(goal);
-        await writeTransaction(dynamoDb, TRANSACTIONS_TABLE, goal, entries, outcome);
-
+        const entries = await settleGoalLoss(dynamoDb, USER_INFO_TABLE, goal.userId, goal.stake);
+        await writeTransaction(dynamoDb, TRANSACTIONS_TABLE, goal, entries, 'lost');
         goal.status = GoalStatus.failed;
         await dynamoDb.put({ TableName: GOALS_TABLE, Item: goal }).promise();
-
-        console.log(`Goal ${goalId} failed (all-or-nothing): penalty applied`);
+        console.log(`Goal ${goalId} failed (all-or-nothing): stake forfeited`);
         continue;
       }
 
-      // Non-allOrNothing: save the missed milestone, check if all resolved
-      await dynamoDb.put({ TableName: GOALS_TABLE, Item: goal }).promise();
+      const entries = await settleMilestoneLoss(dynamoDb, USER_INFO_TABLE, goal.userId, milestone.stake);
+      entries[0].reason = `Milestone missed: ${milestone.milestoneName} — stake forfeited`;
 
       if (allMilestonesResolved(goal.milestones)) {
-        const { entries, outcome } = buildTransactionEntries(goal);
+        const outcome = goal.milestones.some(m => m.completion === true) ? 'mixed' : 'lost';
         await writeTransaction(dynamoDb, TRANSACTIONS_TABLE, goal, entries, outcome);
-
-        const finalStatus = GoalStatus.completed;
-        await updateGoalStatus(dynamoDb, GOALS_TABLE, goalId, finalStatus);
+        goal.status = GoalStatus.completed;
+        await dynamoDb.put({ TableName: GOALS_TABLE, Item: goal }).promise();
         console.log(`Goal ${goalId} fully resolved. Outcome: ${outcome}`);
+      } else {
+        await writeTransaction(dynamoDb, TRANSACTIONS_TABLE, goal, entries, 'lost');
+        await dynamoDb.put({ TableName: GOALS_TABLE, Item: goal }).promise();
       }
     } catch (err) {
       console.error('Error processing SQS record', err);

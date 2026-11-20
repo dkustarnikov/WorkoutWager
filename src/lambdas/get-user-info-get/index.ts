@@ -2,7 +2,7 @@ import * as awsLambda from 'aws-lambda';
 import * as AWS from 'aws-sdk';
 import { getCallerId, unauthorizedResponse } from '../../common/auth';
 import { getApiResponse } from '../../common/helpers';
-import { User } from '../../common/models';
+import { DEFAULT_PLAY_MONEY, STARTING_BALANCE, User } from '../../common/models';
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
@@ -32,7 +32,15 @@ export const handler: awsLambda.Handler = async (event: awsLambda.APIGatewayProx
       return getApiResponse(404, JSON.stringify({ message: 'User profile not found — call /configure-user first' }));
     }
 
-    return getApiResponse(200, JSON.stringify(userInfoResult.Item as User));
+    // Profiles created before the play-money economy have no balance fields yet.
+    const userInfo = userInfoResult.Item as User;
+    return getApiResponse(200, JSON.stringify({
+      ...userInfo,
+      balance: userInfo.balance ?? STARTING_BALANCE,
+      pendingBalance: userInfo.pendingBalance ?? 0,
+      stars: userInfo.stars ?? 0,
+      playMoney: userInfo.playMoney ?? DEFAULT_PLAY_MONEY,
+    }));
   } catch (err) {
     console.error('Error fetching user info:', err);
     return getApiResponse(500, JSON.stringify({ message: 'Internal Server Error' }));
